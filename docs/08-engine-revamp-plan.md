@@ -112,7 +112,8 @@ Frames and labels: `corpus/live/` (`labels.yaml`, second section). All flows wer
   2. Cửa hiệu is a scrolling item grid with ▲ (651,212) and ▼ (651,425). **It keeps its scroll position between opens**, so press ▼ until the chest row shows at the bottom and the grid stops changing. That took 6 presses from the top; the scroll moves in partial rows.
   3. The bottom row holds five identical chest icons at y≈410, x = 335 / 390 / 445 / 500 / 553: **5,000,000 / 10,000,000 / 50,000,000 / 100,000,000 / 1,000,000,000** silver ("5 trăm vạn Bạc" … "1 tỷ bạc"). The icons can't be told apart, so the bot picks by position and **verifies the "Bạc cần" number** (`digits`, at 360–460, 463) before buying.
   4. "Mua" (502,463) buys **at once, with no confirm**: a green floating line "Mua[1 trăm triệu Bạc] thành công". Silver drops by the price (958,983,797 → 858,983,797), and the chest goes into Kho as an item (60 → 61/500 slots). The silver cap shown in the top bar is 2,425,000,000.
-  5. Close with ✕ (802,119). Every press buys one chest, so the bot must read silver after each buy and stop once it is under the target.
+  5. Close with ✕ (802,119). Every press buys one chest, so the bot must read silver after each buy.
+- **Rule (user decision, 2026-10-08)**: when the silver alert appears (silver above 2,000,000,000), buy **two 1,000,000,000 chests** (the last slot, x=553), checking "Bạc cần" = 1000000000 and that silver drops by 1,000,000,000 after each Mua. Then close the dialog and return to the Võ Khôi Tháp loop.
 - **Not yet observed**: the 2-billion silver alert (the account has 959 million), running out of Quân lệnh (593 left, 23 per round), and a lost or timed-out boss fight. They need a long run, and the R2 pilot of this feature should capture them.
 
 ## Target loop
