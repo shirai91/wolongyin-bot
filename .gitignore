@@ -19,3 +19,7 @@ data/
 
 # Live tools build output
 tools/live/*.exe
+
+# Live exploration captures (ngoalong/tools/explore.py): large, kept locally.
+# Labels stay tracked; anchor templates cut from them go under profiles/.
+corpus/**/*.png

@@ -15,6 +15,7 @@ This design document is split into seven short files, so a person or an agent ca
 | [05-known-issues.md](05-known-issues.md) | What is broken | 17 issues (#1–#17) with severity, location and effect |
 | [06-rewrite-design.md](06-rewrite-design.md) | The rewrite plan | Target browsers, automatic screen detection, scene recognition, debug overlay, Python stack, module layout, interfaces, old-to-new mapping, roadmap, decisions |
 | [07-screen-catalogue.md](07-screen-catalogue.md) | Where things are on screen | Measured canvas rectangles, 7 scenes with object positions, v1.8.0 offsets checked against screenshots |
+| [08-engine-revamp-plan.md](08-engine-revamp-plan.md) | The next engine | Why screen detection fails live, the perceive → read state → decide loop, UI parts, screen state, rules, recovery, navigation, phases R0–R4, test policy |
 | [user-guide-vi.md](user-guide-vi.md) | Using the v2 app (Vietnamese) | Install, first run, window detection, each feature, debug mode, routines, multiple windows, troubleshooting. Ships in the build as `HUONG-DAN.md` |
 | [../README.md](../README.md) | Working on the v2 code | Developer quick start, command line, code layout, tests, build (`build.ps1`, `AutoNgoaLong.spec`, `--selftest`) |
 
