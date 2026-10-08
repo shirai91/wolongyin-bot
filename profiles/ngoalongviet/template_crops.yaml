@@ -1,0 +1,281 @@
+﻿# Template crop list for tools/cut_templates.py (reproducible template cutting).
+#
+# sources: screenshot alias -> file (relative to the project root) + the canvas top-left corner in
+#          that file. Reference screenshots: measured with the black-border method (docs/07);
+#          tower-in-dungeon: from the chat-bar anchors (its dark scene defeats the border method).
+#          Live captures (docs/game screenshots/live/): canvas at client (180, 110) in every file.
+# crops:   name (dots = folders under templates/), source alias, rect = canvas [x, y, w, h] at
+#          1000x600, optional mask (ellipse). Scenes and the locator reference these names; the
+#          `at` of a signature item is the rect's (x, y).
+#
+# Regenerate:  .venv\Scripts\python.exe tools/cut_templates.py
+# Verify:      .venv\Scripts\python.exe tools/cut_templates.py --check
+
+sources:
+  main: {path: "docs/game screenshots/main-game.png", origin: [273, 109]}
+  dungeon: {path: "docs/game screenshots/dungeon.png", origin: [272, 110]}
+  worldmap: {path: "docs/game screenshots/worldmap-ui.png", origin: [270, 107]}
+  tower_ui: {path: "docs/game screenshots/tower-ui.png", origin: [272, 106]}
+  tower_confirm: {path: "docs/game screenshots/tower-ui-enter-confirmation.png", origin: [270, 110]}
+  chest: {path: "docs/game screenshots/chest-rolling-ui.png", origin: [271, 112]}
+  tower_battle: {path: "docs/game screenshots/tower-in-dungeon.png", origin: [272, 108]}
+  live_city: {path: "docs/game screenshots/live/01-city-main.png", origin: [180, 110]}
+  live_dungeon_list: {path: "docs/game screenshots/live/05-pho-ban-list.png", origin: [180, 110]}
+  live_switch_banner: {path: "docs/game screenshots/live/07-dungeon-switch-banner.png", origin: [180, 110]}
+  live_army: {path: "docs/game screenshots/live/09-dungeon-army-dialog.png", origin: [180, 110]}
+  live_events: {path: "docs/game screenshots/live/10-hoat-dong-events.png", origin: [180, 110]}
+  live_ngao_du: {path: "docs/game screenshots/live/11-ngao-du.png", origin: [180, 110]}
+  live_region: {path: "docs/game screenshots/live/12-khu-vuc.png", origin: [180, 110]}
+  live_event_dungeon: {path: "docs/game screenshots/live/13-event-dungeon-from-top-pho-ban.png", origin: [180, 110]}
+  live_panel: {path: "docs/game screenshots/live/14-building-panel-dan-cu.png", origin: [180, 110]}
+  # v1.8.0 legacy templates (docs/legacy templates, copied from the archived Server/default/All/Images), taken whole (origin 0, 0): no screenshot of these
+  # screens exists for ngoalongviet.com yet. Replace with live crops once captured (docs/07).
+  legacy_ttl_win: {path: "docs/legacy templates/ThapThiLuyen/TTL_Thang.bmp", origin: [0, 0]}
+  legacy_ttl_win_zh: {path: "docs/legacy templates/ThapThiLuyen/TTL_Thang2.bmp", origin: [0, 0]}
+  legacy_ttl_lose: {path: "docs/legacy templates/ThapThiLuyen/TTL_Thua.bmp", origin: [0, 0]}
+  legacy_ttl_lose_zh: {path: "docs/legacy templates/ThapThiLuyen/TTL_Thua2.bmp", origin: [0, 0]}
+  legacy_ttl_soldier: {path: "docs/legacy templates/ThapThiLuyen/TTL_Linh.bmp", origin: [0, 0]}
+  live_research: {path: "docs/game screenshots/live/16-khoa-ky.png", origin: [180, 110]}
+  live_tavern: {path: "docs/game screenshots/live/17-tuu-quan-tri-ky.png", origin: [180, 110]}
+  # Tower dialog, Tháp tab, Tầng 1-6 unlocked, page box "1" (2026-10-06): the floor-list pager.
+  live_tower_6: {path: "docs/game screenshots/live/26c-tower-dialog-6-floors.png", origin: [180, 110]}
+  # "Bỏ qua thời gian chờ tốn 13 Vàng. Xác nhận?" after "Tăng cấp" on a building (2026-10-06; a
+  # smaller Coowon window: canvas at client (45, 110)). Answered by the popup guard's gold policy.
+  live_gold_skip: {path: "docs/game screenshots/live/51-gold-skip-wait-confirm.png", origin: [45, 110]}
+  # Reward modal "Chúc mừng ngài được" over the tower battle (a debug-mode frame of a user run,
+  # 2026-10-06; the overlay drew nothing over the modal). Dismissed by the popup guard.
+  live_reward: {path: "tests/fixtures/screens/popups/reward-modal-chuc-mung-debug-frame.png", origin: [180, 110]}
+  live_talk: {path: "docs/game screenshots/live/18-tuu-quan-visitor.png", origin: [180, 110]}
+  live_dap_binh: {path: "docs/game screenshots/live/20-dap-binh.png", origin: [180, 110]}
+  live_bo_doanh: {path: "docs/game screenshots/live/21-bo-doanh.png", origin: [180, 110]}
+  live_generals: {path: "docs/game screenshots/live/22-tuong.png", origin: [180, 110]}
+  live_loi_dai: {path: "docs/game screenshots/live/27-loi-dai.png", origin: [180, 110]}
+  live_dau_truong: {path: "docs/game screenshots/live/28-dau-truong.png", origin: [180, 110]}
+  live_city_info: {path: "docs/game screenshots/live/29-world-city-click.png", origin: [180, 110]}
+  live_resources: {path: "docs/game screenshots/live/31-tai-nguyen.png", origin: [180, 110]}
+  live_palace: {path: "docs/game screenshots/live/35-quoc-chinh.png", origin: [180, 110]}
+  live_legion: {path: "docs/game screenshots/live/38-q-doan.png", origin: [180, 110]}
+  live_help: {path: "docs/game screenshots/live/39-giup.png", origin: [180, 110]}
+  live_inventory: {path: "docs/game screenshots/live/41-trang-bi.png", origin: [180, 110]}
+  live_daily: {path: "docs/game screenshots/live/42-bao-danh.png", origin: [180, 110]}
+  # Clear Phó Bản (P2): live field captures, plus v1.8.0 ClearMap images taken whole (origin 0, 0)
+  # for the popups no live capture shows yet (battle result, recruit, level-up, notice).
+  live_pho_ban: {path: "docs/game screenshots/live/04-pho-ban.png", origin: [180, 110]}
+  live_cong_ton: {path: "docs/game screenshots/live/08-dungeon-map-cong-ton.png", origin: [180, 110]}
+  legacy_cm_result: {path: "docs/legacy templates/ClearMap/Button_KetQua.bmp", origin: [0, 0]}
+  legacy_cm_recruit_max: {path: "docs/legacy templates/ClearMap/Button_ChieuBinh_ToiDa.bmp", origin: [0, 0]}
+  legacy_cm_recruit_prompt: {path: "docs/legacy templates/ClearMap/Button_ChieuBinh.bmp", origin: [0, 0]}
+  legacy_cm_level_up: {path: "docs/legacy templates/ClearMap/ChuaCongLenCap.bmp", origin: [0, 0]}
+  legacy_cm_notice_close: {path: "docs/legacy templates/ClearMap/ThongBaoPhoBanMoi.bmp", origin: [0, 0]}
+  # Thám Bảo (P2): no live capture exists (docs/07 "Not reached"): v1.8.0 ThamBao images, whole.
+  legacy_tb_sweep: {path: "docs/legacy templates/ThamBao/TB_CanQuet.bmp", origin: [0, 0]}
+  legacy_tb_sweep_alt: {path: "docs/legacy templates/ThamBao/TB_CanQuet2.bmp", origin: [0, 0]}
+  legacy_tb_opponent: {path: "docs/legacy templates/ThamBao/TB_DoiThu.bmp", origin: [0, 0]}
+  legacy_tb_result: {path: "docs/legacy templates/ThamBao/TB_KetQua.bmp", origin: [0, 0]}
+  legacy_tb_lost: {path: "docs/legacy templates/ThamBao/TB_MatThat.bmp", origin: [0, 0]}
+  legacy_tb_claimed: {path: "docs/legacy templates/ThamBao/TB_DaNhanThuong.bmp", origin: [0, 0]}
+  # P3 "Thám Bảo x2 reward": still no live capture of the screen (2026-10-06), so TB_QuaX2 whole.
+  legacy_tb_reward_x2: {path: "docs/legacy templates/ThamBao/TB_QuaX2.bmp", origin: [0, 0]}
+  # Võ Khôi Tháp boss screen, live capture 2026-10-06 (the world-map marker opens it, docs/07).
+  live_vkt: {path: "docs/game screenshots/live/44-vo-khoi-thap.png", origin: [180, 110]}
+  # v1.8.0 Võ Khôi Tháp and Tri Kỷ images, taken whole: their popups were not reached on
+  # ngoalongviet.com (docs/07). Replace with live crops once captured.
+  legacy_vkt_out_of_tokens: {path: "docs/legacy templates/VoKhoiThap/Boss_CheckHetLenh.bmp", origin: [0, 0]}
+  legacy_vkt_chest_icon: {path: "docs/legacy templates/VoKhoiThap/Boss_TimRuong.bmp", origin: [0, 0]}
+  legacy_vkt_buy_check: {path: "docs/legacy templates/VoKhoiThap/VKT_MuaRuong_Check.bmp", origin: [0, 0]}
+  legacy_vkt_full_silver: {path: "docs/legacy templates/VoKhoiThap/VKT_FullTien.bmp", origin: [0, 0]}
+  legacy_vkt_shop_scroll_down: {path: "docs/legacy templates/VoKhoiThap/VKT_CuaHang_Xuong.bmp", origin: [0, 0]}
+  legacy_vkt_shop_chest_1ty_1: {path: "docs/legacy templates/VoKhoiThap/VKT_CuaHang_Ruong1Ty_1.bmp", origin: [0, 0]}
+  legacy_vkt_shop_chest_1ty_2: {path: "docs/legacy templates/VoKhoiThap/VKT_CuaHang_Ruong1Ty_2.bmp", origin: [0, 0]}
+  legacy_triky_tim_0: {path: "docs/legacy templates/TriKy/Tim/0.bmp", origin: [0, 0]}
+  legacy_triky_tim_1: {path: "docs/legacy templates/TriKy/Tim/1.bmp", origin: [0, 0]}
+  legacy_triky_tim_2: {path: "docs/legacy templates/TriKy/Tim/2.bmp", origin: [0, 0]}
+  legacy_triky_tim_3: {path: "docs/legacy templates/TriKy/Tim/3.bmp", origin: [0, 0]}
+  legacy_triky_tim_4: {path: "docs/legacy templates/TriKy/Tim/4.bmp", origin: [0, 0]}
+  legacy_triky_tim_5: {path: "docs/legacy templates/TriKy/Tim/5.bmp", origin: [0, 0]}
+  legacy_triky_tim_6: {path: "docs/legacy templates/TriKy/Tim/6.bmp", origin: [0, 0]}
+  legacy_triky_tim_7: {path: "docs/legacy templates/TriKy/Tim/7.bmp", origin: [0, 0]}
+  legacy_triky_tim_8: {path: "docs/legacy templates/TriKy/Tim/8.bmp", origin: [0, 0]}
+  legacy_triky_tim_9: {path: "docs/legacy templates/TriKy/Tim/9.bmp", origin: [0, 0]}
+  legacy_triky_tim_10: {path: "docs/legacy templates/TriKy/Tim/10.bmp", origin: [0, 0]}
+  legacy_triky_tim_11: {path: "docs/legacy templates/TriKy/Tim/11.bmp", origin: [0, 0]}
+  legacy_triky_tim_12: {path: "docs/legacy templates/TriKy/Tim/12.bmp", origin: [0, 0]}
+  legacy_triky_tim_13: {path: "docs/legacy templates/TriKy/Tim/13.bmp", origin: [0, 0]}
+  legacy_triky_tim_14: {path: "docs/legacy templates/TriKy/Tim/14.bmp", origin: [0, 0]}
+  legacy_triky_tim_15: {path: "docs/legacy templates/TriKy/Tim/15.bmp", origin: [0, 0]}
+  legacy_triky_tim_16: {path: "docs/legacy templates/TriKy/Tim/16.bmp", origin: [0, 0]}
+  legacy_triky_tim_17: {path: "docs/legacy templates/TriKy/Tim/17.bmp", origin: [0, 0]}
+  legacy_triky_tim_18: {path: "docs/legacy templates/TriKy/Tim/18.bmp", origin: [0, 0]}
+  legacy_triky_cam_0: {path: "docs/legacy templates/TriKy/Cam/0.bmp", origin: [0, 0]}
+  legacy_triky_cam_1: {path: "docs/legacy templates/TriKy/Cam/1.bmp", origin: [0, 0]}
+  legacy_triky_cam_2: {path: "docs/legacy templates/TriKy/Cam/2.bmp", origin: [0, 0]}
+  legacy_triky_cam_3: {path: "docs/legacy templates/TriKy/Cam/3.bmp", origin: [0, 0]}
+  legacy_triky_cam_4: {path: "docs/legacy templates/TriKy/Cam/4.bmp", origin: [0, 0]}
+  legacy_triky_cam_5: {path: "docs/legacy templates/TriKy/Cam/5.bmp", origin: [0, 0]}
+  legacy_triky_cam_6: {path: "docs/legacy templates/TriKy/Cam/6.bmp", origin: [0, 0]}
+  legacy_triky_cam_7: {path: "docs/legacy templates/TriKy/Cam/7.bmp", origin: [0, 0]}
+  legacy_triky_cam_8: {path: "docs/legacy templates/TriKy/Cam/8.bmp", origin: [0, 0]}
+  legacy_triky_cam_9: {path: "docs/legacy templates/TriKy/Cam/9.bmp", origin: [0, 0]}
+  legacy_triky_cam_10: {path: "docs/legacy templates/TriKy/Cam/10.bmp", origin: [0, 0]}
+  legacy_triky_cam_11: {path: "docs/legacy templates/TriKy/Cam/11.bmp", origin: [0, 0]}
+  legacy_triky_cam_12: {path: "docs/legacy templates/TriKy/Cam/12.bmp", origin: [0, 0]}
+  legacy_triky_cam_13: {path: "docs/legacy templates/TriKy/Cam/13.bmp", origin: [0, 0]}
+  legacy_triky_cam_14: {path: "docs/legacy templates/TriKy/Cam/14.bmp", origin: [0, 0]}
+  legacy_triky_cam_15: {path: "docs/legacy templates/TriKy/Cam/15.bmp", origin: [0, 0]}
+  legacy_triky_cam_16: {path: "docs/legacy templates/TriKy/Cam/16.bmp", origin: [0, 0]}
+  legacy_triky_cam_17: {path: "docs/legacy templates/TriKy/Cam/17.bmp", origin: [0, 0]}
+  legacy_triky_cam_18: {path: "docs/legacy templates/TriKy/Cam/18.bmp", origin: [0, 0]}
+  legacy_triky_cam_19: {path: "docs/legacy templates/TriKy/Cam/19.bmp", origin: [0, 0]}
+  legacy_triky_cam_20: {path: "docs/legacy templates/TriKy/Cam/20.bmp", origin: [0, 0]}
+
+crops:
+  # --- canvas locator anchors (fixed HUD pieces) -------------------------------------------------
+  - {name: anchor.kvuc_label, source: main, rect: [2, 574, 40, 22]}      # chat input "K.Vực" box
+  - {name: anchor.chat_send, source: main, rect: [222, 574, 54, 22]}     # chat emoji + send button
+  - {name: anchor.hud_gear, source: main, rect: [751, 5, 22, 22], mask: ellipse}  # settings gear
+
+  # --- city ---------------------------------------------------------------------------------------
+  - {name: city.quoc_chinh, source: live_city, rect: [592, 570, 54, 18]}          # bottom bar "QuốcChín"
+  - {name: city.panel.upgrade, source: live_panel, rect: [345, 312, 60, 22]}      # building panel "Tăng cấp"
+  - {name: city.panel.close, source: live_panel, rect: [678, 192, 20, 20]}        # building panel ✕
+  - {name: overlay.toast.view, source: main, rect: [886, 423, 84, 24]}            # toast "Xem ngay"
+  - {name: overlay.toast.close, source: main, rect: [976, 304, 20, 20]}           # toast ✕
+  - {name: tower.pager.prev, source: live_tower_6, rect: [200, 467, 13, 19]}      # ◀ of the floor list
+  - {name: tower.pager.next, source: live_tower_6, rect: [285, 467, 13, 19]}      # ▶ of the floor list
+  - {name: tower.pager.page1, source: live_tower_6, rect: [236, 469, 26, 14]}     # page box showing "1"
+  - {name: popup.gold_skip.no_remind, source: live_gold_skip, rect: [424, 310, 168, 20]}  # ☐ "Lần sau không nhắc nhở"
+  - {name: popup.gold_skip.ok, source: live_gold_skip, rect: [418, 340, 74, 20]}         # 确定 (left: spend Vàng)
+  - {name: popup.gold_skip.cancel, source: live_gold_skip, rect: [509, 340, 74, 20]}     # 取消 (right)
+  - {name: popup.reward.title, source: live_reward, rect: [436, 229, 120, 15]}    # "Chúc mừng ngài được"
+  - {name: popup.reward.ok, source: live_reward, rect: [458, 341, 74, 22]}        # 确定 of the reward modal
+
+  # --- world map, region, resources ---------------------------------------------------------------
+  - {name: world_map.label_luoyang, source: worldmap, rect: [544, 268, 38, 22]}   # city label 洛阳
+  - {name: world_map.city_info.enter, source: live_city_info, rect: [632, 194, 56, 22]}  # "Vào thành"
+  - {name: region.resources_button, source: live_region, rect: [362, 569, 74, 28]}       # "Tài nguyên"
+  - {name: resources.back_button, source: live_resources, rect: [362, 569, 74, 28]}      # "Về khu vực"
+
+  # --- field (Phó Bản) ----------------------------------------------------------------------------
+  - {name: field.name_bar_left, source: dungeon, rect: [436, 565, 20, 27]}        # left end of the name bar
+  - {name: field.prev_dungeon, source: dungeon, rect: [409, 565, 26, 27]}         # « button
+  - {name: field.dungeon_list.title, source: live_dungeon_list, rect: [470, 363, 60, 18]}  # "Phó bản"
+  - {name: field.switch_banner.left, source: live_switch_banner, rect: [384, 284, 30, 32]}
+  - {name: field.army_dialog.attack, source: live_army, rect: [556, 293, 56, 22]} # "Tấn công"
+  - {name: event_dungeon.terrain, source: live_event_dungeon, rect: [430, 170, 60, 40]}
+
+  # --- trial tower --------------------------------------------------------------------------------
+  - {name: tower.dialog.title, source: tower_ui, rect: [448, 101, 104, 20]}       # "Tháp Thí Luyện"
+  - {name: tower.confirm.text, source: tower_confirm, rect: [350, 282, 120, 18]}  # "Mỗi lần Vượt tháp"
+  - {name: tower.confirm.ok, source: tower_confirm, rect: [420, 320, 66, 22]}     # 确定
+  - {name: tower.battle.floor_label, source: tower_battle, rect: [480, 12, 26, 15]}  # "Tầng"
+  - {name: tower.battle.exit, source: tower_battle, rect: [926, 553, 68, 20]}       # "Thoát"
+  - {name: tower.battle.auto_label, source: tower_battle, rect: [755, 553, 60, 20]} # "Tự Vượt Th"
+  # legacy v1.8.0 images, whole (rect = image size); searched over the whole canvas, not by scenes
+  - {name: tower.result.win, source: legacy_ttl_win, rect: [0, 0, 140, 40]}        # "Thắng Trận"
+  - {name: tower.result.win_zh, source: legacy_ttl_win_zh, rect: [0, 0, 65, 30]}   # 战胜
+  - {name: tower.result.lose, source: legacy_ttl_lose, rect: [0, 0, 107, 33]}      # "Bại Trận"
+  - {name: tower.result.lose_zh, source: legacy_ttl_lose_zh, rect: [0, 0, 63, 26]} # 战败
+  - {name: tower.battle.soldier, source: legacy_ttl_soldier, rect: [0, 0, 11, 6]}  # TTL_Linh (enemy)
+
+  # --- Tinh Tú chest wheel ------------------------------------------------------------------------
+  - {name: chest.wheel.title, source: chest, rect: [448, 62, 104, 20]}            # "Tinh Tú"
+  - {name: chest.wheel.start, source: chest, rect: [398, 240, 48, 48]}            # 开始抽奖
+
+  # --- standard and large dialogs (title plates) --------------------------------------------------
+  - {name: research.title, source: live_research, rect: [448, 101, 104, 20]}      # "Phủ Sách Lược"
+  - {name: generals.title, source: live_generals, rect: [448, 101, 104, 20]}      # "Tướng"
+  - {name: inventory.title, source: live_inventory, rect: [448, 101, 104, 20]}    # "Trang bị"
+  - {name: legion.title, source: live_legion, rect: [448, 101, 104, 20]}          # "QuânĐoàn"
+  - {name: help.title, source: live_help, rect: [448, 101, 104, 20]}              # "T.Giúp"
+  - {name: daily.title, source: live_daily, rect: [448, 101, 104, 20]}            # "Hoạt Động"
+  - {name: events.title, source: live_events, rect: [448, 77, 104, 20]}           # "Hoạt động" (large frame)
+  - {name: bo_doanh.title, source: live_bo_doanh, rect: [448, 77, 104, 20]}       # "Bộ Doanh" (large frame)
+
+  # --- full-screen activities ---------------------------------------------------------------------
+  - {name: tavern.invite_fast, source: live_tavern, rect: [698, 552, 60, 22]}     # "Mời nhanh"
+  - {name: tavern.exit, source: live_tavern, rect: [912, 560, 52, 20]}            # "Thoát"
+  - {name: tavern.talk_result.ok, source: live_talk, rect: [656, 345, 48, 20]}    # 确定
+  - {name: palace.noi_chinh, source: live_palace, rect: [52, 32, 86, 20]}         # "Nội Chính"
+  - {name: dap_binh.leave, source: live_dap_binh, rect: [912, 565, 56, 20]}       # "Rời khỏi"
+  - {name: ngao_du.black_point, source: live_ngao_du, rect: [722, 555, 56, 20]}   # "Hắc điểm"
+  - {name: loi_dai.exit, source: live_loi_dai, rect: [890, 538, 44, 24]}          # 退出
+  - {name: dau_truong.title, source: live_dau_truong, rect: [447, 10, 106, 22]}   # 竞技场
+
+  # --- Clear Phó Bản (scenes/clear_map.yaml) -----------------------------------------------------
+  # Red flag of an attackable army (v1.8.0 DaoQuan_2/_3 match these flags exactly); <= 0.75 elsewhere.
+  - {name: field.enemy_flag, source: live_pho_ban, rect: [401, 393, 14, 8]}
+  - {name: field.hud.icons_toggle, source: live_pho_ban, rect: [822, 70, 19, 18]}    # ">>" (= Button_AnChucNang)
+  - {name: field.hud.quest_collapse, source: live_pho_ban, rect: [807, 165, 20, 26]} # "▶" (= AnKhungThongBao)
+  - {name: hud.chat_collapse, source: live_city, rect: [3, 549, 15, 16]}             # "⌄" left of "Chung": chat log open (collapsed shows "⌃")
+  - {name: hud.sap_mo, source: live_city, rect: [64, 268, 48, 17]}                   # "Sắp mở" title of the upcoming-building box
+  - {name: hud.notice_collapse, source: live_city, rect: [2, 129, 17, 17]}           # top "<<" of the left notice list (Thu, Khoa kỹ, Ruộng, ...)
+  - {name: field.next_dungeon, source: live_cong_ton, rect: [570, 568, 18, 20]}     # "»" on the dungeon bar
+  # legacy v1.8.0 images, whole; searched over the canvas (scene margin 1000), positions unknown
+  - {name: clear_map.result, source: legacy_cm_result, rect: [0, 0, 6, 8]}              # Button_KetQua
+  - {name: clear_map.recruit.max, source: legacy_cm_recruit_max, rect: [0, 0, 75, 24]}  # Button_ChieuBinh_ToiDa
+  - {name: clear_map.recruit.prompt, source: legacy_cm_recruit_prompt, rect: [0, 0, 33, 18]}  # Button_ChieuBinh
+  - {name: clear_map.level_up, source: legacy_cm_level_up, rect: [0, 0, 27, 28]}        # ChuaCongLenCap
+  - {name: clear_map.notice_close, source: legacy_cm_notice_close, rect: [0, 0, 21, 19]}  # ThongBaoPhoBanMoi
+
+  # --- Thám Bảo (scenes/tham_bao.yaml): legacy v1.8.0 images, whole --------------------------------
+  - {name: tham_bao.sweep, source: legacy_tb_sweep, rect: [0, 0, 18, 8]}            # TB_CanQuet
+  - {name: tham_bao.sweep_alt, source: legacy_tb_sweep_alt, rect: [0, 0, 38, 13]}   # TB_CanQuet2
+  - {name: tham_bao.opponent, source: legacy_tb_opponent, rect: [0, 0, 46, 50]}     # TB_DoiThu
+  - {name: tham_bao.result, source: legacy_tb_result, rect: [0, 0, 6, 6]}           # TB_KetQua
+  - {name: tham_bao.lost, source: legacy_tb_lost, rect: [0, 0, 17, 31]}             # TB_MatThat
+  - {name: tham_bao.claimed, source: legacy_tb_claimed, rect: [0, 0, 20, 22]}       # TB_DaNhanThuong
+  - {name: tham_bao.reward_x2, source: legacy_tb_reward_x2, rect: [0, 0, 50, 54]}   # TB_QuaX2 (x2 reward bag)
+
+  # --- Võ Khôi Tháp (legacy v1.8.0 images, whole; searched over the canvas, not by scenes) -------
+  - {name: vo_khoi_thap.screen.title, source: live_vkt, rect: [458, 4, 84, 18]}  # "Võ Khôi Tháp" (boss screen title)
+  - {name: vo_khoi_thap.screen.exit, source: live_vkt, rect: [462, 567, 64, 20]}  # "Thoát" (boss screen)
+  - {name: vo_khoi_thap.out_of_tokens, source: legacy_vkt_out_of_tokens, rect: [0, 0, 11, 14]}  # Boss_CheckHetLenh: out-of-tokens marker (BOSS_CHECKHETLENH)
+  - {name: vo_khoi_thap.chest_icon, source: legacy_vkt_chest_icon, rect: [0, 0, 7, 9]}  # Boss_TimRuong: piece of the HUD icon Tinh Tú (727, 112)
+  - {name: vo_khoi_thap.buy_check, source: legacy_vkt_buy_check, rect: [0, 0, 25, 23]}  # VKT_MuaRuong_Check: chest purchase check
+  - {name: vo_khoi_thap.full_silver, source: legacy_vkt_full_silver, rect: [0, 0, 28, 16]}  # VKT_FullTien: confirm-box corner: searched in a central region only
+  - {name: vo_khoi_thap.shop.scroll_down, source: legacy_vkt_shop_scroll_down, rect: [0, 0, 28, 25]}  # VKT_CuaHang_Xuong: shop list scroll-down button
+  - {name: vo_khoi_thap.shop.chest_1ty_1, source: legacy_vkt_shop_chest_1ty_1, rect: [0, 0, 56, 38]}  # VKT_CuaHang_Ruong1Ty_1: 1-billion-silver chest, art 1
+  - {name: vo_khoi_thap.shop.chest_1ty_2, source: legacy_vkt_shop_chest_1ty_2, rect: [0, 0, 45, 44]}  # VKT_CuaHang_Ruong1Ty_2: 1-billion-silver chest, art 2
+
+  # --- Tri Kỷ portraits (legacy v1.8.0 images, whole): tri_ky.tim.<i> / tri_ky.cam.<i> = the
+  # purple / orange checkbox <i> of the v1.8.0 GUI (names in ngoalong/features/tri_ky.py) -----------
+  - {name: tri_ky.tim.0, source: legacy_triky_tim_0, rect: [0, 0, 70, 50]}
+  - {name: tri_ky.tim.1, source: legacy_triky_tim_1, rect: [0, 0, 65, 57]}
+  - {name: tri_ky.tim.2, source: legacy_triky_tim_2, rect: [0, 0, 74, 48]}
+  - {name: tri_ky.tim.3, source: legacy_triky_tim_3, rect: [0, 0, 75, 55]}
+  - {name: tri_ky.tim.4, source: legacy_triky_tim_4, rect: [0, 0, 75, 54]}
+  - {name: tri_ky.tim.5, source: legacy_triky_tim_5, rect: [0, 0, 73, 43]}
+  - {name: tri_ky.tim.6, source: legacy_triky_tim_6, rect: [0, 0, 80, 59]}
+  - {name: tri_ky.tim.7, source: legacy_triky_tim_7, rect: [0, 0, 76, 58]}
+  - {name: tri_ky.tim.8, source: legacy_triky_tim_8, rect: [0, 0, 85, 59]}
+  - {name: tri_ky.tim.9, source: legacy_triky_tim_9, rect: [0, 0, 79, 51]}
+  - {name: tri_ky.tim.10, source: legacy_triky_tim_10, rect: [0, 0, 74, 53]}
+  - {name: tri_ky.tim.11, source: legacy_triky_tim_11, rect: [0, 0, 76, 61]}
+  - {name: tri_ky.tim.12, source: legacy_triky_tim_12, rect: [0, 0, 66, 45]}
+  - {name: tri_ky.tim.13, source: legacy_triky_tim_13, rect: [0, 0, 67, 49]}
+  - {name: tri_ky.tim.14, source: legacy_triky_tim_14, rect: [0, 0, 66, 63]}
+  - {name: tri_ky.tim.15, source: legacy_triky_tim_15, rect: [0, 0, 75, 56]}
+  - {name: tri_ky.tim.16, source: legacy_triky_tim_16, rect: [0, 0, 64, 54]}
+  - {name: tri_ky.tim.17, source: legacy_triky_tim_17, rect: [0, 0, 77, 51]}
+  - {name: tri_ky.tim.18, source: legacy_triky_tim_18, rect: [0, 0, 62, 52]}
+  - {name: tri_ky.cam.0, source: legacy_triky_cam_0, rect: [0, 0, 76, 54]}
+  - {name: tri_ky.cam.1, source: legacy_triky_cam_1, rect: [0, 0, 71, 56]}
+  - {name: tri_ky.cam.2, source: legacy_triky_cam_2, rect: [0, 0, 67, 51]}
+  - {name: tri_ky.cam.3, source: legacy_triky_cam_3, rect: [0, 0, 75, 51]}
+  - {name: tri_ky.cam.4, source: legacy_triky_cam_4, rect: [0, 0, 76, 58]}
+  - {name: tri_ky.cam.5, source: legacy_triky_cam_5, rect: [0, 0, 75, 60]}
+  - {name: tri_ky.cam.6, source: legacy_triky_cam_6, rect: [0, 0, 83, 68]}
+  - {name: tri_ky.cam.7, source: legacy_triky_cam_7, rect: [0, 0, 75, 61]}
+  - {name: tri_ky.cam.8, source: legacy_triky_cam_8, rect: [0, 0, 73, 49]}
+  - {name: tri_ky.cam.9, source: legacy_triky_cam_9, rect: [0, 0, 70, 53]}
+  - {name: tri_ky.cam.10, source: legacy_triky_cam_10, rect: [0, 0, 80, 55]}
+  - {name: tri_ky.cam.11, source: legacy_triky_cam_11, rect: [0, 0, 75, 51]}
+  - {name: tri_ky.cam.12, source: legacy_triky_cam_12, rect: [0, 0, 73, 54]}
+  - {name: tri_ky.cam.13, source: legacy_triky_cam_13, rect: [0, 0, 69, 55]}
+  - {name: tri_ky.cam.14, source: legacy_triky_cam_14, rect: [0, 0, 78, 52]}
+  - {name: tri_ky.cam.15, source: legacy_triky_cam_15, rect: [0, 0, 71, 62]}
+  - {name: tri_ky.cam.16, source: legacy_triky_cam_16, rect: [0, 0, 64, 47]}
+  - {name: tri_ky.cam.17, source: legacy_triky_cam_17, rect: [0, 0, 83, 62]}
+  - {name: tri_ky.cam.18, source: legacy_triky_cam_18, rect: [0, 0, 79, 63]}
+  - {name: tri_ky.cam.19, source: legacy_triky_cam_19, rect: [0, 0, 79, 62]}
+  - {name: tri_ky.cam.20, source: legacy_triky_cam_20, rect: [0, 0, 75, 60]}

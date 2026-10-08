@@ -1,0 +1,45 @@
+# Field (Phó Bản dungeon map) scenes (docs/07).
+
+field:
+  kind: screen
+  description: "Phó Bản dungeon map: dungeon-name bar bottom-centre, no 'Quốc Chính'"
+  signature:
+    - {template: field.name_bar_left, at: [436, 565]}
+  objects:
+    name_bar: {offset: [500, 578], description: "opens the dungeon list"}
+    prev_dungeon: {template: field.prev_dungeon, at: [409, 565], offset: [423, 578], description: "«"}
+    next_dungeon: {offset: [578, 578], description: "» (only when a next dungeon exists)"}
+    side_arrow: {offset: [983, 178]}
+
+field.dungeon_list:
+  kind: modal
+  description: "Popup 'Phó bản' listing the dungeons"
+  signature:
+    - {template: field.dungeon_list.title, at: [470, 363]}
+  objects:
+    entry_0: {offset: [490, 397], description: "Khăn Vàng (entries step 25 px)"}
+    scroll_up: {offset: [574, 392]}
+    scroll_down: {offset: [574, 552]}
+
+field.switch_banner:
+  kind: overlay
+  description: "Transient '<Name> 100%' banner after « / » (disappears after ~2 s)"
+  signature:
+    - {template: field.switch_banner.left, at: [384, 284], threshold: 0.8}
+
+field.army_dialog:
+  kind: modal
+  description: "Army dialog after clicking an enemy squad"
+  signature:
+    - {template: field.army_dialog.attack, at: [556, 293]}
+  objects:
+    attack: {offset: [584, 304], description: "Tấn công"}
+    strategy: {offset: [584, 374], description: "Chiến lược"}
+    report_checkbox: {offset: [550, 412], description: "Phát chiến đấu"}
+    close: {offset: [638, 185]}
+
+event_dungeon:
+  kind: screen
+  description: "Event dungeon (top 'Phó Bản' icon); single reference capture, terrain signature"
+  signature:
+    - {template: event_dungeon.terrain, at: [430, 170], threshold: 0.8}

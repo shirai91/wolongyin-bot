@@ -1,0 +1,37 @@
+# Pop-ups the bot closes by itself, whatever feature is running (ngoalong/engine/popups.py).
+# Checked on every frame a feature captures; after a close click the frame is captured again.
+#
+# Plain entries are HARMLESS NOTICES only: pop-ups whose button just closes them. A pop-up that
+# costs something is listed only with a `policy` (a setting the user switches on; declined and the
+# task stopped when off). Never list a dialog a feature answers itself (tower.confirm, battle
+# results, buy / exchange boxes inside a feature's own flow).
+#
+# signature: template that identifies the pop-up; at = canvas top-left where it was cut (1000x600);
+#            margin = extra search room on each side (px); threshold = match score needed.
+# dismiss:   the button to click, searched near its own `at` moved by as much as the signature
+#            moved; or {click: signature} to click the signature match itself.
+# Add a new pop-up: capture it (Mẫu ảnh tab), cut its title and its close button as templates,
+# add an entry below, and add the capture to tests/test_popups.py.
+
+gold_skip_wait:
+  # "Bỏ qua thời gian chờ tốn N Vàng. Xác nhận?" (the first line depends on the task). Recognised by
+  # the unchanging "☐ Lần sau không nhắc nhở" line plus both buttons. The checkbox is NEVER ticked:
+  # it would make the game spend Vàng without asking. Answered by Settings.game.spend_gold_skip_wait.
+  description: "Hỏi dùng Vàng bỏ qua thời gian chờ"
+  policy: spend_gold_skip_wait
+  signature: {template: popup.gold_skip.no_remind, at: [424, 310], margin: 60, threshold: 0.85}
+  dismiss: {template: popup.gold_skip.ok, at: [418, 340], margin: 15, threshold: 0.85}
+  decline: {template: popup.gold_skip.cancel, at: [509, 340], margin: 15, threshold: 0.85}
+  stop_message: >-
+    game hỏi dùng Vàng để bỏ qua thời gian chờ; đã bấm Huỷ vì "Dùng vàng bỏ qua thời gian chờ"
+    đang tắt (thẻ Cài đặt)
+
+reward:
+  description: "Chúc mừng ngài được (phần thưởng, huân chương)"
+  signature: {template: popup.reward.title, at: [436, 229], margin: 40, threshold: 0.85}
+  dismiss: {template: popup.reward.ok, at: [458, 341], margin: 20, threshold: 0.8}
+
+toast:
+  description: "Thông báo góc phải (Bảo vật, Tửu Quán, ...)"
+  signature: {template: overlay.toast.view, at: [886, 423], margin: 20, threshold: 0.85}
+  dismiss: {template: overlay.toast.close, at: [976, 304], margin: 12, threshold: 0.85}

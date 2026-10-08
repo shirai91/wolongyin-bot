@@ -1,0 +1,35 @@
+# Chạy Thành Tựu (ngoalong/features/thanh_tuu.py). Canvas coordinates at 1000x600.
+#
+# Measured 2026-10-06 on the user's screenshots of the "Hoạt Động" dialog, tab T.Tựu (stored at
+# 1007x605, so every value below is the screenshot value / 1.008) and on the live captures
+# docs/game screenshots/live/08 (field) and 43 (Hoạt Động dialog). Check them on a live capture
+# (Mẫu ảnh tab, debug mode draws every OCR line) before the first real run.
+# Rectangles are [x, y, w, h]; points are [x, y].
+
+thanh_tuu:
+  open_button: [923, 65]              # vertical "T.Tựu" tab at the top right (city and field)
+  # --- dialog "Hoạt Động", tab T.Tựu (scene `daily`, object tab_thanh_tuu) ---------------------------
+  map_list: [192, 205, 140, 212]      # "Tên phó bản" list: 9 rows of ~23 px
+  map_scroll_up: [337, 213]           # ▲ of the list
+  map_scroll_down: [337, 471]         # ▼ of the list
+  progress: [362, 183, 288, 25]       # "Tiến độ:100% (20điểm)"
+  rank_tasks: [367, 243, 278, 100]    # "Đánh giá": one line per army to beat with rank S
+  rank_checkbox_x: 380                # centre x of the ✓ box at the start of each line
+  rank_checkbox_half: 7               # half size of the ✓ box
+  rank_checked_ratio: 0.02            # share of yellow pixels in the box that means ✓ (thin tick: 0.044, empty: 0)
+  challenge_cards: [365, 385, 285, 108]  # "Khiêu chiến": cards "5Điểm / portrait / name / 1/30"
+  card_first_x: 369                   # left edge of the first card
+  card_pitch: 70                      # card k starts at card_first_x + k * card_pitch
+  card_width: 66
+  card_portrait: [6, 17, 52, 44]      # portrait inside a card, relative to the card's top-left
+  max_cards: 4
+  score: [680, 440, 120, 30]          # "Điểm:: 44" (a tighter box loses the text)
+  claim: [734, 478]                   # "Nhận thưởng"
+  # --- field (dungeon map) --------------------------------------------------------------------------
+  dungeon_name: [440, 568, 128, 20]   # name on the dungeon bar ("Công Tôn")
+  prev_dungeon: [422, 578]            # "«"
+  next_dungeon: [579, 578]            # "»"
+  # --- army dialog (scene field.army_dialog) --------------------------------------------------------
+  army_dialog: [330, 150, 345, 390]   # whole dialog: title, portrait, "Số lượng", buttons
+  army_portrait_area: [345, 165, 160, 170]  # top-left of the dialog, around its portrait (searched)
+  army_click_offset_from_tent: [-14, 14]  # yellow tent sits at the top right of its squad

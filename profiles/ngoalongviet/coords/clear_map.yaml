@@ -1,0 +1,26 @@
+# Click offsets recovered from AutoNgoaLong v1.8.0 (decompiled source).
+# Split from reverse/coordinates.yaml: one file per top-level key (feature).
+# All values are (dx, dy) relative to the game origin, canvas at 100% zoom (~1000x600).
+# Keys ending in "_offset_from_match" are relative to a template match, not the origin.
+# The port (ngoalong/features/clear_map.py) clicks matches at their CENTRE (v1.8.0: top-left
+# corner, #3); the notes say which keys it still uses and how.
+
+clear_map:                           # CLEARMAP
+  focus_click: [5, 1]                # double-clicked before ESC keys are sent (Flash keyboard focus)
+  after_enemy_click: [500, 300]      # v1.8.0 only; lands on the live army dialog's title: not used
+  tan_cong_offset_from_match: [-50, 20]  # v1.8.0 only; port clicks the scene object field.army_dialog.attack
+  recruit: [548, 331]                # opens the recruit dialog when v1.8.0's "must recruit" cue shows
+  recruit_max_offset_from_match: [100, 3]      # from the TOP-LEFT of clear_map.recruit.max ("Tối đa")
+  recruit_confirm_offset_from_match: [215, 30] # from the TOP-LEFT of clear_map.recruit.max (confirm)
+  close_recruit: [803, 120]          # standard dialog ✕ (803, 118) live
+  result_close_offset_from_match: [335, 480]   # from the TOP-LEFT of clear_map.result (Button_KetQua)
+  next_map: [580, 580]               # "»" (578, 578) live; the port clicks the matched "»" instead
+  enemy_click_offset_from_match: [0, 10]       # from the CENTRE of the red flag (field.enemy_flag)
+  # --- new in the port --------------------------------------------------------------------------
+  # Canvas rectangles [x, y, w, h] searched for red army flags: the map minus the player panel,
+  # notification list, chat log, chat bar, dungeon bar, bottom bar and bottom-right buttons (docs/07).
+  enemy_search_regions:
+    - [276, 125, 539, 435]           # centre of the map (chat log ends at x 275, bottom bar at y 560)
+    - [0, 228, 285, 156]             # left, between the notification list and the chat log (y 385)
+    - [800, 125, 200, 350]           # right (under the quest tracker: collapsed first)
+  enemy_search_region_hud_hidden: [340, 0, 420, 135]  # top band, only once the HUD icons are hidden

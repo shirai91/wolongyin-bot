@@ -1,0 +1,24 @@
+# CanvasLocator settings (docs/06 "Finding the game screen automatically").
+# All positions are canvas-relative at 1000x600; templates live in templates/ (see template_crops.yaml).
+
+canvas: {width: 1000, height: 600}
+
+black_border:
+  black_level: 40          # a pixel is "black" when max(B, G, R) <= this
+  tolerance_px: 2          # accept the box only when it is 1000x600 * scale, +-2 px
+  min_count: 10            # a row/column belongs to the canvas when >= this many non-black pixels
+  min_scale: 0.5
+  max_scale: 2.0
+
+agree_px: 3                # two detectors agree when their origins are within 3 px
+
+layout:
+  center_offset_x: 5       # the page is centred inside the window frame (~5 px left border)
+  search_margin_px: 60     # anchor search window around the prior position
+
+# Anchors: HUD pieces at fixed canvas positions. `at` = the template's top-left in the canvas.
+# Any two anchors (or one anchor and the black border) that agree give a reliable canvas.
+anchors:
+  - {name: kvuc_label, template: anchor.kvuc_label, at: [2, 574], threshold: 0.9}   # all screens
+  - {name: chat_send, template: anchor.chat_send, at: [222, 574], threshold: 0.9}   # all screens
+  - {name: hud_gear, template: anchor.hud_gear, at: [751, 5], threshold: 0.9}       # hidden in full-screen scenes

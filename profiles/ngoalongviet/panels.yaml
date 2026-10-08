@@ -1,0 +1,19 @@
+# Panels collapsed before every run (ngoalong/engine/panels.py; Cài đặt > "Thu gọn các bảng che game").
+# open: a template that shows only while the panel is open; the match is its collapse button and is
+# clicked. at = canvas top-left where the template was cut (1000x600); margin = search room (px).
+# Checked on the 44 live captures (docs/game screenshots/live): open >= 0.98, closed/absent <= 0.53.
+
+# The top icon rows (">>" at 822, 70) are NOT collapsed: features open their screens from them
+# (Quay Tinh Tú, Tửu Quán, ...). Clear Phó Bản still hides them itself, as v1.8.0 did.
+
+quest_tracker:
+  description: "bảng nhiệm vụ bên phải"
+  open: {template: field.hud.quest_collapse, at: [807, 165], margin: 8, threshold: 0.85}  # "▶"
+
+sap_mo:
+  description: "khung Sắp mở"
+  open: {template: hud.sap_mo, at: [64, 268], margin: 8, threshold: 0.85}                  # title of the box (city, world map)
+
+chat:
+  description: "khung chat"
+  open: {template: hud.chat_collapse, at: [3, 549], margin: 6, threshold: 0.85}           # "⌄" (collapsed: "⌃")

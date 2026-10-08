@@ -1,0 +1,44 @@
+# World map, region (Khu Vực) and resources (Tài Nguyên) scenes (docs/07).
+
+world_map:
+  kind: screen
+  description: "Thế Giới map: Chinese city labels, no 'Quốc Chính' in the bottom bar"
+  signature:
+    - {template: world_map.label_luoyang, at: [544, 268]}
+  objects:
+    city_hanzhong: {offset: [275, 285], description: "汉中"}
+    city_changan: {offset: [445, 210], description: "长安"}
+    city_luoyang: {offset: [560, 250], description: "洛阳"}
+    city_chengdu: {offset: [350, 415], description: "成都"}
+    city_jianye: {offset: [870, 420], description: "建业"}
+    main_city: {offset: [959, 549], description: "主城"}
+
+world_map.city_info:
+  kind: modal
+  description: "City info dialog after clicking a city marker"
+  signature:
+    - {template: world_map.city_info.enter, at: [632, 194]}
+  objects:
+    enter: {offset: [660, 205], description: "Vào thành"}
+    move: {offset: [660, 241], description: "Dời đến"}
+    expand: {offset: [660, 277], description: "Mở rộng"}
+    close: {offset: [690, 158]}
+
+region:
+  kind: screen
+  description: "Khu Vực: own castle, bottom bar 'Tài nguyên / Khu trước / Khu sau'"
+  signature:
+    - {template: region.resources_button, at: [362, 569]}
+  objects:
+    page_box: {offset: [500, 548]}
+    go: {offset: [558, 548], description: "Đi đến"}
+
+resources:
+  kind: screen
+  description: "Tài Nguyên: rice fields and mines, bottom 'Về khu vực'"
+  signature:
+    - {template: resources.back_button, at: [362, 569]}
+  objects:
+    back_to_region: {offset: [398, 578], description: "Về khu vực"}
+    prev_area: {offset: [478, 578], description: "Khu trước"}
+    next_area: {offset: [565, 578], description: "Khu sau"}

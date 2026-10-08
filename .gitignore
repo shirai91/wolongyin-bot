@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+
+# Build / packaging
+build/
+dist/
+*.spec
+!AutoNgoaLong.spec
+selftest-report.txt
+
+# Runtime output
+logs/
+settings.toml
+data/
+
+# Live tools build output
+tools/live/*.exe

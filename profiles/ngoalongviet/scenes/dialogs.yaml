@@ -1,0 +1,74 @@
+# Standard dialogs (title plate at (500, 111), ✕ (803, 118)) and large dialogs (title (500, 87),
+# ✕ (855, 85)), recognised by their title text (docs/07 live recon).
+
+research:
+  kind: modal
+  description: "Khoa kỹ: 'Phủ Sách Lược'"
+  signature:
+    - {template: research.title, at: [448, 101], threshold: 0.9}
+  objects:
+    first_item: {offset: [238, 248], description: "grid step 72 px, rows y 248 / 322 / 395"}
+    scroll_up: {offset: [646, 228]}
+    scroll_down: {offset: [646, 422]}
+    upgrade: {offset: [615, 472], description: "Tăng cấp"}
+    close: {offset: [803, 118]}
+
+generals:
+  kind: modal
+  description: "Tướng"
+  signature:
+    - {template: generals.title, at: [448, 101], threshold: 0.9}
+  objects:
+    tab_recruit: {offset: [533, 159], description: "Chiêu Mộ"}
+    close: {offset: [803, 118]}
+
+inventory:
+  kind: modal
+  description: "Trang bị"
+  signature:
+    - {template: inventory.title, at: [448, 101], threshold: 0.9}
+  objects:
+    first_item: {offset: [222, 230], description: "8xN grid, step 54 px"}
+    close: {offset: [803, 118]}
+
+legion:
+  kind: modal
+  description: "Q.Đoàn ('QuânĐoàn')"
+  signature:
+    - {template: legion.title, at: [448, 101], threshold: 0.9}
+  objects:
+    close: {offset: [803, 118]}
+
+help:
+  kind: modal
+  description: "T.Giúp in-game help"
+  signature:
+    - {template: help.title, at: [448, 101], threshold: 0.9}
+  objects:
+    close: {offset: [803, 118]}
+
+daily:
+  kind: modal
+  description: "Báo danh / 'Hoạt Động' (standard frame)"
+  signature:
+    - {template: daily.title, at: [448, 101], threshold: 0.9}
+  objects:
+    sign_in: {offset: [757, 367], description: "Báo danh"}
+    tab_thanh_tuu: {offset: [222, 159], description: "tab T.Tựu (Thành tựu)"}
+    close: {offset: [803, 118]}
+
+events:
+  kind: modal
+  description: "Hoạt động events (large frame)"
+  signature:
+    - {template: events.title, at: [448, 77], threshold: 0.9}
+  objects:
+    close: {offset: [855, 85]}
+
+bo_doanh:
+  kind: modal
+  description: "Bộ Doanh (large frame); 开始挑战 costs 50000 Vàng"
+  signature:
+    - {template: bo_doanh.title, at: [448, 77], threshold: 0.9}
+  objects:
+    close: {offset: [855, 85]}
