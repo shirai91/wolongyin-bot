@@ -1,0 +1,64 @@
+# UI parts: the pieces of game UI the perception layer looks for (docs/08 "UI parts", phase R1).
+#
+# template:  name under templates/ (cut by part_crops.yaml)
+# search:    canvas region [x, y, w, h] at 1000x600 where the part may appear; "canvas" = anywhere.
+#            Keep it tight: short button texts look alike across the UI and only separate by place.
+# threshold: score needed (TM_CCOEFF_NORMED); default 0.90. A button under the bot's own cursor (the
+#            mouse stays where it last clicked) glows and scores lower: those get 0.80.
+# multi:     true when several copies can show at once (✕ of stacked dialogs, magic circles)
+#
+# Score them over the corpus:  .venv\Scripts\python.exe tools/part_report.py
+
+# --- generic -------------------------------------------------------------------------------------
+close:                {template: part.close, search: canvas, multi: true}
+box.ok:               {template: part.box.ok, search: [330, 280, 340, 130]}
+box.cancel:           {template: part.box.cancel, search: [330, 280, 340, 130]}
+
+# --- map HUD -------------------------------------------------------------------------------------
+hud.silver_label:     {template: part.hud.silver_label, search: [80, 20, 60, 30]}
+hud.home:             {template: part.hud.home, search: [920, 530, 80, 70]}
+bar.quoc_chinh:       {template: part.bar.quoc_chinh, search: [480, 525, 420, 50]}
+bar.khoa_ky:          {template: part.bar.khoa_ky, search: [480, 525, 420, 50]}
+bar.trang_bi:         {template: part.bar.trang_bi, search: [480, 525, 420, 50], threshold: 0.80}  # hover 0.85
+map.vao_hai_cang:     {template: part.map.vao_hai_cang, search: [250, 470, 150, 60]}
+map.hai_chien:        {template: part.map.hai_chien, search: [320, 490, 120, 50]}
+map.vo_khoi_thap:     {template: part.map.vo_khoi_thap, search: [170, 340, 140, 50]}
+field.next:           {template: part.field.next, search: [450, 555, 250, 45]}
+
+# --- dialog titles (title strip of the medium / large frame) -------------------------------------
+title.tower:          {template: part.title.tower, search: [400, 95, 200, 32]}
+title.research:       {template: part.title.research, search: [400, 95, 200, 32]}
+title.inventory:      {template: part.title.inventory, search: [400, 95, 200, 32]}
+title.tinh_tu:        {template: part.title.tinh_tu, search: [400, 52, 200, 36]}
+
+# --- buttons -------------------------------------------------------------------------------------
+btn.building_upgrade: {template: part.btn.building_upgrade, search: [320, 300, 110, 50]}
+btn.research_upgrade: {template: part.btn.research_upgrade, search: [560, 450, 110, 45]}
+btn.vuot_thap:        {template: part.btn.vuot_thap, search: [320, 450, 100, 40]}
+btn.tu_vuot_thap:     {template: part.btn.tu_vuot_thap, search: [490, 450, 100, 40]}
+btn.attack:           {template: part.btn.attack, search: [540, 280, 90, 45]}
+btn.mua:              {template: part.btn.mua, search: [450, 440, 110, 40]}
+shop.silver_chest:    {template: part.shop.silver_chest, search: [190, 380, 450, 60], multi: true}
+
+# --- tower floor and battle results --------------------------------------------------------------
+tower.floor_label:    {template: part.tower.floor_label, search: [440, 0, 120, 32]}
+tower.exit:           {template: part.tower.exit, search: [900, 540, 100, 40]}
+tower.auto_label:     {template: part.tower.auto_label, search: [740, 545, 100, 30]}
+result.win:           {template: part.result.win, search: [420, 170, 160, 55]}
+result.lose:          {template: part.result.lose, search: [420, 170, 160, 55]}
+result.continue:      {template: part.result.continue, search: [410, 385, 100, 40]}
+
+# --- Tinh Tú -------------------------------------------------------------------------------------
+tinh_tu.spin:         {template: part.tinh_tu.spin, search: [360, 220, 120, 100]}
+tinh_tu.auto_off:     {template: part.tinh_tu.auto_off, search: [150, 395, 110, 40], threshold: 0.80}  # hover 0.82
+tinh_tu.auto_on:      {template: part.tinh_tu.auto_on, search: [150, 395, 110, 40]}
+
+# --- Võ Khôi Tháp --------------------------------------------------------------------------------
+vkt.title:            {template: part.vkt.title, search: [420, 0, 160, 30]}
+vkt.attack:           {template: part.vkt.attack, search: [440, 475, 120, 50]}
+vkt.lap_doi:          {template: part.vkt.lap_doi, search: [720, 485, 100, 40]}
+vkt.khai_chien:       {template: part.vkt.khai_chien, search: [750, 490, 110, 40]}
+vkt.countdown:        {template: part.vkt.countdown, search: [470, 70, 140, 40]}
+vkt.circle:           {template: part.vkt.circle, search: [100, 250, 600, 300], multi: true}
+vkt.victory:          {template: part.vkt.victory, search: [400, 100, 200, 90]}
+vkt.victory_ok:       {template: part.vkt.victory_ok, search: [440, 400, 110, 50]}

@@ -75,7 +75,7 @@
 065-building-panel.png:           {base: city, dialogs: [city.building_panel], frame: panel, state: {building: "Tháp thí luyện", close: [687, 202]}}
 066-tower-dialog.png:             {base: city, dialogs: [tower.dialog], frame: medium, state: {tab: "Tháp", page: 15, floors: [141], tokens: 13420}, note: "opened on the last-used page"}
 067-city-after-tower.png:         {base: city}
-068-hai-cang.png:                 {base: harbour, note: "city bottom bar + a ship icon at its left end"}
+068-hai-cang.png:                 {base: harbour, note: "same bottom bar as the city; told apart by the map label Hải Chiến (city: Vào Hải Cảng)"}
 069-city-from-harbour.png:        {base: city}
 070-settings-gear.png:            {base: city, dialogs: [spend_reminders], frame: small, state: {close: [639, 179]}}
 071-city-final.png:               {base: city}

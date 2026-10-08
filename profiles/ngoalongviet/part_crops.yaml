@@ -1,0 +1,90 @@
+# UI-part templates for the new perception layer (docs/08, phase R1), cut from the live corpus.
+#
+# Sources are canvas captures from `python -m ngoalong.tools.explore` (corpus/live/, ignored by git),
+# so origin is [0, 0] and rect is canvas x, y, w, h at 1000x600. Names map to templates/part/...
+# Only the 6 supported features are covered (docs/08 "Supported features").
+# Checkboxes (Tự Vượt Tháp, Phát chiến đấu) and selected tabs are colour probes, not templates.
+#
+# Regenerate (needs the corpus locally):
+#   .venv\Scripts\python.exe tools/cut_templates.py --crops profiles/ngoalongviet/part_crops.yaml
+# Score every part over the corpus:
+#   .venv\Scripts\python.exe tools/part_report.py
+
+sources:
+  city: {path: "corpus/live/064-city-again.png", origin: [0, 0]}
+  harbour: {path: "corpus/live/207-harbour-panel-closed.png", origin: [0, 0]}
+  field: {path: "corpus/live/072-field-for-battle.png", origin: [0, 0]}
+  world: {path: "corpus/live/123-world-map-2.png", origin: [0, 0]}
+  legion: {path: "corpus/live/048-q-doan.png", origin: [0, 0]}
+  tower_dialog: {path: "corpus/live/066-tower-dialog.png", origin: [0, 0]}
+  research: {path: "corpus/live/050-khoa-ky.png", origin: [0, 0]}
+  inventory: {path: "corpus/live/052-trang-bi.png", origin: [0, 0]}
+  tinh_tu: {path: "corpus/live/208-tinh-tu-2.png", origin: [0, 0]}
+  tinh_tu_auto: {path: "corpus/live/218-tinh-tu-auto-t0.png", origin: [0, 0]}
+  building: {path: "corpus/live/196-building-tower-panel.png", origin: [0, 0]}
+  confirm: {path: "corpus/live/103-tower-confirm.png", origin: [0, 0]}
+  tower_floor: {path: "corpus/live/109-tower-enter-t5.png", origin: [0, 0]}
+  tower_lose: {path: "corpus/live/115-tower-run-t5.png", origin: [0, 0]}
+  tower_win: {path: "corpus/live/254-tower21-run-t7.png", origin: [0, 0]}
+  army: {path: "corpus/live/073-field-army-yellow-click.png", origin: [0, 0]}
+  shop: {path: "corpus/live/266-shop-cua-hieu.png", origin: [0, 0]}
+  vkt_lobby: {path: "corpus/live/124-vo-khoi-thap.png", origin: [0, 0]}
+  vkt_teams: {path: "corpus/live/125-vkt-attack-t0.png", origin: [0, 0]}
+  vkt_room: {path: "corpus/live/134-vkt-create-team.png", origin: [0, 0]}
+  vkt_arena: {path: "corpus/live/152-vkt-before-circle.png", origin: [0, 0]}
+  vkt_victory: {path: "corpus/live/156-vkt-circle-t3.png", origin: [0, 0]}
+
+crops:
+  # --- generic -----------------------------------------------------------------------------------
+  - {name: part.close, source: legion, rect: [792, 109, 21, 21]}             # ✕ of every dialog/panel
+  - {name: part.box.ok, source: confirm, rect: [430, 320, 46, 20]}           # 确定 of confirm boxes
+  - {name: part.box.cancel, source: confirm, rect: [523, 320, 46, 20]}       # 取消
+
+  # --- map HUD -----------------------------------------------------------------------------------
+  - {name: part.hud.silver_label, source: city, rect: [100, 30, 26, 16]}     # "Bạc" (player panel)
+  - {name: part.hud.home, source: city, rect: [944, 562, 30, 18]}            # 主城 (maps)
+  - {name: part.bar.quoc_chinh, source: city, rect: [612, 539, 24, 24]}      # bottom bar icons
+  - {name: part.bar.khoa_ky, source: city, rect: [701, 537, 24, 24]}
+  - {name: part.bar.trang_bi, source: city, rect: [748, 539, 24, 26]}
+  - {name: part.map.vao_hai_cang, source: city, rect: [286, 492, 80, 20]}    # city map label
+  - {name: part.map.hai_chien, source: harbour, rect: [350, 507, 62, 18]}    # harbour map label
+  - {name: part.map.vo_khoi_thap, source: world, rect: [203, 361, 70, 18]}   # world map label
+  - {name: part.field.next, source: field, rect: [568, 566, 22, 24]}         # "»" next dungeon
+
+  # --- dialog titles (searched in the title strip of a dialog frame) -----------------------------
+  - {name: part.title.tower, source: tower_dialog, rect: [455, 103, 90, 18]}     # Tháp Thí Luyện
+  - {name: part.title.research, source: research, rect: [455, 103, 90, 18]}      # Phủ Sách Lược
+  - {name: part.title.inventory, source: inventory, rect: [470, 103, 60, 18]}    # Trang bị
+  - {name: part.title.tinh_tu, source: tinh_tu, rect: [470, 62, 60, 18]}         # Tinh Tú
+
+  # --- buttons -----------------------------------------------------------------------------------
+  - {name: part.btn.building_upgrade, source: building, rect: [345, 316, 58, 20]}  # Tăng cấp (building panel)
+  - {name: part.btn.research_upgrade, source: research, rect: [580, 461, 70, 22]}  # Tăng cấp (Phủ Sách Lược)
+  - {name: part.btn.vuot_thap, source: tower_dialog, rect: [334, 460, 70, 20]}
+  - {name: part.btn.tu_vuot_thap, source: tower_dialog, rect: [500, 460, 76, 20]}
+  - {name: part.btn.attack, source: army, rect: [558, 295, 52, 20]}                # Tấn công (army dialog)
+  - {name: part.btn.mua, source: shop, rect: [468, 454, 72, 20]}
+  - {name: part.shop.silver_chest, source: shop, rect: [310, 387, 48, 48]}
+
+  # --- tower floor and battle results ------------------------------------------------------------
+  - {name: part.tower.floor_label, source: tower_floor, rect: [478, 10, 30, 18]}   # "Tầng"
+  - {name: part.tower.exit, source: tower_floor, rect: [926, 555, 70, 22]}         # Thoát (floor map)
+  - {name: part.tower.auto_label, source: tower_floor, rect: [752, 555, 66, 18]}   # "Tự Vượt Th"
+  - {name: part.result.win, source: tower_win, rect: [470, 183, 60, 28]}           # 战胜 (tower and battles)
+  - {name: part.result.lose, source: tower_lose, rect: [470, 183, 60, 28]}         # 战败
+  - {name: part.result.continue, source: tower_lose, rect: [432, 399, 56, 18]}     # Tiếp tục (loss only)
+
+  # --- Tinh Tú -----------------------------------------------------------------------------------
+  - {name: part.tinh_tu.spin, source: tinh_tu, rect: [388, 240, 64, 54]}           # 开始抽奖
+  - {name: part.tinh_tu.auto_off, source: tinh_tu, rect: [172, 408, 58, 16]}       # "Tự mở"
+  - {name: part.tinh_tu.auto_on, source: tinh_tu_auto, rect: [168, 408, 66, 16]}   # "Ngưng mở"
+
+  # --- Võ Khôi Tháp ------------------------------------------------------------------------------
+  - {name: part.vkt.title, source: vkt_lobby, rect: [460, 4, 80, 18]}              # lobby / team screens
+  - {name: part.vkt.attack, source: vkt_lobby, rect: [470, 491, 64, 20]}           # Tấn công (lobby)
+  - {name: part.vkt.lap_doi, source: vkt_teams, rect: [748, 498, 44, 18]}
+  - {name: part.vkt.khai_chien, source: vkt_room, rect: [778, 503, 58, 18]}
+  - {name: part.vkt.countdown, source: vkt_arena, rect: [502, 82, 80, 18]}         # "Đếm ngược" (arena)
+  - {name: part.vkt.circle, source: vkt_arena, rect: [300, 384, 56, 30]}           # magic circle (find all)
+  - {name: part.vkt.victory, source: vkt_victory, rect: [436, 116, 116, 52]}       # 胜利
+  - {name: part.vkt.victory_ok, source: vkt_victory, rect: [474, 418, 40, 20]}     # 确定
