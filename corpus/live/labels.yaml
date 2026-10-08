@@ -137,3 +137,15 @@
 259-tower-sweep-typed-2.png:       {base: city, dialogs: [tower.dialog, tower.sweep], state: {runs: 2}}
 260-tower-sweep-ok.png:            {base: city, dialogs: [tower.dialog, tower.sweep, confirm.ok_cancel]}
 262-tower-sweep-after.png:         {base: city, dialogs: [tower.dialog], state: {tokens: 13908}, note: "sweep is instant: 2 runs x 3 tokens"}
+
+# --- Session 3 (2026-10-08): silver chest purchase (Võ Khôi Tháp loop) ---------------------------
+265-shop-trang-bi.png:             {base: city, dialogs: [inventory], frame: medium, state: {tab: "Kho", slots: "60/500"}}
+266-shop-cua-hieu.png:             {base: city, dialogs: [inventory], state: {tab: "Cửa hiệu", scroll: bottom, selected: "1 tỷ bạc", price: 1000000000}}
+267..271:                          {base: city, dialogs: [inventory], state: {tab: "Cửa hiệu", scroll: bottom}, note: "chests at y=410, x=335/390/445/500/553: 5e6, 1e7, 5e7, 1e8, 1e9 (icons identical)"}
+272-shop-select-100m.png:          {base: city, dialogs: [inventory], state: {selected: "1 trăm triệu Bạc", price: 100000000}}
+273-shop-mua-100m.png:             {base: city, dialogs: [inventory], overlay: [floating_success], state: {silver: 858983797}, note: "no confirm; green line 'Mua[1 trăm triệu Bạc] thành công'"}
+274..280:                          {base: city, dialogs: [inventory], state: {tab: "Cửa hiệu", scroll: top}}
+282-shop-reopen.png:               {base: city, dialogs: [inventory], state: {tab: "Kho", slots: "61/500"}, note: "the bought chest is an item in Kho"}
+283-shop-reopen-cua-hieu.png:      {base: city, dialogs: [inventory], state: {tab: "Cửa hiệu", scroll: top}, note: "scroll position is kept between opens"}
+284-shop-kho.png:                  {base: city, dialogs: [inventory], state: {tab: "Kho"}}
+285..292:                          {base: city, dialogs: [inventory], state: {tab: "Cửa hiệu", scroll: "top → bottom"}, note: "▼ at 651,425; bottom after 6 clicks, partial rows"}
