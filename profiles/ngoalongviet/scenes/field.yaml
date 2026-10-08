@@ -38,6 +38,27 @@ field.army_dialog:
     report_checkbox: {offset: [550, 412], description: "Phát chiến đấu"}
     close: {offset: [638, 185]}
 
+field.group_army_dialog:
+  kind: modal
+  description: "Bảng chuẩn bị Đoàn chiến (chưa lập đội, 'Lập đội' xuất hiện)"
+  signature:
+    - {template: field.group_battle.title, at: [453, 122]}
+    - {template: field.group_battle.create_team, at: [674, 473]}
+  objects:
+    create_team: {offset: [702, 482], description: "Lập đội"}
+    close: {offset: [770, 142], description: "✕"}
+
+field.group_lobby_dialog:
+  kind: modal
+  description: "Bảng phòng chờ Đoàn chiến (đã lập đội, 'Khai chiến' xuất hiện)"
+  signature:
+    - {template: field.group_battle.title, at: [453, 122]}
+    - {template: field.group_battle.start, at: [708, 472]}
+  objects:
+    start: {offset: [738, 484], description: "Khai chiến"}
+    disband: {offset: [398, 482], description: "Giải tán"}
+    close: {offset: [770, 142], description: "✕"}
+
 event_dungeon:
   kind: screen
   description: "Event dungeon (top 'Phó Bản' icon); single reference capture, terrain signature"

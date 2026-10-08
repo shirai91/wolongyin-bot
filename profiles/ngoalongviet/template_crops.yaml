@@ -1,4 +1,4 @@
-﻿# Template crop list for tools/cut_templates.py (reproducible template cutting).
+# Template crop list for tools/cut_templates.py (reproducible template cutting).
 #
 # sources: screenshot alias -> file (relative to the project root) + the canvas top-left corner in
 #          that file. Reference screenshots: measured with the black-border method (docs/07);
@@ -23,6 +23,8 @@ sources:
   live_dungeon_list: {path: "docs/game screenshots/live/05-pho-ban-list.png", origin: [180, 110]}
   live_switch_banner: {path: "docs/game screenshots/live/07-dungeon-switch-banner.png", origin: [180, 110]}
   live_army: {path: "docs/game screenshots/live/09-dungeon-army-dialog.png", origin: [180, 110]}
+  live_group_army: {path: "docs/game screenshots/live/52-dungeon-group-army-dialog.png", origin: [24, -28]}
+  live_group_lobby: {path: "docs/game screenshots/live/53-dungeon-group-lobby-dialog.png", origin: [26, -27]}
   live_events: {path: "docs/game screenshots/live/10-hoat-dong-events.png", origin: [180, 110]}
   live_ngao_du: {path: "docs/game screenshots/live/11-ngao-du.png", origin: [180, 110]}
   live_region: {path: "docs/game screenshots/live/12-khu-vuc.png", origin: [180, 110]}
@@ -161,6 +163,10 @@ crops:
   - {name: field.dungeon_list.title, source: live_dungeon_list, rect: [470, 363, 60, 18]}  # "Phó bản"
   - {name: field.switch_banner.left, source: live_switch_banner, rect: [384, 284, 30, 32]}
   - {name: field.army_dialog.attack, source: live_army, rect: [556, 293, 56, 22]} # "Tấn công"
+  - {name: field.group_battle.title, source: live_group_army, rect: [453, 122, 70, 21]} # "Đoàn chiến"
+  - {name: field.group_battle.create_team, source: live_group_army, rect: [674, 473, 56, 19]} # "Lập đội"
+  - {name: field.group_battle.start, source: live_group_lobby, rect: [708, 472, 61, 20]} # "Khai chiến"
+  - {name: field.group_battle.disband, source: live_group_lobby, rect: [366, 469, 65, 26]} # "Giải tán"
   - {name: event_dungeon.terrain, source: live_event_dungeon, rect: [430, 170, 60, 40]}
 
   # --- trial tower --------------------------------------------------------------------------------

@@ -204,6 +204,18 @@ def test_debug_off_saves_nothing_but_failures(tmp_path: Path) -> None:
     assert path is not None and path.is_file() and len(frames) == 1 and frames[0].failed
 
 
+def test_overlay_on_debug_off_publishes_to_sinks_without_saving_pngs(tmp_path: Path) -> None:
+    frames: list[DebugFrame] = []
+    png = PngSink(tmp_path, enabled=True)
+    ctx, _ = make_ctx(frames=[CHEST], canvas=CanvasLocator.from_profile(PROFILE),
+                      debug_sink=CallbackSink(frames.append), png_sink=png,
+                      debug_enabled=lambda: False, overlay_enabled=lambda: True, task_name="Quay rương")
+    ctx.find("chest.wheel.title")
+    ctx.click("quay_ruong.per_spin.0")
+    assert len(frames) == 2
+    assert png.saved == []  # overlay receives frames, but NO PNG logs saved to disk!
+
+
 # --- execute ------------------------------------------------------------------------------------
 class _Boom(Task):
     id = "boom"

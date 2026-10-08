@@ -55,6 +55,8 @@ from ngoalong.engine.task import Task, TaskParams
 # --- scenes (scenes/field.yaml, scenes/clear_map.yaml, scenes/city.yaml) --------------------------
 FIELD = "field"
 ARMY = "field.army_dialog"
+GROUP_ARMY = "field.group_army_dialog"
+GROUP_LOBBY = "field.group_lobby_dialog"
 OBJECTS = "field.clear_map"  # object group of the field used by this feature
 CITY = "city"
 OPEN_FROM: tuple[str, ...] = ("city", "world_map", "region", "resources")  # show "Phó Bản" (899, 549)
@@ -254,8 +256,8 @@ class ClearMap(Task):
         m = ctx.detect_scene()
         if m.name == FIELD:
             return
-        if m.name == ARMY:
-            ctx.click_object(ARMY, "close")
+        if m.name in (ARMY, GROUP_ARMY, GROUP_LOBBY):
+            ctx.click_object(m.name, "close")
             ctx.expect_scene(FIELD, p.scene_timeout_s)
             return
         if m.name in OPEN_FROM:
@@ -347,19 +349,37 @@ class ClearMap(Task):
         return None
 
     def _attack(self, ctx: RunContext, target: Point, stats: _Stats) -> Outcome | None:
-        """Click the army at canvas ``target``, then "Tấn công"; ``None`` when its dialog did not open."""
+        """Click the army at canvas ``target``, then attack; ``None`` when its dialog did not open.
+
+        Handles both standalone squads ("Tấn công") and group squads / Đoàn chiến ("Lập đội" -> "Khai chiến").
+        """
         p = self.params
         ctx.step("mở đạo quân")
         ctx.sleep(p.delay_ms)
         ctx.click(target, label="đạo quân")
         try:
-            ctx.expect_scene(ARMY, p.wait_s)
+            m = ctx.expect_scene_in((ARMY, GROUP_ARMY, GROUP_LOBBY), p.wait_s)
         except SceneTimeout as exc:
             ctx.info(f"Không mở được bảng đạo quân tại {target.as_tuple()}: {exc}")
             return None
         ctx.sleep(p.delay_ms)
-        ctx.step("tấn công")
-        ctx.click_object(ARMY, "attack")
+        if m.name == GROUP_ARMY:
+            ctx.step("lập đội đoàn chiến")
+            ctx.click_object(GROUP_ARMY, "create_team")
+            try:
+                ctx.expect_scene(GROUP_LOBBY, p.wait_s)
+            except SceneTimeout as exc:
+                ctx.info(f"Không vào được phòng chờ đoàn chiến: {exc}")
+                return None
+            ctx.sleep(p.delay_ms)
+            ctx.step("khai chiến đoàn chiến")
+            ctx.click_object(GROUP_LOBBY, "start")
+        elif m.name == GROUP_LOBBY:
+            ctx.step("khai chiến đoàn chiến")
+            ctx.click_object(GROUP_LOBBY, "start")
+        else:
+            ctx.step("tấn công")
+            ctx.click_object(ARMY, "attack")
         return self._resolve_battle(ctx, stats)
 
     def _recruit(self, ctx: RunContext) -> None:
@@ -416,7 +436,7 @@ class ClearMap(Task):
                     outcome = Outcome.UNKNOWN
                 self._close_result(ctx, obj, r)
                 field_since = None
-            elif self._seen(ctx, "army_attack") is not None and outcome is None:
+            elif (self._seen(ctx, "army_attack") is not None or self._seen(ctx, "group_start") is not None) and outcome is None:
                 field_since = None
                 if now - attack_at >= ATTACK_RETRY_S:
                     if attack_clicks >= MAX_ATTACK_CLICKS:
@@ -424,7 +444,10 @@ class ClearMap(Task):
                             f"đã bấm 'Tấn công' {attack_clicks} lần nhưng bảng đạo quân vẫn mở "
                             "(hết lệnh, thiếu lính hoặc đạo quân chưa mở?)"
                         )
-                    ctx.click_object(ARMY, "attack")
+                    if self._seen(ctx, "group_start") is not None:
+                        ctx.click_object(GROUP_LOBBY, "start")
+                    else:
+                        ctx.click_object(ARMY, "attack")
                     attack_at, attack_clicks = time.monotonic(), attack_clicks + 1
                     reattack = False
             elif self._needs_recruit(ctx, now - attack_at <= max(p.wait_s, 1.0)):

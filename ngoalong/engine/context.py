@@ -126,6 +126,7 @@ class RunContext:
         debug_sink: DebugSink | None = None,
         png_sink: PngSink | None = None,
         debug_enabled: Callable[[], bool] = lambda: False,
+        overlay_enabled: Callable[[], bool] = lambda: False,
         on_log: LogFn | None = None,
         on_progress: ProgressFn | None = None,
         on_status: StatusFn | None = None,
@@ -156,6 +157,7 @@ class RunContext:
         self.debug_sink = debug_sink
         self.png_sink = png_sink
         self.debug_enabled = debug_enabled
+        self.overlay_enabled = overlay_enabled
         self._on_log = on_log
         self._on_progress = on_progress
         self._on_status = on_status
@@ -197,6 +199,9 @@ class RunContext:
     @property
     def cancelled(self) -> bool:
         return self.control.stopped
+
+    def _should_publish(self) -> bool:
+        return self.debug_enabled() or self.overlay_enabled()
 
     # --- reporting ------------------------------------------------------------------------------
     def log(self, message: str, level: str = "info") -> None:
@@ -337,7 +342,7 @@ class RunContext:
                 else:
                     self.info(f"{popup.description}: đồng ý theo cài đặt")
                     self.count(popup.name)
-                if self.debug_enabled():
+                if self._should_publish():
                     self.publish_debug(step=f"popup {popup.name}")
                 self.checkpoint()
                 self.input.click(point, "left", False)
@@ -412,7 +417,7 @@ class RunContext:
         p = self.resolve(target)
         name = label or (target if isinstance(target, str) else getattr(target, "name", "point"))
         self._clicks.append(p)
-        if self.debug_enabled():
+        if self._should_publish():
             self.publish_debug(step=f"click {name}")
         self.checkpoint()
         self.input.click(p, button, double)
@@ -434,7 +439,7 @@ class RunContext:
         det = self._search(frame, fix, name, region, threshold)
         if not det.found:
             self._canvas_dirty = True
-        if self.debug_enabled():
+        if self._should_publish():
             self.publish_debug(step=f"find {name}")
         return Match(det.name, det.rect, det.score) if det.found else None
 
@@ -456,7 +461,7 @@ class RunContext:
         while True:
             frame, fix = self.observe()
             dets = [self._search(frame, fix, n, region, threshold) for n in wanted]
-            if self.debug_enabled():
+            if self._should_publish():
                 self.publish_debug(step=f"wait {'/'.join(wanted)}")
             found = [d for d in dets if d.found]
             if found:
@@ -481,7 +486,7 @@ class RunContext:
         while True:
             frame, fix = self.observe()
             det = self._search(frame, fix, name, region, threshold)
-            if self.debug_enabled():
+            if self._should_publish():
                 self.publish_debug(step=f"wait gone {name}")
             if not det.found:
                 return
@@ -519,7 +524,7 @@ class RunContext:
         # frame pixels of the crop -> canvas: (x0 + p) mapped back by the canvas origin and scale
         s = fix.scale
         out = [ln.moved((x0 - fix.rect.x) / s, (y0 - fix.rect.y) / s, 1 / s) for ln in lines]
-        if self.debug_enabled():
+        if self._should_publish():
             self._pending.extend(
                 Detection(f"ocr '{ln.text}'", fix.rect_to_frame(ln.rect), 1.0, 0.0, True) for ln in out)
             self.publish_debug(step=f"ocr {region.x},{region.y}")
@@ -538,7 +543,7 @@ class RunContext:
         self._pending.extend(m.detections)
         self._scene = m
         self._status()
-        if self.debug_enabled():
+        if self._should_publish():
             self.publish_debug(step="detect scene")
         return m
 
@@ -552,7 +557,7 @@ class RunContext:
             frame, fix = self.observe()
             m = scenes.check(frame, fix, scene)
             self._pending.extend(m.detections)
-            if self.debug_enabled():
+            if self._should_publish():
                 self.publish_debug(step=f"expect {scene}")
             if m.found:
                 self._scene = m
@@ -568,6 +573,40 @@ class RunContext:
                 raise SceneTimeout(
                     f"không thấy màn hình {scene} sau {timeout_s:.1f}s (đang hiển thị: {shown})",
                     scene, actual,
+                )
+            self.sleep_s(min(interval, remaining))
+
+    def expect_scene_in(
+        self, scenes: Sequence[str], timeout_s: float, interval_s: float | None = None
+    ) -> SceneMatch:
+        """Poll until one of ``scenes`` is shown; raises ``SceneTimeout`` naming what was shown instead."""
+        detector = self._require_scenes()
+        for name in scenes:
+            detector.get(name)  # unknown scene names fail fast
+        interval = self.poll_interval_s if interval_s is None else interval_s
+        deadline = self._clock() + max(0.0, timeout_s)
+        while True:
+            frame, fix = self.observe()
+            for name in scenes:
+                m = detector.check(frame, fix, name)
+                self._pending.extend(m.detections)
+                if m.found:
+                    self._scene = m
+                    self._status()
+                    if self._should_publish():
+                        self.publish_debug(step=f"expect {name}")
+                    return m
+            self._canvas_dirty = True
+            remaining = deadline - self._clock()
+            if remaining <= 0:
+                actual = detector.detect(frame, fix)
+                self._scene = actual
+                self._status()
+                shown = actual.name if actual.found else f"không rõ (gần nhất {actual.candidate})"
+                joined = " / ".join(scenes)
+                raise SceneTimeout(
+                    f"không thấy màn hình trong [{joined}] sau {timeout_s:.1f}s (đang hiển thị: {shown})",
+                    scenes[0] if scenes else "", actual,
                 )
             self.sleep_s(min(interval, remaining))
 
@@ -608,7 +647,7 @@ class RunContext:
                 self.png_sink.save(frame)
             except Exception:  # saving a debug image must never break the run
                 log.exception("could not save debug frame")
-        if self.debug_sink is not None and (failed or self.debug_enabled()):
+        if self.debug_sink is not None and (failed or self._should_publish()):
             try:
                 self.debug_sink.publish(frame)
             except Exception:

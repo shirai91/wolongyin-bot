@@ -246,8 +246,12 @@ class AppServices:
         self.window: GameWindow | None = None
         # One locator per bound window: its last good fix is reused between runs (docs/06 Track).
         self.locator: CanvasLocator = self.new_locator()
+        if self.settings.debug and not self.settings.draw_overlay:
+            self.settings.draw_overlay = True
         self.debug = DebugState(self.settings.debug)
         self.debug.changed.connect(self._on_debug_changed)
+        self.draw_overlay = DebugState(self.settings.draw_overlay)
+        self.draw_overlay.changed.connect(self._on_draw_overlay_changed)
         self.panel_sink = PanelSink()
         self.live_sink = FanoutSink([self.panel_sink])
         self.overlay_sink: OverlaySink | None = None
@@ -288,6 +292,11 @@ class AppServices:
 
     def _on_debug_changed(self, enabled: bool) -> None:
         self.settings.debug = enabled
+        self.draw_overlay.set_enabled(enabled)
+        self.save()
+
+    def _on_draw_overlay_changed(self, enabled: bool) -> None:
+        self.settings.draw_overlay = enabled
         if self.overlay_sink is not None:
             self.overlay_sink.set_enabled(enabled)
         self.overlay_refresher.sync()
@@ -302,7 +311,7 @@ class AppServices:
 
     def attach_overlay(self, presenter: object) -> OverlaySink:
         """Connect the live overlay window (``OverlayPresenter``) to the debug frames."""
-        sink = OverlaySink(presenter, enabled=self.debug.enabled)  # type: ignore[arg-type]
+        sink = OverlaySink(presenter, enabled=self.draw_overlay.enabled)  # type: ignore[arg-type]
         self.overlay_sink = sink
         self.live_sink.add(sink)
         self.overlay_refresher.sync()
@@ -521,6 +530,7 @@ class AppServices:
             debug_sink=debug_sink,  # type: ignore[arg-type]
             png_sink=PngSink(hooks.run_dir, enabled=self.debug.enabled),
             debug_enabled=lambda: self.debug.enabled,
+            overlay_enabled=lambda: self.draw_overlay.enabled,
             on_log=hooks.on_log,
             on_progress=hooks.on_progress,
             on_status=hooks.on_status,
@@ -635,6 +645,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         settings, imported = load_or_import(args.settings, args.ini, features)
         if args.debug:
             settings.debug = True
+            settings.draw_overlay = True
         services = AppServices(settings, args.settings)
         window = MainWindow(services)
     except Exception as exc:

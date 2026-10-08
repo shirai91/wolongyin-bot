@@ -184,10 +184,19 @@ def test_debug_toggle_and_panel(qapp, services) -> None:
     try:
         tab = w.extra_tabs["debug"]
         assert not tab.checkbox.isChecked()
+        assert not tab.overlay_checkbox.isChecked()
         services.debug.toggle()  # what Ctrl+Alt+D does
         assert tab.checkbox.isChecked() and services.settings.debug
+        assert tab.overlay_checkbox.isChecked() and services.settings.draw_overlay
         tab.checkbox.setChecked(False)
         assert not services.debug.enabled
+        assert not tab.overlay_checkbox.isChecked() and not services.settings.draw_overlay
+        # Toggle overlay checkbox independently (overlay on, debug off)
+        tab.overlay_checkbox.setChecked(True)
+        assert tab.overlay_checkbox.isChecked() and services.settings.draw_overlay and services.draw_overlay.enabled
+        assert not tab.debug_checkbox.isChecked() and not services.settings.debug and not services.debug.enabled
+        tab.overlay_checkbox.setChecked(False)
+        assert not tab.overlay_checkbox.isChecked() and not services.settings.draw_overlay
         services.panel_sink.publish(_debug_frame())
         qapp.processEvents()
         tab.panel.refresh()

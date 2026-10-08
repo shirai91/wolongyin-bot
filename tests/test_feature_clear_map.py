@@ -95,7 +95,8 @@ class FieldSim:
 
     def __init__(self, start: str = "field", map_: str = "luu", outcomes: list[str] | None = None,
                  flags: tuple[tuple[int, int], ...] = (FLAG_A, FLAG_B), beam: bool = True,
-                 marked: tuple[int, int] | None = None) -> None:
+                 marked: tuple[int, int] | None = None,
+                 group_flags: tuple[tuple[int, int], ...] = ()) -> None:
         self.state = start
         self.map = map_
         self.hud_expanded = True
@@ -105,6 +106,7 @@ class FieldSim:
         self._order = flags
         self.beam = beam
         self.marked = marked
+        self.group_flags = set(group_flags)
         self.outcomes = list(outcomes or ["win"])
         self.target: tuple[int, int] | None = None
         self.result = ""
@@ -144,6 +146,14 @@ class FieldSim:
             d = _img("09-dungeon-army-dialog.png")
             img[O[1] + DIALOG.y:O[1] + DIALOG.bottom, O[0] + DIALOG.x:O[0] + DIALOG.right] = \
                 d[O[1] + DIALOG.y:O[1] + DIALOG.bottom, O[0] + DIALOG.x:O[0] + DIALOG.right]
+        elif self.state == "group_army":
+            g = _img("52-dungeon-group-army-dialog.png")
+            h, w = min(572, 600 - 28), min(1000, 1024 - 24)
+            img[O[1] + 28:O[1] + 28 + h, O[0]:O[0] + w] = g[0:h, 24:24 + w]
+        elif self.state == "group_lobby":
+            g = _img("53-dungeon-group-lobby-dialog.png")
+            h, w = min(572, 600 - 27), min(1000, 1024 - 26)
+            img[O[1] + 27:O[1] + 27 + h, O[0]:O[0] + w] = g[0:h, 26:26 + w]
         elif self.state == "result":
             _paste(img, RESULT_AT, _tpl("tower.result.win" if self.result == "win" else "tower.result.lose"))
         elif self.state == "recruit":
@@ -183,11 +193,22 @@ class FieldSim:
             else:
                 for f in self.alive:
                     if _near(p, _flag_click(f), 6, 6):
-                        self.state, self.target = "army", f
+                        self.state = "group_army" if f in self.group_flags else "army"
+                        self.target = f
         elif s == "army":
             if _near(p, (584, 304), 28, 11):
                 self._attack()
             elif _near(p, (638, 185)) or _near(p, (638, 184), 12, 12):
+                self.state = "field"
+        elif s == "group_army":
+            if _near(p, (702, 482), 30, 15):
+                self.state = "group_lobby"
+            elif _near(p, (770, 142), 15, 15):
+                self.state = "field"
+        elif s == "group_lobby":
+            if _near(p, (738, 484), 30, 15):
+                self._attack()
+            elif _near(p, (770, 142), 15, 15) or _near(p, (398, 482), 30, 15):
                 self.state = "field"
         elif s == "result" and _near(p, (538, 409), 30, 12):
             if self.result == "win":
@@ -573,6 +594,29 @@ def test_max_battles() -> None:
     ctx, _ = make_ctx(sim)
     msg = ClearMap(params(hide_hud=False, max_battles=1)).run(ctx)
     assert msg.startswith("Đã đủ 1 trận") and sim.attacks == 1
+
+
+def test_group_army_two_clicks_to_battle() -> None:
+    """Group troop (Đoàn chiến) requires 2 clicks: 'Lập đội' then 'Khai chiến'."""
+    sim = FieldSim(flags=(FLAG_A,), group_flags=(FLAG_A,), outcomes=["win"])
+    ctx, _ = make_ctx(sim)
+    msg = ClearMap(params(hide_hud=False, max_battles=1)).run(ctx)
+    assert msg.startswith("Đã đủ 1 trận") and len(sim.alive) == 0
+    assert sim.attacks == 1
+    group_clicks = sim.clicks("group_army")
+    lobby_clicks = sim.clicks("group_lobby")
+    assert len(group_clicks) == 1 and _near(group_clicks[0], (702, 482), 10, 10)
+    assert len(lobby_clicks) == 1 and _near(lobby_clicks[0], (738, 484), 10, 10)
+
+
+def test_open_field_closes_group_dialogs() -> None:
+    for initial in ("group_army", "group_lobby"):
+        sim = FieldSim(start=initial)
+        ctx, _ = make_ctx(sim)
+        ClearMap(params())._open_field(ctx)
+        assert sim.state == "field"
+        close_clicks = sim.clicks(initial)
+        assert len(close_clicks) == 1 and _near(close_clicks[0], (770, 142), 10, 10)
 
 
 # --- parameters ---------------------------------------------------------------------------------

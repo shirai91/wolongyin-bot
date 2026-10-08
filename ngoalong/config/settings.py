@@ -20,7 +20,7 @@ from typing import Any
 from urllib.parse import urlsplit
 
 import tomli_w
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 
 from ngoalong.engine.task import Task, TaskParams
 from ngoalong.hotkeys import DEFAULT_DEBUG_TOGGLE, DEFAULT_STOP, normalize_hotkey
@@ -171,6 +171,7 @@ class Settings(BaseModel):
 
     version: int = 1
     debug: bool = False
+    draw_overlay: bool = False
     overlay_refresh_ms: int = OVERLAY_REFRESH_DEFAULT_MS  # debug overlay re-capture interval
     log_dir: str = "logs"
     profile: str = "ngoalongviet"
@@ -184,6 +185,13 @@ class Settings(BaseModel):
     legacy_ini: dict[str, str] = Field(default_factory=dict)
     legacy_applied: list[str] = Field(default_factory=list)
     ini_imported_from: str = ""
+
+    @model_validator(mode="before")
+    @classmethod
+    def _default_overlay_from_debug(cls, data: Any) -> Any:
+        if isinstance(data, dict) and data.get("debug") and "draw_overlay" not in data:
+            data["draw_overlay"] = True
+        return data
 
     @field_validator("overlay_refresh_ms")
     @classmethod
