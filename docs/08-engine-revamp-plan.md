@@ -71,6 +71,7 @@ Frames and labels: `corpus/live/` (`labels.yaml`, second section). All flows wer
 - **State**: a 6×3 grid of research icons (scrolls with ▲▼ at 645,225 / 645,422); the **selected** slot has a light frame; the "Thông tin" panel shows Tên, **Cấp** (green digits), Y/C (requirement), Phí.
 - **Action**: select a slot, press "Tăng cấp" (613,471).
 - **Result**: no box. Success raises Cấp; a failure shows a **red floating line** over the grid, e.g. "Cấp Phủ sách lược không đủ, không thể thăng cấp!" (fades after ~2 s). On this account every slot was capped by that requirement, so the rule is: after Tăng cấp, if Cấp did not change and the red line appeared, mark the slot "capped" and move on. Read Cấp with `digits`; detect the red line with a colour probe (pure red text in the grid region).
+- *R1 live check (2026-10-09, frames 298–302)*: the dialog reopens on the slot selected last; the selected slot is read from its 1 px yellow frame (`research.slot`, 0–17 row by row). Cấp is unreadable on the Chiêu binh tab, as it should be.
 
 ### 2 · Structures (city and harbour)
 
@@ -78,12 +79,16 @@ Frames and labels: `corpus/live/` (`labels.yaml`, second section). All flows wer
 - Each press of Tăng cấp upgrades one level **instantly** (cost and time grow: 30091 → 31727 over 5 presses). The red silver digits in the top-left bar flashed during the presses.
 - **The gold "skip wait" prompt does not show on this account because the player already chose "use gold to skip" in the game, and that choice resets on every browser reload.** So the bot can't assume either state. It must handle both: no prompt, or the `gold_skip_wait` confirm (answered by the user's setting).
 - Buildings carry a "lvN" label on the map; the harbour is reached with "Vào Hải Cảng" (city) and left with 主城. Which buildings to upgrade (and their map positions) is per-account; the map labels give the levels.
+- *R1 live check (2026-10-09)*: a harbour building upgraded at once (silver −7,218, cost 7,218 → 7,404, frames 332–333). The city's Tháp thí luyện building did **nothing** on Tăng cấp (no cost, no level change, no message, frames 304–305), probably a cap. So the rule must check that the cost (`city.building_panel.cost`) or silver changed, and give up on that building otherwise. The harbour map now shows summer colours (no snow): map art changes with the season, so identification never relies on it.
 
 ### 3 · Campaign (Phó Bản)
 
 - Field map with the **light-blue beam** over the next army. Clicking any army opens `field.army_dialog` (small frame, ✕ 638,184): name, level, troops "N/30", checkbox **"Phát chiến đấu"** (play the battle; ticked label turns white), "Tấn công" (584,304).
 - With "Phát chiến đấu" **off**, the fight resolves at once with no battle screen; the dialog stays open and the troop count drops (30/30 → 29/30). **With it on**, the battle screen opens (`第N回合` round label at the top, "Kết quả / Tải / Nhanh" buttons bottom right), then a **战胜 / 战败 box** with "Xem lại" and "Thoát" (540,408). Thoát returns to the field.
 - Rule: keep "Phát chiến đấu" off for speed and read the outcome from the troop count and whether the army is still there. Use the battle path only when the result has to be known exactly.
+- *Correction (R1, frames 075–083 and 385)*: with "Phát chiến đấu" off the army dialog **closes** right after Tấn công and a green floating line shows the result; it does not stay open. Every attack costs **1 Quân lệnh** (123 → 122). The checkbox keeps its last state between armies.
+- *Group armies (R1 live check, Đổng Trác, frames 360–373)*: an army titled "(Đoàn-Tinh)" has no "Phát chiến đấu" box (`field.army_dialog.group`). Tấn công opens the **Đoàn chiến** dialog (same team list as Võ Khôi Tháp): Lập đội → team room (no ✕) → Khai chiến → a battle screen with the VS bar (loading first), which ends with a big **攻方胜利** ("the attacker won") over the field and Xem lại / Thoát at the bottom right. The loss text (presumably 守方胜利) has not been seen.
+- *The beam* was seen on Đổng Trác (frame 359: 15 × 47 px at 826,94, the army 90 px below its top). It flickers (frames 361–373 show it on and off), so a rule needs it on 2 ticks. The last dungeon (Tư Mã) has « but no » under its name bar.
 - The same battle screen and result box appear in Thám Bảo, so "battle" is one reusable part.
 
 ### 4 · Trial tower (Tháp Thí Luyện)
@@ -91,6 +96,7 @@ Frames and labels: `corpus/live/` (`labels.yaml`, second section). All flows wer
 - Building panel "Tháp Thí Luyện" → medium dialog with tabs Tháp / Luyện / Điểm tướng (it reopens on the last tab and page).
 - **Floor list with pagination**: page N shows floors 10(N−1)+1 … 10N, and only floors the player has reached are listed (page 15 showed only "Tầng 141"). Page box at 247,476 with ◀ 206,476 and ▶ 291,476. **Typing works**: double-click the box, Backspace ×3, type the page, Enter (page 3 → Tầng 21–30). Read the page with `digits` and the list rows with row templates.
 - **Climb ("Vượt Tháp", 367,469)** → confirm box (3 Thí luyện lệnh) → **floor map** (`Tầng N` at the top, kill log top-left, bottom-right "☑ Tự Vượt Tháp" checkbox at 741,563, "Phát chiến báo", "Thoát"). Nothing moves until a click: **ensure the "Tự Vượt Tháp" checkbox is ticked, then click the first enemy once**; the unit then fights every guard by itself. The floor maps differ (own unit at 268,480 on Tầng 141 and 378,440 on Tầng 21), so the first enemy must be found on the map, not clicked at a fixed offset.
+- *R1 live check (frames 313–328)*: the guard to click is the one under a **light-blue crystal** (the same colour as the campaign beam; `tower.floor.marker`, ~50 px above the guard). A click on the next guard along did nothing (316–322); the click under the crystal started the climb, and floor 21 was won in a few seconds. Paging with ◀ ▶ selects the first row of the new page; a selected row has a yellow frame, a hovered one a teal frame (both read as selected).
 - **Result**: win = 战胜 box with only "Thoát", which returns straight to the tower dialog. Loss = 战败 box with "Tiếp tục" and "Thoát"; leaving then asks "Chưa hoàn thành vượt Tháp, xác nhận thoát?" (确定 / 取消) and returns to the dialog.
 - **Sweep ("Tự Vượt Tháp" button in the dialog, 538,469)**: a side panel "Hãy nhập số lần vào" with a count box (700,253), cost "Vàng*0", floor, reward preview, 确定 / 取消, then a confirm. It completes instantly (2 runs = 6 Thí luyện lệnh) with no battle. **Only floors already won can be swept**; this is the user's requirement for the "Tự vượt tháp" mode.
 
@@ -101,6 +107,7 @@ Frames and labels: `corpus/live/` (`labels.yaml`, second section). All flows wer
 - "Mua" → quantity box (+ / − / Tối đa) "Dùng 240 vàng, mua 1 Rương may mắn" → 确定 (438,365).
 - "Tự mở" → "Tự mở N Rương may mắn không?" with a quantity box → 确定. The button then reads **"Ngưng mở"** (button label = auto-open state) and opens about one chest every 4 s.
 - **Fast-open trick** (user tip, verified): toggle Tự mở on and off quickly. 5 cycles of Tự mở → 确定 → Ngưng mở, 0.3 s apart, took 5.9 s and opened 4 chests: about 1.5 s per chest instead of 4 s. The loop stops when the chest count reads 0.
+- *R1 live check (frames 335–343, 387)*: Mua costs 240 vàng per chest (3 bought). The button already reads "Ngưng mở" while the "Tự mở N" confirm box is open, and auto-open stops by itself at 0 chests. A chest can give Quân lệnh (+20 seen), which is why the Võ Khôi Tháp loop comes here.
 
 ### 6 · Võ Khôi Tháp
 
@@ -116,7 +123,8 @@ Frames and labels: `corpus/live/` (`labels.yaml`, second section). All flows wer
   4. "Mua" (502,463) buys **at once, with no confirm**: a green floating line "Mua[1 trăm triệu Bạc] thành công". Silver drops by the price (958,983,797 → 858,983,797), and the chest goes into Kho as an item (60 → 61/500 slots). The silver cap shown in the top bar is 2,425,000,000.
   5. Close with ✕ (802,119). Every press buys one chest, so the bot must read silver after each buy.
 - **Rule (user decision, 2026-10-08)**: when the silver alert appears (silver above 2,000,000,000), buy **two 1,000,000,000 chests** (the last slot, x=553), checking "Bạc cần" = 1000000000 and that silver drops by 1,000,000,000 after each Mua. Then close the dialog and return to the Võ Khôi Tháp loop.
-- **Not yet observed**: the 2-billion silver alert (the account has 959 million), running out of Quân lệnh (593 left, 23 per round), and a lost or timed-out boss fight. They need a long run, and the R2 pilot of this feature should capture them.
+- **Not yet observed**: the 2-billion silver alert (the account has 959 million), running out of Quân lệnh (593 left, 23 per round). They need a long run, and the R2 pilot of this feature should capture them.
+- *A lost round (R1 live check, 2026-10-09, frames 390–423)*: the lobby reopened on another boss (**Mộc Lv.140, 70,000,000 HP, cost Quân Lệnh 1**: the cost depends on the boss, read it per boss). Clicks on the 2nd and 3rd magic circle (not the one next to the player) did not join; a little later the countdown and the player vanished and the boss kept full HP. Thoát asks "Bạn muốn thoát khỏi Võ Khôi Tháp?" and leads to the world map (Quân lệnh −1); clicking the world-map tower then went **straight back into the arena**, and Thoát there showed the **失败 box** (every reward 0, the HP bar empty as after a win). After that the game client **froze**: no pixel changed for minutes and clicks and keys were ignored. So: `vkt.result.result` (win / lose) decides the outcome, never the HP bar; `vkt.arena.counting` tells a running round from an expired one; and R2 needs a watchdog for a frozen client (identical frames for N seconds while actions get no response).
 
 ## Target loop
 
@@ -199,7 +207,7 @@ Each screen declares **readers** that turn pixels into typed values. State is re
 
 | Reader | How | Example |
 | --- | --- | --- |
-| `selected_tab` | colour probe on each tab (the highlighted one is brighter) | which tab of `tower.dialog` is open: Tháp / Luyện / Điểm tướng |
+| `selected_tab` | colour probe on each tab: mean(R − B) without the label (gold = selected) | which tab of `tower.dialog` is open: Tháp / Luyện / Điểm tướng |
 | `enabled` | colour probe (grey vs active) | is "Nâng cấp" clickable |
 | `present` | template or colour in a small region | battle result 战胜 / 战败 shown, beam visible, "»" shown |
 | `rows` | row-slot templates or highlight probe per slot | the floor list: which slots are filled, which one is selected |
@@ -224,6 +232,30 @@ Readers run lazily: a decision that only needs `tab` reads nothing else. Values 
   - Chests: 21 → 20 → 21 → 20 … 11 → 7 → 3.
   - Thí luyện lệnh, tower page and floor, research Cấp, and all five shop prices also read correctly.
   - 28 frames were rejected and none were misread. The rejections were silver flashing **red** while it is being spent (read again next tick), and Quân lệnh covered by the Tinh Tú or events dialog.
+- *R1 end*: 12 fields (added Tinh Tú coins, sweep runs, army troops "80/80", building cost "Tốn bạc: 33047" via `last_int`): 688 reads over 425 frames, none wrong; 46 rejected (red silver, covered Quân lệnh, Cấp on the Chiêu binh tab, armies without a troop count).
+
+### Perception (built 2026-10-09, R1)
+
+The package `ngoalong/perception/` turns a 1000×600 canvas into a `Snapshot` without OCR. Profile data: `parts.yaml` (56 parts, templates cut by `part_crops.yaml`), `probes.yaml` (colour probes), `numbers.yaml` (digit fields), `screens/*.yaml` (screen rules and readers).
+
+| Module | Does |
+| --- | --- |
+| `parts.py` | `PartLibrary` (specs + templates, loaded once) and `PartScan` (one frame): `find(name)` searches the part's region once and caches the hits; `multi` parts return every copy (non-maximum suppression) |
+| `probes.py` | colour probes of 4 kinds: `mean` (e.g. R − B of a tab without its label), `count` (pixels of a colour, optionally only on a border ring, or *at most* N for "not drawn"), `blobs` (connected colour regions with size/aspect, e.g. the beam), `fill` (bar fill fraction) |
+| `screens.py` | `ScreenBook`: rules `require` (all of; a nested list = one of), `forbid`, `over` (only over these screens), `z` (stacking), `close` (which ✕ it owns), `claims`. Bases are tried in order (first match), every dialog / overlay that holds is kept. A ✕ nobody claims becomes an `unknown` dialog with its position. YAML note: the key is `over`, because YAML reads a bare `on` as *true*. |
+| `readers.py` | `Senses` (parts + probes + digits of one frame, cached) and `ScreenState` (a screen's readers, lazy, cached). Reader kinds: `tabs`, `present`/`enabled`, `value`, `digits`, `point`, `find_all`, `count`, `blobs`, `first_of`, `grid` (rows / slots with filled / selected probes and a number per row), `from` (+ `pick`) |
+| `snapshot.py` | `Perceiver.load()`, `Perceiver.canvas(frame, fix)`, `perceive(canvas) -> Snapshot` with `base`, `dialogs` (top last), `overlays`, `unknown`, `stack`, `top`, `has()`, `snap["tower.dialog"].page`, `snap.hud.silver`, `point(part)`, `describe()` |
+
+Screens declared for the six features: bases `battle`, `tower.floor`, `vkt.arena`, `vkt.lobby`, `field`, `harbour`, `city`, `world_map`, `map` (any other HUD map); dialogs `research`, `city.building_panel`, `field.army_dialog`, `field.dungeon_list`, `field.group_list`, `field.group_room`, `battle.result`, `battle.group_result`, `tower.dialog`, `tower.sweep`, `tower.result`, `chest.wheel`, `chest.buy`, `chest.auto_open_confirm`, `inventory`, `vkt.team_list`, `vkt.team_room`, `vkt.result`, `confirm.ok_cancel`, `notice.ok`; overlays `floating_error`, `floating_success`, `toast`; the `hud` (silver, Quân lệnh).
+
+Findings while building it:
+
+- **Which map is under a big dialog.** Tinh Tú covers the map labels and the bottom-bar icons. The bar's *label strip* ("DinhPhủ") still shows under it, and the sea in the left margin tells the harbour from the city (mean B − R: harbour +76..+93, city −9..−24); the right margin tells the world map (+26).
+- **One ✕ search region** (x ≥ 560, y ≤ 340) holds every ✕ seen (9 ms instead of 37 ms on the whole canvas).
+- **The battle screen** is recognised by its VS bar (also on the loading screen and group battles) or the Nhanh button.
+- The old engine's `field.enemy_flag` template no longer matches this account's army sprites; the campaign port needs new army templates (or the beam alone).
+- `tools/perceive.py --bench` over `corpus/live/labels.yaml` (labels may carry `expect: "base > dialog + overlay"` where the human names differ): **364/364 feature frames and 31/31 other frames** have the right stack, every reader value in the labels matches (31 readers, 0 wrong), **0 OCR calls**, parts 21 ms mean / 33 ms max, full Snapshot with every reader 35 ms mean / 81 ms max (the tower dialog's 10 row reads are the dearest). The two failure frames of 2026-10-08 that were kept (`logs/run-…-215050`, `run-…-222038`) read as `city` and `field{beam=True}`.
+- **Live check** (`perceive.py --live`, or `explore` + `perceive.py` on the saved frame): frames 294–423, every screen of the six features, see `labels.yaml` session 4.
 
 ### When OCR is allowed
 
@@ -284,12 +316,12 @@ The overlay, the debug panel and the PNGs draw the Snapshot: each part's box, th
 | --- | --- |
 | `core/window.py`, `core/drivers/*`, `core/capture.py`, `core/input.py`, `core/geometry.py`, `core/templates.py`, `core/vision.py` (Matcher), `core/ocr.py`, `core/locator.py` | **Keep.** They work: the canvas was found HIGH on 44/46 live captures. |
 | `engine/control.py`, `engine/runner.py` (`TaskRunner`, `execute`), `engine/manager.py`, `engine/scheduler.py`, `engine/history.py`, `engine/registry.py`, `notify.py`, `hotkeys.py`, `config/`, `ui/` shell, `debug/` sinks | **Keep**, with small adapters (a run's counters come from the feature's Memory). |
-| `core/scenes.py` + `profiles/*/scenes/*.yaml` | **Replace** with `perception/` (`parts.py`, `screens.py`, `readers.py`, `snapshot.py`) + `profiles/*/parts.yaml`, `screens/*.yaml`, `nav.yaml`. Existing templates are reused as part detectors where they still hold. |
+| `core/scenes.py` + `profiles/*/scenes/*.yaml` | **Replace** with `perception/` (`parts.py`, `probes.py`, `screens.py`, `readers.py`, `snapshot.py`) + `profiles/*/parts.yaml`, `probes.yaml`, `screens/*.yaml`, `nav.yaml`. Existing templates are reused as part detectors where they still hold. *Perception built in R1; `nav.yaml` is R2.* |
 | `engine/context.py` (`RunContext` with `expect_scene` / `wait_for` / `click`) | **Replace** with `engine/loop.py` (tick, decide, act, verify), `engine/actions.py`, `engine/recovery.py`, `engine/navigate.py`. A thin `Actor` keeps click/key/text and the debug recording. |
 | `engine/popups.py`, `engine/panels.py` | **Fold into** interrupt rules; their YAML stays. |
 | `features/*.py` | **Rewrite** one by one as rule sets. The old modules are deleted as each one is ported. |
 | `profiles/*/coords/*.yaml` | **Shrink.** Offsets stay only for things that have no recognisable part (a spot on the map). Buttons are found through their screen. |
-| `tools/annotate.py` | **Extend** into `tools/perceive.py`: prints and draws the Snapshot for screenshots or the live window, and runs the benchmark below. |
+| `tools/annotate.py` | **Extend** into `tools/perceive.py`: prints and draws the Snapshot for screenshots or the live window, and runs the benchmark below. *Done in R1 (`tools/perceive.py`); `annotate.py` stays until R4.* |
 
 ## Phases and gates
 
@@ -298,7 +330,7 @@ Each phase ends at a gate checked on the real game, as in 06.
 | Phase | Scope | Exit gate |
 | --- | --- | --- |
 | **R0 · Clean slate and corpus** | *Started 2026-10-08: tests and scenes removed; `tools/explore.py`; 71 labelled live frames.* Remove the tests and scene definitions (see "Tests" below). Turn `docs/game screenshots/live/` + failure PNGs from `logs/` into a **labelled corpus**: for each image, the expected screen stack and key state values (`corpus/labels.yaml`). Add a capture button to the debug tab that saves the frame and opens a label form. | ≥ 80 labelled frames covering every screen the 12 features touch, including the failure frames of 2026-10-08 |
-| **R1 · Perception** | *Started 2026-10-09: 40 part templates (`part_crops.yaml` → `templates/part/`), `parts.yaml` with search regions, `tools/part_report.py`. All 40 separate cleanly over 293 frames, 1.75 ms per search. Digit reader with 8 number fields (`numbers.yaml`): 435 correct reads over the corpus, none wrong.* Parts, screen rules, readers (colour, template, `digits`), Snapshot, `tools/perceive.py --bench` (per-screen precision/recall, per-reader accuracy, ms per Snapshot, OCR calls). Cut title, icon and digit-glyph templates. Live "Kiểm tra" shows the Snapshot. | Screen stack correct on ≥ 98% of the corpus with **zero OCR calls**, no "unknown" on any frame a feature needs; parts ≤ 80 ms and full Snapshot with its readers ≤ 150 ms; the 3 failing frames above read correctly |
+| **R1 · Perception** | *Started 2026-10-09: 40 part templates (`part_crops.yaml` → `templates/part/`), `parts.yaml` with search regions, `tools/part_report.py`. All 40 separate cleanly over 293 frames, 1.75 ms per search. Digit reader with 8 number fields (`numbers.yaml`): 435 correct reads over the corpus, none wrong. **Gate passed 2026-10-09** (see "Perception"): 56 parts, 17 colour probes, 33 screens (9 bases, 20 dialogs, 3 overlays, the HUD), 12 number fields; stack correct on 364/364 feature frames and 31/31 other frames of 395 labelled, 0 OCR calls, parts ≤ 33 ms, Snapshot with every reader ≤ 81 ms; both kept failure frames read correctly (the third run left no PNG); live check over every screen of the six features (frames 294–423). The live "Kiểm tra" button is `tools/perceive.py --live` for now; wiring it into the UI is left to R2.* Parts, screen rules, readers (colour, template, `digits`), Snapshot, `tools/perceive.py --bench` (per-screen precision/recall, per-reader accuracy, ms per Snapshot, OCR calls). Cut title, icon and digit-glyph templates. Live "Kiểm tra" shows the Snapshot. | Screen stack correct on ≥ 98% of the corpus with **zero OCR calls**, no "unknown" on any frame a feature needs; parts ≤ 80 ms and full Snapshot with its readers ≤ 150 ms; the 3 failing frames above read correctly |
 | **R2 · Decision loop** | `engine/loop.py`, actions with expectations, interrupts, recovery ladder, navigation graph, decision log, overlay of the Snapshot. One pilot feature: **Quay rương** (small), then **Tháp Thí Luyện** (dialog + battle + result). | Both pilots run 30 minutes live; starting each from city, world map, field or with a dialog open still reaches the goal; Stop ends within 1 s |
 | **R3 · Port the features** | In order of failure pain: Nâng cấp công trình, Clear Phó Bản, Cày cấp chúa công, Nâng cấp khoa kỹ, Võ Khôi Tháp, Thám Bảo, Tri Kỷ, Mở thẻ bài, Chạy Thành Tựu. AutoClick stays a plain clicker. Delete each old module and its coords when its port passes. | Each feature passes a 30-minute live run with no stuck loop; every recovery is logged with its Snapshot |
 | **R4 · Remove the old engine** | Delete `core/scenes.py`, `RunContext`, `scenes/*.yaml`, unused coords; update `selftest.py`, `build.ps1`, docs 06 and the user guide | `--selftest` runs the perception benchmark on the bundled corpus; build passes |
