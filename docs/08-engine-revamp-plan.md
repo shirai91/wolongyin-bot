@@ -209,6 +209,22 @@ Each screen declares **readers** that turn pixels into typed values. State is re
 
 Readers run lazily: a decision that only needs `tab` reads nothing else. Values are cached per Snapshot.
 
+### Digits (built 2026-10-09)
+
+`ngoalong/core/digits.py` reads numbers without OCR. Glyphs are in `templates/digits/game/`, learned by `tools/cut_digits.py` from `digit_samples.yaml`; the fields are in `numbers.yaml`; `tools/number_report.py` checks them.
+
+- **One font for every number** the six features read: 9 px tall, proportional (a "1" is 4 px wide, a "2" 7 px). Only the colour changes (white, yellow, green, red). The reader turns a region into an **ink mask** (max(B, G, R) > 150), which keeps the digits and drops box borders and backgrounds for every colour. It splits the mask at blank columns and matches each character against 13 glyph images (0–9, "/", and second variants of 0 and 2).
+- **Touching digits** (the font kerns, e.g. "74", "342", "22") are split by dynamic programming: the glyph sequence that best covers the run, allowing 1 px overlap.
+- **Text caret** in the page box: an inked column taller than 11 px is removed.
+- **Safety**: a character that matches no glyph reads "?", and a read whose ink touches the region's left or right edge is **clipped**. Either one rejects the read, because a region starting inside a "1" read it as a "4" with a 0.89 score. Numbers that run into an icon can't be read; the HUD gold count touches 充, and no supported feature needs it.
+- **Centred labels** ("Tầng 141" / "Tầng 21") use `last_int`: a wide region, keeping the characters after the last word gap (≥ 4 px).
+- **Result over the corpus**: 435 reads across 8 fields, all consistent with the session.
+  - Silver: +90M from the boss, then upgrades, then −100M for the chest.
+  - Quân lệnh: 619 → 618 → 617 → 594 (−23 Võ Khôi Tháp) → 593.
+  - Chests: 21 → 20 → 21 → 20 … 11 → 7 → 3.
+  - Thí luyện lệnh, tower page and floor, research Cấp, and all five shop prices also read correctly.
+  - 28 frames were rejected and none were misread. The rejections were silver flashing **red** while it is being spent (read again next tick), and Quân lệnh covered by the Tinh Tú or events dialog.
+
 ### When OCR is allowed
 
 OCR (RapidOCR) costs hundreds of milliseconds, against a few milliseconds for a template or colour probe. It is used only:
@@ -282,7 +298,7 @@ Each phase ends at a gate checked on the real game, as in 06.
 | Phase | Scope | Exit gate |
 | --- | --- | --- |
 | **R0 · Clean slate and corpus** | *Started 2026-10-08: tests and scenes removed; `tools/explore.py`; 71 labelled live frames.* Remove the tests and scene definitions (see "Tests" below). Turn `docs/game screenshots/live/` + failure PNGs from `logs/` into a **labelled corpus**: for each image, the expected screen stack and key state values (`corpus/labels.yaml`). Add a capture button to the debug tab that saves the frame and opens a label form. | ≥ 80 labelled frames covering every screen the 12 features touch, including the failure frames of 2026-10-08 |
-| **R1 · Perception** | *Started 2026-10-09: 40 part templates (`part_crops.yaml` → `templates/part/`), `parts.yaml` with search regions, `tools/part_report.py`. All 40 separate cleanly over 293 frames, 1.75 ms per search.* Parts, screen rules, readers (colour, template, `digits`), Snapshot, `tools/perceive.py --bench` (per-screen precision/recall, per-reader accuracy, ms per Snapshot, OCR calls). Cut title, icon and digit-glyph templates. Live "Kiểm tra" shows the Snapshot. | Screen stack correct on ≥ 98% of the corpus with **zero OCR calls**, no "unknown" on any frame a feature needs; parts ≤ 80 ms and full Snapshot with its readers ≤ 150 ms; the 3 failing frames above read correctly |
+| **R1 · Perception** | *Started 2026-10-09: 40 part templates (`part_crops.yaml` → `templates/part/`), `parts.yaml` with search regions, `tools/part_report.py`. All 40 separate cleanly over 293 frames, 1.75 ms per search. Digit reader with 8 number fields (`numbers.yaml`): 435 correct reads over the corpus, none wrong.* Parts, screen rules, readers (colour, template, `digits`), Snapshot, `tools/perceive.py --bench` (per-screen precision/recall, per-reader accuracy, ms per Snapshot, OCR calls). Cut title, icon and digit-glyph templates. Live "Kiểm tra" shows the Snapshot. | Screen stack correct on ≥ 98% of the corpus with **zero OCR calls**, no "unknown" on any frame a feature needs; parts ≤ 80 ms and full Snapshot with its readers ≤ 150 ms; the 3 failing frames above read correctly |
 | **R2 · Decision loop** | `engine/loop.py`, actions with expectations, interrupts, recovery ladder, navigation graph, decision log, overlay of the Snapshot. One pilot feature: **Quay rương** (small), then **Tháp Thí Luyện** (dialog + battle + result). | Both pilots run 30 minutes live; starting each from city, world map, field or with a dialog open still reaches the goal; Stop ends within 1 s |
 | **R3 · Port the features** | In order of failure pain: Nâng cấp công trình, Clear Phó Bản, Cày cấp chúa công, Nâng cấp khoa kỹ, Võ Khôi Tháp, Thám Bảo, Tri Kỷ, Mở thẻ bài, Chạy Thành Tựu. AutoClick stays a plain clicker. Delete each old module and its coords when its port passes. | Each feature passes a 30-minute live run with no stuck loop; every recovery is logged with its Snapshot |
 | **R4 · Remove the old engine** | Delete `core/scenes.py`, `RunContext`, `scenes/*.yaml`, unused coords; update `selftest.py`, `build.ps1`, docs 06 and the user guide | `--selftest` runs the perception benchmark on the bundled corpus; build passes |

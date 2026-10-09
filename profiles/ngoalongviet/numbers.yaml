@@ -1,0 +1,19 @@
+# Number fields read with the digit glyphs (ngoalong.core.digits; docs/08 "Screen state").
+#
+# rect:  canvas region [x, y, w, h] at 1000x600; must start and end in blank space next to the
+#        number (a rect that cuts a digit is reported as clipped and the read is rejected).
+# when:  the part (parts.yaml) that must be on screen for the field to exist
+# parse: int (all digits) | before_slash ("858983797/24250000…" -> 858983797; the cap may be cut off
+#        by its box) | fraction ("593/100" -> (593, 100)) | last_int (the number after the last word
+#        gap: for centred labels like "Tầng 141" whose number moves with its length)
+#
+# Check over the corpus:  .venv\Scripts\python.exe tools/number_report.py
+
+hud.silver:        {rect: [138, 30, 130, 15], when: hud.silver_label, parse: before_slash}
+hud.quan_lenh:     {rect: [114, 106, 48, 15], when: hud.silver_label, parse: fraction}   # "Lện593/100"; covered by the Tinh Tú dialog
+tinh_tu.chests:    {rect: [681, 135, 40, 15], when: title.tinh_tu, parse: int}           # after "X "
+tower.tokens:      {rect: [419, 374, 60, 15], when: title.tower, parse: int}             # Thí luyện lệnh
+tower.page:        {rect: [226, 469, 40, 16], when: title.tower, parse: int}             # page box (caret ignored)
+tower.floor:       {rect: [440, 12, 120, 15], when: tower.floor_label, parse: last_int}  # "Tầng N", centred
+research.level:    {rect: [748, 341, 40, 15], when: title.research, parse: int}          # Cấp of the selected slot
+shop.price:        {rect: [364, 455, 90, 15], when: btn.mua, parse: int}                 # "Bạc cần"

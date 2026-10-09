@@ -1,0 +1,30 @@
+# Digit samples for tools/cut_digits.py (docs/08, R1 `digits` reader). Canvas rects at 1000x600 in
+# corpus/live/<frame>-*.png. One font serves every number the supported features read.
+# Learn samples must have every character as its own ink run (no touching pairs); every instance
+# is compared, and up to 3 variants per character are kept.
+# Not readable: the HUD gold count (its last digit touches the 充 icon); no supported feature needs it.
+font: game
+level: 150
+
+learn:
+  - {frame: "064", rect: [138, 74, 58, 15], text: "70500000"}    # HUD Lính -> 7 0 5
+  - {frame: "064", rect: [114, 106, 46, 15], text: "619/100"}    # Quân lệnh "Lện619/100" -> 6 1 9 /
+  - {frame: "233", rect: [251, 436, 24, 15], text: "140"}        # floor list "Tầng 140" -> 4
+  - {frame: "234", rect: [253, 211, 20, 15], text: "21"}         # "Tầng 21" -> 2
+  - {frame: "234", rect: [253, 261, 20, 15], text: "23"}         # "Tầng 23" -> 3
+  - {frame: "234", rect: [253, 386, 20, 15], text: "28"}         # "Tầng 28" -> 8
+
+check:
+  - {frame: "064", rect: [138, 30, 66, 15], text: "869174318"}   # HUD silver ("74" touch)
+  - {frame: "064", rect: [138, 52, 60, 15], text: "59172287"}    # HUD Lúa ("722" touch)
+  - {frame: "064", rect: [278, 74, 52, 15], text: "1000000"}
+  - {frame: "066", rect: [419, 374, 60, 15], text: "13420"}      # Thí luyện lệnh ("342" touch), after the colon
+  - {frame: "234", rect: [238, 469, 14, 16], text: "3"}          # tower page box (with caret)
+  - {frame: "192", rect: [748, 341, 26, 15], text: "35"}         # research Cấp (green)
+  - {frame: "266", rect: [364, 455, 86, 15], text: "1000000000"} # shop "Bạc cần"
+  - {frame: "208", rect: [681, 135, 18, 15], text: "21"}         # Tinh Tú chests (yellow), after "X "
+  - {frame: "109", rect: [504, 12, 22, 15], text: "141"}         # tower floor title (yellow)
+  - {frame: "234", rect: [253, 236, 20, 15], text: "22"}         # floor list (touching pairs)
+  - {frame: "234", rect: [253, 286, 20, 15], text: "24"}
+  - {frame: "234", rect: [253, 361, 20, 15], text: "27"}
+  - {frame: "234", rect: [253, 436, 20, 15], text: "30"}
