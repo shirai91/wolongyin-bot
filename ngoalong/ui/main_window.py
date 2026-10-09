@@ -32,9 +32,12 @@ def canvas_text(fix: CanvasFix | None) -> str:
             f"{CONFIDENCE_TEXT.get(fix.confidence, fix.confidence.value)}")
 
 
-def scene_text(scene: SceneMatch | None, services: Any = None) -> str:
+def scene_text(scene: SceneMatch | str | None, services: Any = None) -> str:
+    """The status line: a Snapshot description (decision loop, "Kiểm tra") or an old SceneMatch."""
     if scene is None:
         return "Màn hình: chưa kiểm tra"
+    if isinstance(scene, str):
+        return f"Màn hình: {scene}"
     if not scene.found:
         near = f" (gần nhất: {scene.candidate})" if scene.candidate else ""
         return f"Màn hình: không rõ{near}"
@@ -48,7 +51,7 @@ def scene_text(scene: SceneMatch | None, services: Any = None) -> str:
 
 
 class _ProbeThread(QThread):
-    done = Signal(object, object, str)  # CanvasFix | None, SceneMatch | None, error
+    done = Signal(object, object, str)  # CanvasFix | None, Snapshot description | None, error
 
     def __init__(self, services: Any) -> None:
         super().__init__()
@@ -88,6 +91,7 @@ class MainWindow(QMainWindow):
         self.check_btn.clicked.connect(self.check_screen)
         self.canvas_label = QLabel(canvas_text(None))
         self.scene_label = QLabel(scene_text(None))
+        self.scene_label.setWordWrap(True)
         grid.addWidget(self.window_combo, 0, 0)
         grid.addWidget(self.refresh_btn, 0, 1)
         grid.addWidget(self.check_btn, 0, 2)

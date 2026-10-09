@@ -101,6 +101,11 @@ class Win32InputDriver:
             self._sleep(self.press_delay_s)
             self._post(hwnd, up, 0, lp)
 
+    def move(self, p: Point) -> None:
+        """Move the game's idea of the mouse to ``p`` (no button): the last-clicked button stops
+        glowing, a hovered list row stops reading as selected."""
+        self._post(self.hwnd, w.WM_MOUSEMOVE, 0, w.make_lparam(p.x, p.y))
+
     def key(self, vk: int) -> None:
         hwnd = self.hwnd
         scan = int(w.MapVirtualKeyW(vk, w.MAPVK_VK_TO_VSC)) & 0xFF

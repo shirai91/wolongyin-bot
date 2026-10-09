@@ -30,7 +30,7 @@ from ngoalong.core.geometry import Point, Rect
 from ngoalong.core.input import InputDriver
 from ngoalong.core.locator import CanvasFix, CanvasLocator, Confidence, LocatorConfig, canvas_crop
 from ngoalong.core.ocr import default_ocr
-from ngoalong.core.scenes import SceneDetector, SceneMatch, load_scene_defs
+from ngoalong.core.scenes import SceneDetector, load_scene_defs
 from ngoalong.core.templates import TemplateStore
 from ngoalong.core.vision import Matcher
 from ngoalong.core.window import GameWindow
@@ -38,7 +38,9 @@ from ngoalong.debug.model import DebugFrame
 from ngoalong.debug.sink import FanoutSink, OverlaySink, PanelSink, PngSink
 from ngoalong.engine import registry
 from ngoalong.engine.context import RunContext
+from ngoalong.engine.actor import snapshot_frame
 from ngoalong.engine.history import HistoryRecorder, HistoryStore
+from ngoalong.engine.loop import load_profile
 from ngoalong.engine.manager import RunnerManager, WindowSlot, same_window
 from ngoalong.engine.panels import PanelTidier
 from ngoalong.engine.popups import PopupGuard
@@ -49,6 +51,7 @@ from ngoalong.engine.runner import RunHooks, RunResult, TaskRunner
 from ngoalong.engine.task import Task
 from ngoalong.features.thanh_tuu import AchievementStore
 from ngoalong.hotkeys import HotkeyManager
+from ngoalong.perception import Perceiver
 from ngoalong.notify import Notifier, QtTray
 
 log = logging.getLogger(__name__)
@@ -255,9 +258,8 @@ class AppServices:
         self.panel_sink = PanelSink()
         self.live_sink = FanoutSink([self.panel_sink])
         self.overlay_sink: OverlaySink | None = None
-        # Live overlay refresh between bot frames: its own locator and detector (refresh thread).
+        # Live overlay refresh between bot frames: its own locator (refresh thread).
         self._overlay_locator = self.new_locator()
-        self._overlay_scenes = self.new_scene_detector()
         self.overlay_refresher = OverlayRefresher(self)
         base_log = Path(log_dir if log_dir is not None else self.settings.log_dir)
         self.runner = TaskRunner(base_log if base_log.is_absolute() else PROJECT_ROOT / base_log)
@@ -383,16 +385,21 @@ class AppServices:
     def new_scene_detector(self, matcher: Matcher | None = None) -> SceneDetector:
         return SceneDetector(self.scene_defs, matcher or Matcher(self.templates, history=256))
 
-    def probe(self) -> tuple[np.ndarray, CanvasFix, SceneMatch]:
-        """Capture once and name the canvas and scene (UI status; point recording)."""
+    def perceiver(self) -> Perceiver:
+        """The profile's perception layer (loaded once, shared with the decision loop)."""
+        return load_profile(str(self.profile_dir))[0]
+
+    def probe(self) -> tuple[np.ndarray, CanvasFix, str]:
+        """Capture once, locate the canvas and describe the Snapshot ("Kiểm tra"; point recording)."""
         gw = self.require_window()
         frame = self.capturer_factory(gw).grab()
         fix = self.new_locator().locate(frame)
-        scene = self.new_scene_detector().detect(frame, fix)
-        return frame, fix, scene
+        if not fix.reliable:
+            return frame, fix, "không thấy khung game"
+        return frame, fix, self.perceiver().perceive(Perceiver.canvas(frame, fix)).describe()
 
     def overlay_snapshot(self) -> DebugFrame | None:
-        """A live overlay frame of the bound window: canvas and scene, outside any task
+        """A live overlay frame of the bound window: canvas and Snapshot, outside any task
         (``OverlayRefresher``, refresh thread). ``None`` clears the overlay: game minimised or no
         canvas found. Raises ``WindowNotFoundError`` / ``WindowGoneError`` when the window is lost."""
         gw = self.require_window()
@@ -402,12 +409,12 @@ class AppServices:
         fix = self._overlay_locator.locate(image)
         if fix.confidence is Confidence.NONE:
             return None
-        scene = self._overlay_scenes.detect(image, fix)
-        return DebugFrame(
-            canvas=fix, scene=scene.name, scene_score=scene.score,
-            detections=[*scene.detections, *scene.overlay_detections],
-            window=gw.title, note="live",
-        )
+        if not fix.reliable:
+            return DebugFrame(canvas=fix, window=gw.title, note="live")
+        snap = self.perceiver().perceive(Perceiver.canvas(image, fix))
+        frame = snapshot_frame(image, fix, snap, window=gw.title, note="live")
+        frame.image = None  # the overlay draws over the game itself
+        return frame
 
     def cursor_canvas_point(self) -> Point:
         """The mouse position as a canvas point (1000x600); raises ValueError when outside."""

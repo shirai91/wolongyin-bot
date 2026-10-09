@@ -1,0 +1,49 @@
+# Screen graph for navigation (ngoalong/engine/navigate.py; docs/08 "Concepts" 5, phase R2).
+#
+# edges: <from screen>: {<to screen>: <how>}. The "from" screen must be the top of the stack.
+#   click: part (parts.yaml), found on the frame and clicked at its centre
+#   at: [x, y] canvas point (a spot on a map that has no recognisable part)
+#   key: esc | close: true (close the top dialog; the screen under it is the "to" screen)
+#   reveal: part clicked first when the click part is not shown; over: only when that screen is
+#   in the stack; within: seconds the next screen may take (default 8: first opens load)
+# close: dialogs that are closed by something other than their ✕ (default ✕, else ESC)
+#
+# Any dialog on top that is not on the way is closed first, so "a dialog open" is never a dead end.
+
+edges:
+  # --- maps with the HUD: 主城 goes to the city; the Tinh Tú icon opens the chest wheel ----------
+  city:
+    chest.wheel: {click: icon.tinh_tu, reveal: hud.icons_hidden}
+    city.building_panel: {at: [460, 320], label: "toà Tháp thí luyện"}   # the tall pagoda (lv140) in the city centre
+    harbour: {click: map.vao_hai_cang}
+  harbour:
+    city: {click: hud.home}
+    chest.wheel: {click: icon.tinh_tu, reveal: hud.icons_hidden}
+  world_map:
+    city: {click: hud.home}
+    chest.wheel: {click: icon.tinh_tu, reveal: hud.icons_hidden}
+  field:
+    city: {click: hud.home}
+    chest.wheel: {click: icon.tinh_tu, reveal: hud.icons_hidden}
+  map:
+    city: {click: hud.home}
+    chest.wheel: {click: icon.tinh_tu, reveal: hud.icons_hidden}
+
+  # --- Tháp Thí Luyện -----------------------------------------------------------------------------
+  city.building_panel:
+    tower.dialog: {click: btn.panel_tower}       # only the tower's panel has this button
+  tower.dialog:
+    city: {close: true}
+  tower.floor:
+    tower.dialog: {click: tower.exit}            # an unfinished floor asks first (confirm below)
+  tower.result:
+    tower.dialog: {click: result.exit}           # a loss asks "Chưa hoàn thành vượt Tháp, xác nhận thoát?"
+  confirm.ok_cancel:
+    tower.dialog: {click: box.ok, over: tower.floor}
+
+close:
+  confirm.ok_cancel: {click: box.cancel}         # a question that is not on the way: answer no
+  confirm.gold: {click: box.cancel}              # never spend Vàng on the way
+  notice.ok: {click: box.ok}
+  tower.sweep: {at: [754, 464], label: "Hủy"}    # side panel of the tower dialog: 取消
+  tower.result: {click: result.exit}
