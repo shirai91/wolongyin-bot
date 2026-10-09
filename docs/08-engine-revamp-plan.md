@@ -257,6 +257,61 @@ Findings while building it:
 - `tools/perceive.py --bench` over `corpus/live/labels.yaml` (labels may carry `expect: "base > dialog + overlay"` where the human names differ): **364/364 feature frames and 31/31 other frames** have the right stack, every reader value in the labels matches (31 readers, 0 wrong), **0 OCR calls**, parts 21 ms mean / 33 ms max, full Snapshot with every reader 35 ms mean / 81 ms max (the tower dialog's 10 row reads are the dearest). The two failure frames of 2026-10-08 that were kept (`logs/run-…-215050`, `run-…-222038`) read as `city` and `field{beam=True}`.
 - **Live check** (`perceive.py --live`, or `explore` + `perceive.py` on the saved frame): frames 294–423, every screen of the six features, see `labels.yaml` session 4.
 
+### Decision loop (built 2026-10-09, R2)
+
+| Module | Does |
+| --- | --- |
+| `engine/loop.py` | `Loop.tick()`: Stop / Pause and max run time → capture, canvas (located again every 5 s), Snapshot → frozen-client watchdog → verify the previous action's expectation → interrupts → the feature's `goal` → recovery navigation → the feature's rules → `Navigate(entry)` → act. Loop guard (`Limits`): 40 idle ticks, a `Wait` past its `patience`, or the same decision on the same screen 8 times in a row climbs the recovery ladder. `run_feature(feature, ctx)` is what `Feature.run` calls. |
+| `engine/actions.py` | `Click(at)`, `Key(vk)`, `Text(text, at=, clear=, enter=)`, `Wait(seconds, patience=)`, `Done(message)`, `Fail(message)`, `Navigate(screen)`. Each carries `expect=` (a screen name or a predicate on the next Snapshot), `change=` (a reader whose value must change), `within=` (seconds), `settle=`, `then=` (runs once the expectation is met: update the memory) and `stop=` (end the run as stopped). |
+| `engine/feature.py` | `Feature(Task)` with `entry`, a pydantic `Memory`, `rules()`, `goal(snap)`, `begin()`, `summary()`, `max_run_s()`, `answers` (boxes the feature answers itself). `Rule(name, on=screen, when=, do=)`: the first rule whose `on` is the top of the stack and whose `when` holds fires; `when` / `do` get that screen's `ScreenState`, `self.snap` is the Snapshot, `self.m` the memory. A missing reader (KeyError / AttributeError) or a `Click` on a part that is not shown means "does not apply". |
+| `engine/navigate.py` + `nav.yaml` | The screen graph: edges `click: part` / `at: [x, y]` / `key` / `close: true`, with `reveal` (click this first when the part is hidden: the "<<" of the top icon rows), `over` and `within`; `close:` entries for dialogs not closed by their ✕ (boxes answer 取消, the sweep panel). `Navigator.step(snap, target)`: cost = dialogs to close + shortest path from each screen of the stack; only the first edge is checked against the frame. A dialog not on the way (also an `unknown` one) is closed by its ✕, else ESC. |
+| `engine/interrupts.py` | `popups.yaml` (reward, toast, `gold_skip_wait` by its setting) and `panels.yaml` (quest tracker, Sắp mở, chat: at most 2 clicks each per run, only on a map with no dialog), checked every tick before the feature's rules. |
+| `engine/recovery.py` | Ladder, one rung per trouble, back to 0 when a feature rule's expectation is met: 1 close the top dialog by its ✕ → 2 ESC → 3 `Navigate(entry)` for up to 45 s, ignoring the feature's rules → 4 fail with the screenshot and the Snapshot dump in run.log. |
+| `engine/actor.py` | `Actor`: capture, canvas fix, clicks / keys / typing in canvas points, the mouse moved to (600, 2) after every click (no hover glow), run counters and progress, the debug frame of a Snapshot (`snapshot_frame`: parts found green, unclaimed ✕ red, the stack as the status line). Built from the old `RunContext` for now (`Actor.from_context`). |
+| `tools/run_feature.py` | `python -m ngoalong.tools.run_feature <id> --set k=v [--debug] [--stop-after S]`: one feature through `AppServices` → `TaskRunner` → `Feature.run`, the same path as the "Bắt đầu" button, with the run log on the console. |
+
+The app's "Kiểm tra" button and the live overlay now show the Snapshot (`AppServices.probe`, `overlay_snapshot`), and the status line follows the stack while a feature runs. run.log has one line per new decision, the values the rules looked at (`Snapshot.describe(read="seen")`) and the action with its expectation:
+
+```text
+09:34:52 [DEBUG] field | → tower.dialog → click field → city: hud.home @959,571, expect state ≤8s
+09:34:52 [DEBUG] city > city.building_panel | → tower.dialog → click city.building_panel → tower.dialog: btn.panel_tower @522,322, expect state ≤8s
+09:34:53 [DEBUG] city > tower.dialog{tab=Tháp, page=15, tokens=21379} | rule "trang" → type '3' trang 3, expect state ≤3s
+```
+
+**Pilots** (`features/quay_ruong.py` "Quay Tinh Tú", `features/thap_thi_luyen.py`), replacing the old scripts; their forms come from the new `Params` (old saved keys are ignored):
+
+- *Quay Tinh Tú*: `opens` (0 = all), `buy` (chests to buy first, 240 Vàng each), `max_minutes`. Buy: Mua → type the number → 确定 → the spend-Vàng box 确定; then the fast trick (Tự mở → 确定 → Ngưng mở) while 2 or more are left, 开始抽奖 for the last one. Every drop of the chest count is a chest opened.
+- *Tháp Thí Luyện*: `mode` climb / sweep, `start_floor`, `end_floor`, `sweep_runs`, `battle_timeout_s`, `max_minutes`. Climb: tab Tháp → type the page → select the floor → Vượt Tháp → 确定 → tick Tự Vượt Tháp if needed → click under the crystal (seen on 2 ticks) once → 战胜: next floor / 战败: Thoát → 确定, the run ends. Sweep: only when the next floor is listed (else it fails: "Tầng N chưa thắng"), Tự Vượt Tháp → type the runs → 确定 → 确定; the runs are counted from the Thí luyện lệnh spent.
+- `features/_tower.py` and `coords/thap.yaml` stay: `chua_cong` (Cày cấp chúa công) still uses them; it is the same flow as the new sweep mode, so R3 can drop it. `coords/quay_ruong.yaml` stays for `vo_khoi_thap` (its spin). No coords became unused.
+
+**Live gate** (2026-10-09, the test account, `run_feature` through the runner): see the table in "Phases and gates". Findings:
+
+- **The browser reload reset the game's "don't remind" choices.** Buying a Tinh Tú chest now asks "Dùng 240 vàng, mua N Rương may mắn ☐ Lần sau không nhắc nhở" (frame 435). The old pop-up guard took it for `gold_skip_wait` (same "Lần sau không nhắc nhở" line) and declined, stopping the run. It is now the screen `confirm.gold`; a feature that expects it lists it in `answers` and the guard leaves it alone; navigation answers 取消 to it. The box is never ticked.
+- **Quantity boxes reset to 1 when emptied** (frames 430–432): double-click selects the number, Backspace empties it, the game puts "1" back with the caret in front, so typing gave "61". Type over the selection (`Text(clear=0)`). The page box takes Backspace as R1 found; `Text` sends Backspace and Delete so the caret side does not matter.
+- **A mouse move outside the canvas never reaches the game**: the last clicked button kept its hover glow, "Ngưng mở" scored 0.88 against 0.90 and the fast trick stalled until the idle guard closed and reopened the dialog. The mouse now rests at canvas (600, 2) and `tinh_tu.auto_on` uses 0.80 like `auto_off`. With the rest point no tower row read as hovered.
+- **The top icon rows change with the account** (after the reload "Quà mỗi ngày" and "VIP Đông" appeared and Tinh Tú moved from x≈500 to x≈558): `icon.tinh_tu` is searched along both rows; the "<<" of hidden rows is `hud.icons_hidden`, clicked first (`reveal`).
+- **Speeds**: the fast trick opened 60 chests in 60 s (~1.0 s per chest at a 0.3 s tick). A tower floor of 21–40 took ~27 s (the crystal is found in about 1 s, the fight ~23 s). The building panel and the tower dialog open in under 0.5 s once loaded.
+- **ESC on the city map does nothing** (frame 429), so the ESC rung is harmless on maps.
+- **Ice floors (61+) have blue torches and orbs** of the crystal's colour (frame 449: 18×63 at 813,188 and 9×37 at 672,96). The first run clicked the biggest blob, far from any guard; the crystal is now picked by size (6–15 × 26–44 px) and, of several, the lowest one (the path starts at the bottom). Floors 61–66 then went through on the first click.
+- **The frozen-client watchdog** was checked offline (a static frame, a feature typing into it): the ladder gave up after 12.5 s and reported "game không phản hồi … Hãy tải lại trình duyệt (F5)"; on a live client that keeps changing pixels it never fired. Long waits (fights) are covered by `Wait(patience=battle_timeout_s)`.
+
+Gate runs (run folders under `logs/`, frames in `corpus/live/labels.yaml` session 5):
+
+| Pilot | Start | Run | Result |
+| --- | --- | --- | --- |
+| Quay Tinh Tú | city, panels + toast open after the reload | `092020`, `092203`, `092355` | toast closed, 3 panels collapsed, wheel opened (0 chests: done); `092203` stopped on the spend-Vàng box (finding below); after the fix 6 bought and opened in 14 s |
+| Quay Tinh Tú | world map | `093129` (63 s) | bought 60, opened 60. The runs before the hover fix (`092812`, `093011`) stalled on the glowing "Ngưng mở"; the idle guard closed and reopened the wheel 4 times and they still finished |
+| Quay Tinh Tú | campaign field | `093249` | bought 50, opened exactly the 40 asked for |
+| Quay Tinh Tú | field with Quân Đoàn open (unknown dialog) | `093348` | ✕ closed it; bought 40, opened 50 |
+| Quay Tinh Tú | city | `095624` + `095700` | bought 150, Stop after 30 s (latency 0.01 s, 26 opened), the next run opened the other 123 |
+| Tháp Thí Luyện | chest wheel open over the city | `092429` | climbed 22–24 |
+| Tháp Thí Luyện | campaign field | `093450` | 主城 → city → panel → dialog; climbed 25–30 |
+| Tháp Thí Luyện | world map | `093817` | climbed 31–40 (276 s, no recovery) |
+| Tháp Thí Luyện | city with Quân Đoàn open | `094312` | climbed 41–60 across a page change (551 s, no recovery) |
+| Tháp Thí Luyện | city | `095235` | sweep floor 50 ×60 (page 6 checked for floor 51, then page 5); `092626`: floor 23 ×5 |
+| Tháp Thí Luyện | tower dialog | `092638`, `092652` | sweep of floor 141 refused ("chưa thắng"); climb 141 lost → Thoát → 确定 → summary |
+| Tháp Thí Luyện | tower dialog / inside floor 61 | `095246` + `095327` | Stop after 12 s mid-floor (latency 0.02 s); the next run started on the floor map and climbed 61–66 |
+
 ### When OCR is allowed
 
 OCR (RapidOCR) costs hundreds of milliseconds, against a few milliseconds for a template or colour probe. It is used only:
@@ -293,6 +348,8 @@ class ThapThiLuyen(Feature):
     entry = "tower.dialog"            # Navigate there first if not on it
 ```
 
+*As built in R2 (see "Decision loop"): `Rule(name, on=, when=, do=)` with `when` / `do` taking the top screen's state, `goal(snap)` returning the summary, `entry` a screen name; memory updates go in an action's `then=`.*
+
 The engine picks the first rule whose screen and condition match the Snapshot. Every action carries an **expectation** (a screen, or a state change) and a time limit, checked on the following ticks.
 
 ### 5. Built-in behaviour every feature gets
@@ -317,8 +374,8 @@ The overlay, the debug panel and the PNGs draw the Snapshot: each part's box, th
 | `core/window.py`, `core/drivers/*`, `core/capture.py`, `core/input.py`, `core/geometry.py`, `core/templates.py`, `core/vision.py` (Matcher), `core/ocr.py`, `core/locator.py` | **Keep.** They work: the canvas was found HIGH on 44/46 live captures. |
 | `engine/control.py`, `engine/runner.py` (`TaskRunner`, `execute`), `engine/manager.py`, `engine/scheduler.py`, `engine/history.py`, `engine/registry.py`, `notify.py`, `hotkeys.py`, `config/`, `ui/` shell, `debug/` sinks | **Keep**, with small adapters (a run's counters come from the feature's Memory). |
 | `core/scenes.py` + `profiles/*/scenes/*.yaml` | **Replace** with `perception/` (`parts.py`, `probes.py`, `screens.py`, `readers.py`, `snapshot.py`) + `profiles/*/parts.yaml`, `probes.yaml`, `screens/*.yaml`, `nav.yaml`. Existing templates are reused as part detectors where they still hold. *Perception built in R1; `nav.yaml` is R2.* |
-| `engine/context.py` (`RunContext` with `expect_scene` / `wait_for` / `click`) | **Replace** with `engine/loop.py` (tick, decide, act, verify), `engine/actions.py`, `engine/recovery.py`, `engine/navigate.py`. A thin `Actor` keeps click/key/text and the debug recording. |
-| `engine/popups.py`, `engine/panels.py` | **Fold into** interrupt rules; their YAML stays. |
+| `engine/context.py` (`RunContext` with `expect_scene` / `wait_for` / `click`) | **Replace** with `engine/loop.py` (tick, decide, act, verify), `engine/actions.py`, `engine/recovery.py`, `engine/navigate.py`. A thin `Actor` keeps click/key/text and the debug recording. *Built in R2 (see "Decision loop"); `RunContext` stays until R4 for the features not ported yet, and the new loop takes its window, switches and sinks through `Actor.from_context`.* |
+| `engine/popups.py`, `engine/panels.py` | **Fold into** interrupt rules; their YAML stays. *R2: `engine/interrupts.py` runs them inside the loop; the old `RunContext` path still uses them directly until R4.* |
 | `features/*.py` | **Rewrite** one by one as rule sets. The old modules are deleted as each one is ported. |
 | `profiles/*/coords/*.yaml` | **Shrink.** Offsets stay only for things that have no recognisable part (a spot on the map). Buttons are found through their screen. |
 | `tools/annotate.py` | **Extend** into `tools/perceive.py`: prints and draws the Snapshot for screenshots or the live window, and runs the benchmark below. *Done in R1 (`tools/perceive.py`); `annotate.py` stays until R4.* |
@@ -331,7 +388,7 @@ Each phase ends at a gate checked on the real game, as in 06.
 | --- | --- | --- |
 | **R0 · Clean slate and corpus** | *Started 2026-10-08: tests and scenes removed; `tools/explore.py`; 71 labelled live frames.* Remove the tests and scene definitions (see "Tests" below). Turn `docs/game screenshots/live/` + failure PNGs from `logs/` into a **labelled corpus**: for each image, the expected screen stack and key state values (`corpus/labels.yaml`). Add a capture button to the debug tab that saves the frame and opens a label form. | ≥ 80 labelled frames covering every screen the 12 features touch, including the failure frames of 2026-10-08 |
 | **R1 · Perception** | *Started 2026-10-09: 40 part templates (`part_crops.yaml` → `templates/part/`), `parts.yaml` with search regions, `tools/part_report.py`. All 40 separate cleanly over 293 frames, 1.75 ms per search. Digit reader with 8 number fields (`numbers.yaml`): 435 correct reads over the corpus, none wrong. **Gate passed 2026-10-09** (see "Perception"): 56 parts, 17 colour probes, 33 screens (9 bases, 20 dialogs, 3 overlays, the HUD), 12 number fields; stack correct on 364/364 feature frames and 31/31 other frames of 395 labelled, 0 OCR calls, parts ≤ 33 ms, Snapshot with every reader ≤ 81 ms; both kept failure frames read correctly (the third run left no PNG); live check over every screen of the six features (frames 294–423). The live "Kiểm tra" button is `tools/perceive.py --live` for now; wiring it into the UI is left to R2.* Parts, screen rules, readers (colour, template, `digits`), Snapshot, `tools/perceive.py --bench` (per-screen precision/recall, per-reader accuracy, ms per Snapshot, OCR calls). Cut title, icon and digit-glyph templates. Live "Kiểm tra" shows the Snapshot. | Screen stack correct on ≥ 98% of the corpus with **zero OCR calls**, no "unknown" on any frame a feature needs; parts ≤ 80 ms and full Snapshot with its readers ≤ 150 ms; the 3 failing frames above read correctly |
-| **R2 · Decision loop** | `engine/loop.py`, actions with expectations, interrupts, recovery ladder, navigation graph, decision log, overlay of the Snapshot. One pilot feature: **Quay rương** (small), then **Tháp Thí Luyện** (dialog + battle + result). | Both pilots run 30 minutes live; starting each from city, world map, field or with a dialog open still reaches the goal; Stop ends within 1 s |
+| **R2 · Decision loop** | *Gate passed 2026-10-09 (see "Decision loop"): both pilots ran ~30 min in all on the live game through `TaskRunner` (`tools/run_feature.py`), every start screen reached the goal, Stop ended in 0.01–0.02 s; table below.* `engine/loop.py`, actions with expectations, interrupts, recovery ladder, navigation graph, decision log, overlay of the Snapshot. One pilot feature: **Quay rương** (small), then **Tháp Thí Luyện** (dialog + battle + result). | Both pilots run 30 minutes live; starting each from city, world map, field or with a dialog open still reaches the goal; Stop ends within 1 s |
 | **R3 · Port the features** | In order of failure pain: Nâng cấp công trình, Clear Phó Bản, Cày cấp chúa công, Nâng cấp khoa kỹ, Võ Khôi Tháp, Thám Bảo, Tri Kỷ, Mở thẻ bài, Chạy Thành Tựu. AutoClick stays a plain clicker. Delete each old module and its coords when its port passes. | Each feature passes a 30-minute live run with no stuck loop; every recovery is logged with its Snapshot |
 | **R4 · Remove the old engine** | Delete `core/scenes.py`, `RunContext`, `scenes/*.yaml`, unused coords; update `selftest.py`, `build.ps1`, docs 06 and the user guide | `--selftest` runs the perception benchmark on the bundled corpus; build passes |
 
@@ -355,4 +412,4 @@ Consequences until R1/R4 replace them:
 - **Animated Flash content.** Some parts flicker or animate (beam, battle). Readers that need stability take the value seen on 2 consecutive ticks.
 - **Labelling effort.** The corpus is the main cost of R0. The capture-and-label button keeps it to a few seconds per frame.
 - **Transition period.** Old features keep running on `RunContext` until their port passes, so the app stays usable. R4 removes the old path.
-- **Decision to confirm:** is the R1 accuracy gate (98%, no unknown on feature screens) the right bar, and which feature should be the second pilot?
+- **Decision to confirm:** is the R1 accuracy gate (98%, no unknown on feature screens) the right bar, and which feature should be the second pilot? *R2: the pilots were Quay Tinh Tú and Tháp Thí Luyện.*
