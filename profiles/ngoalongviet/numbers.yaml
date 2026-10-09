@@ -17,3 +17,7 @@ tower.page:        {rect: [226, 469, 40, 16], when: title.tower, parse: int}    
 tower.floor:       {rect: [440, 12, 120, 15], when: tower.floor_label, parse: last_int}  # "Tầng N", centred
 research.level:    {rect: [748, 341, 40, 15], when: title.research, parse: int}          # Cấp of the selected slot
 shop.price:        {rect: [364, 455, 90, 15], when: btn.mua, parse: int}                 # "Bạc cần"
+tinh_tu.coins:     {rect: [677, 392, 60, 15], when: title.tinh_tu, parse: int}           # coin count after "X "
+tower.sweep_runs:  {rect: [656, 246, 80, 15], when: tower.sweep, parse: int}             # "Hãy nhập số lần vào" box
+army.troops:       {rect: [442, 320, 94, 15], when: btn.attack, parse: fraction}         # Số lượng "30/30" (empty on some armies)
+building.cost:     {rect: [333, 358, 120, 15], when: btn.building_upgrade, parse: last_int}  # "Tốn bạc: 29766"

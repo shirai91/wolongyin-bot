@@ -1,0 +1,73 @@
+# Base screens: the map or full-screen location under everything else (docs/08 "Screen identity").
+# Tried in this order; the first rule that holds is the base, none -> "unknown".
+# Rule syntax and readers: ngoalong/perception/screens.py and readers.py. Parts: parts.yaml;
+# probes: probes.yaml. Check: .venv\Scripts\python.exe tools/perceive.py --bench
+
+# --- full-screen locations (HUD hidden) -----------------------------------------------------------
+battle:                     # campaign battle ("Phát chiến đấu" on, group armies; also Thám Bảo): VS bar on top,
+  layer: base               # Kết quả / Tắt / Nhanh bottom right (Xem lại / Thoát when a group battle ends)
+  require: [[battle.vs, battle.nhanh]]
+  read:
+    fast: {point: battle.nhanh}
+
+tower.floor:                # Tháp Thí Luyện floor map: "Tầng N", ☑ Tự Vượt Tháp, Phát chiến báo, Thoát
+  layer: base
+  require: [tower.exit, tower.auto_label]
+  read:
+    floor: {digits: tower.floor}
+    auto_climb: {present: tower.auto_tick}      # must be ticked before the first enemy is clicked
+    started: {present: tower.kill_log}          # the kill log appears with the first guard down
+    marker: {blobs: tower.marker}               # crystal over the next guard: click ~50 px below it to start
+    exit: {point: tower.exit}
+
+vkt.arena:                  # Võ Khôi Tháp boss arena: HP bar, Đếm ngược, three magic circles
+  layer: base
+  require: [vkt.countdown]
+  read:
+    boss_hp: {value: vkt.boss_hp}               # fraction of the HP bar still green (1.0 full; 0.0 after a win AND a loss)
+    counting: {present: vkt.countdown_running}  # the mm:ss under "Đếm ngược" is shown (it goes when the round ends)
+    circles: {find_all: vkt.circle}             # click one to join the fight
+
+vkt.lobby:                  # Võ Khôi Tháp lobby: boss, Quân Lệnh cost, Tấn công, Thoát
+  layer: base
+  require: [vkt.title]
+  read:
+    attack: {point: vkt.attack}
+
+# --- maps with the HUD ----------------------------------------------------------------------------
+field:                      # Phó Bản dungeon map: name bar with "«" / "»" at the bottom centre (first map: no «, last: no »)
+  layer: base
+  require: [hud.home, [field.next, field.prev]]
+  read:
+    beam: {present: field.beam}
+    beams: {blobs: field.beam}                  # the next army is under the beam
+    next_map: {point: field.next}               # None on the last dungeon
+    prev_map: {point: field.prev}
+
+harbour:                    # Hải Cảng: the city's bottom bar, map label "Hải Chiến" (or the sea on the left)
+  layer: base
+  require: [hud.home, [bar.dinh_phu, bar.quoc_chinh], [map.hai_chien, harbour.water]]
+
+city:                       # Thành chính: bottom bar with Dinh Phủ / Quốc Chính
+  layer: base
+  require: [hud.home, [bar.dinh_phu, bar.quoc_chinh]]
+  read:
+    harbour: {point: map.vao_hai_cang}
+
+world_map:                  # Thế Giới: no Dinh Phủ in the bar; "Võ Khôi Tháp" label (or the sea on the right)
+  layer: base
+  require: [hud.home, [map.vo_khoi_thap, world.sea]]
+  read:
+    vo_khoi_thap: {point: map.vo_khoi_thap}
+
+map:                        # any other map with the HUD (region, resources, event dungeons): not a feature screen
+  layer: base
+  require: [hud.home]
+
+# --- the HUD (not part of the stack; Snapshot.hud) ------------------------------------------------
+hud:
+  layer: hud
+  require: [hud.silver_label]
+  read:
+    silver: {digits: hud.silver}                # rejected while it flashes red during spending
+    quan_lenh: {digits: hud.quan_lenh}          # (have, cap); covered by the Tinh Tú dialog

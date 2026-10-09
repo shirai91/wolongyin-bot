@@ -1,0 +1,51 @@
+# Feature 3 · campaign (Phó Bản) (docs/08 "Feature flows" 3).
+
+field.army_dialog:          # click an army on the field (small frame)
+  layer: dialog
+  over: [field]
+  require: [btn.attack]
+  close: [638, 184]
+  read:
+    play_battle: {present: army.play_tick}      # "Phát chiến đấu": off = instant result, no battle screen
+    group: {present: army.no_play_box}          # a group army (Đoàn-Tinh): Tấn công opens Đoàn chiến
+    troops: {digits: army.troops}               # (left, max); None when the army shows no count
+    attack: {point: btn.attack}
+
+battle.result:              # 战胜 / 战败 box over the battle screen (Xem lại, Thoát)
+  layer: dialog
+  over: [battle]
+  require: [[result.win, result.lose]]
+  read:
+    result: {first_of: {win: result.win, lose: result.lose}}
+    exit: {point: result.exit}
+
+battle.group_result:        # a group battle ends with a big 攻方胜利 (attacker won) on the field, Xem lại / Thoát bottom right
+  layer: dialog             # (the loss text, presumably 守方胜利, has not been seen: result reads None then)
+  over: [battle]
+  require: [battle.exit]
+  read:
+    result: {first_of: {win: result.group_win}}
+    exit: {point: battle.exit}
+
+field.dungeon_list:         # "Phó bản" list opened from the dungeon name bar (no ✕: the name bar closes it)
+  layer: dialog
+  over: [field]
+  require: [field.dungeon_list]
+
+# Group armies ("(Đoàn-Tinh)" in the army dialog title, no "Phát chiến đấu" box): Tấn công opens the
+# Đoàn chiến dialog. Lập đội creates a team (team list -> team room, as in Võ Khôi Tháp), Khai chiến
+# starts the fight. The room has no ✕.
+field.group_list:           # Đoàn chiến, no team yet: "Hiện không có nhóm", Lập đội
+  layer: dialog
+  over: [field]
+  require: [title.group_battle, group.lap_doi]
+  close: [802, 119]
+  read:
+    create: {point: group.lap_doi}
+
+field.group_room:           # own team: Mời / Giải tán / Khai trừ / Khai chiến
+  layer: dialog
+  over: [field]
+  require: [title.group_battle, group.khai_chien]
+  read:
+    start: {point: group.khai_chien}

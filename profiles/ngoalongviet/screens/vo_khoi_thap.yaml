@@ -1,0 +1,24 @@
+# Feature 6 · Võ Khôi Tháp loop (docs/08 "Feature flows" 6). Lobby and arena are base screens
+# (base.yaml); the silver chest purchase is in inventory.yaml, the chests in tinh_tu.yaml.
+
+vkt.team_list:              # after Tấn công: team list page 1/1, "Lập đội"
+  layer: dialog
+  over: [vkt.lobby]
+  require: [vkt.lap_doi]
+  read:
+    create: {point: vkt.lap_doi}
+
+vkt.team_room:              # own team: Mời / Giải tán / Khai trừ / Khai chiến (never click Giải tán)
+  layer: dialog
+  over: [vkt.lobby]
+  require: [vkt.khai_chien]
+  read:
+    start: {point: vkt.khai_chien}
+
+vkt.result:                 # 胜利 box with the rewards, or 失败 with every reward 0 (round lost or timed out);
+  layer: dialog             # 确定 returns to the world map. The HP bar is empty in both cases.
+  over: [vkt.arena]
+  require: [[vkt.victory, vkt.defeat]]
+  read:
+    result: {first_of: {win: vkt.victory, lose: vkt.defeat}}
+    ok: {point: vkt.victory_ok}

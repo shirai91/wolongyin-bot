@@ -1,0 +1,17 @@
+# Silver chest purchase for the Võ Khôi Tháp loop (docs/08 "Feature flows" 6): city bottom bar
+# "Trang Bị" -> Trang bị, tab Cửa hiệu.
+
+inventory:                  # medium dialog Trang bị; reopens on its last tab and keeps the shop's scroll
+  layer: dialog
+  require: [title.inventory]
+  close: [802, 119]
+  read:
+    tab: {tabs: [Kho, Tài Nguyên, Cửa hiệu, Bảo vật, Cường hóa, Phái, Tướng khí]}
+    price: {digits: shop.price}                 # "Bạc cần" of the selected item (Cửa hiệu)
+    silver_chests: {find_all: shop.silver_chest}  # bottom shop row: 5e6, 1e7, 5e7, 1e8, 1e9 left to right
+    buy: {point: btn.mua}                       # buys at once, no confirm
+
+floating_success:           # green line "Mua[...] thành công" over the shop grid
+  layer: overlay
+  over: [inventory]
+  require: [btn.mua, shop.success]

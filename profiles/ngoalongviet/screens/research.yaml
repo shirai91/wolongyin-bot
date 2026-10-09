@@ -1,0 +1,17 @@
+# Feature 1 · Khoa kỹ (docs/08 "Feature flows" 1): city bottom bar "Khoa kỹ" -> Phủ Sách Lược.
+
+research:                   # medium dialog Phủ Sách Lược, tabs Khoa kỹ / Chiêu binh
+  layer: dialog
+  require: [title.research]
+  close: [802, 119]
+  read:
+    tab: {tabs: [Khoa kỹ, Chiêu binh]}
+    level: {digits: research.level}             # Cấp of the selected slot
+    slots: {grid: {at: [203, 213, 71, 71], dx: 72, dy: 73.5, cols: 6, n: 18, selected: slot.selected}}
+    slot: {from: slots, pick: selected_index}   # 0..17 row by row (6 per row); the grid scrolls with ▲▼
+    upgrade: {point: btn.research_upgrade}
+
+floating_error:             # red line over the grid after Tăng cấp: "Cấp Phủ sách lược không đủ, ..." (~2 s)
+  layer: overlay
+  over: [research]
+  require: [research.error]

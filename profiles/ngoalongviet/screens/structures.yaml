@@ -1,0 +1,9 @@
+# Feature 2 · structures in the city and the harbour (docs/08 "Feature flows" 2).
+
+city.building_panel:        # click a building: same panel in the city and the harbour
+  layer: dialog
+  require: [btn.building_upgrade]
+  close: [687, 202]
+  read:
+    cost: {digits: building.cost}               # "Tốn bạc" of the next level
+    upgrade: {point: btn.building_upgrade}      # one press = one level, instant

@@ -1,0 +1,40 @@
+# Colour probes (ngoalong/perception/probes.py; docs/08 "UI parts", cheapest detector kind).
+#
+# kind: mean | count | blobs | fill (see probes.py). rect: canvas [x, y, w, h] at 1000x600; probes
+# without a rect are rules that readers apply to their own rects (tabs, grid slots, list rows).
+# use: copy another probe's settings. colour: per-channel [lo, hi], also r-b, b-r, g-r, g-b.
+# Calibrated on corpus/live (frame numbers in the comments). Check: tools/perceive.py --bench
+
+# --- shared rules ---------------------------------------------------------------------------------
+tab.selected:   {kind: mean, expr: r-b, skip_light: 150, min: 5}       # gold +27..+33, teal -14..-20 (9 dialogs)
+checkbox.tick:  {kind: count, colour: {r: [151, 255], g: [111, 255], b: [0, 99], r-b: [81, 255]}, min: 8}  # yellow tick: 16-18 px, empty box 0-1
+slot.selected:  {kind: count, colour: {r: [171, 255], g: [151, 255], b: [0, 89]}, ring: 6, min: 60}  # yellow frame: 255 px, others 0
+row.filled:     {kind: mean, expr: g, skip_light: 150, min: 32}        # tower floor rows: 38-39 shown, 25 empty
+row.selected:   {kind: mean, expr: g, skip_light: 150, min: 55}        # 70-73 selected (yellow frame) or hovered
+
+# --- which map is under a dialog ------------------------------------------------------------------
+# The map labels (Vào Hải Cảng / Hải Chiến / Võ Khôi Tháp) hide under the large Tinh Tú dialog;
+# the sea in the left / right margin does not: mean(B - R) harbour +76..+93, city -9..-24,
+# field -42, world map -20 (left) / +26 (right), region / resources / event map <= +9.
+harbour.water:  {kind: mean, expr: b-r, rect: [0, 330, 125, 210], min: 40}
+world.sea:      {kind: mean, expr: b-r, rect: [875, 150, 125, 320], min: 16}
+
+# --- checkboxes -----------------------------------------------------------------------------------
+tower.auto_tick: {use: checkbox.tick, rect: [730, 553, 22, 22]}        # "Tự Vượt Tháp" on the floor map (109, 240: 16)
+army.play_tick:  {use: checkbox.tick, rect: [538, 400, 24, 22]}        # "Phát chiến đấu" in the army dialog (085, 096: 16-18)
+army.no_play_box: {kind: count, colour: {g: [151, 255]}, rect: [566, 405, 82, 15], min: 0, max: 40}  # label ink: 244 px, none on group armies (360)
+
+# --- floating lines and markers -------------------------------------------------------------------
+research.error: {kind: count, colour: {r: [191, 255], g: [0, 49], b: [0, 49]}, rect: [185, 200, 480, 240], min: 60}  # red line: 625 px, none 3
+shop.success:   {kind: count, colour: {g: [181, 255], r: [0, 119], b: [0, 99]}, rect: [185, 195, 480, 245], min: 60}  # green line: 259 px, Cửa hiệu grid 1
+tower.kill_log: {kind: count, colour: {g: [150, 255], g-r: [80, 255], g-b: [80, 255]}, rect: [10, 50, 70, 16], min: 10}  # first "Đã tiêu diệt" line: 204 px
+vkt.countdown_running: {kind: count, colour: {r: [191, 255], g: [191, 255], b: [191, 255]}, rect: [495, 100, 80, 28], min: 100}  # white mm:ss: 226-303 px, gone 0
+vkt.boss_hp:    {kind: fill, colour: {g: [120, 255], g-r: [60, 255]}, rect: [365, 14, 450, 24], col_frac: 0.3, min: 0.98}  # 1.00 full, 0.00 dead
+# The light-blue beam over the next army (old clear_map rule, widened live on 2026-10-09: frame 359,
+# beam 15 x 47 px at 826,94 over the army at 835,185; its top reaches into the HUD icon rows, so
+# the rect starts at y=80). Not on the corpus's Khăn Vàng frames (that map showed no beam).
+field.beam:     {kind: blobs, colour: {b: [201, 255], g: [171, 255], r: [0, 199], b-r: [51, 255]}, rect: [0, 80, 1000, 470],
+                 min_w: 4, min_h: 20, min_area: 60, aspect: 1.8}
+# The same light-blue crystal floats over the next guard on the tower floor map (8-12 x 29-36 px;
+# the guard is ~50 px below its bottom). It flickers: missing on some frames (315).
+tower.marker:   {use: field.beam}

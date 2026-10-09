@@ -1,0 +1,25 @@
+# Generic boxes and overlays shared by every feature (docs/08 "Screen families": Box, Overlay).
+# A box has no title and no ✕; its meaning comes from what the bot just did.
+
+confirm.ok_cancel:          # 确定 / 取消 box (spend Thí luyện lệnh, leave an unfinished tower, sweep N runs, ...)
+  layer: dialog
+  z: 3
+  require: [box.ok, box.cancel]
+  forbid: [qty.max]                             # the Tinh Tú quantity boxes have the same buttons
+  claims: [box.ok, box.cancel]
+  read:
+    ok: {point: box.ok}
+    cancel: {point: box.cancel}
+
+notice.ok:                  # single-确定 notice ("needs level 130", ...)
+  layer: dialog
+  z: 3
+  require: [box.ok]
+  forbid: [box.cancel, qty.max]
+  claims: [box.ok]
+  read:
+    ok: {point: box.ok}
+
+toast:                      # corner toast with its own ✕ (e.g. "Bảo vật ... Xem ngay" at the right edge)
+  layer: overlay
+  require: [{part: close, near: [985, 314]}]

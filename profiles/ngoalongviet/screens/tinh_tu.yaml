@@ -1,0 +1,33 @@
+# Feature 5 · Tinh Tú chest wheel (docs/08 "Feature flows" 5). Top icon "Tinh Tú" opens it over any map.
+
+chest.wheel:                # large dialog: chest count + Mua, coin count + Đổi, reward log, Tự mở / Ngưng mở
+  layer: dialog
+  require: [title.tinh_tu]
+  close: [859, 98]
+  read:
+    chests: {digits: tinh_tu.chests}
+    coins: {digits: tinh_tu.coins}
+    auto_open: {present: tinh_tu.auto_on}       # the button reads "Ngưng mở" while auto-opening
+    spin: {point: tinh_tu.spin}                 # 开始抽奖: one chest
+    auto_button: {point: [tinh_tu.auto_off, tinh_tu.auto_on]}
+
+chest.buy:                  # "Mua": quantity box "Dùng 240 vàng, mua N Rương may mắn" + 确定 / 取消
+  layer: dialog
+  z: 2
+  over: [chest.wheel]
+  require: [qty.max, qty.buy_text]
+  close: [638, 227]
+  claims: [box.ok, box.cancel]
+  read:
+    ok: {point: box.ok}
+    max: {point: qty.max}
+
+chest.auto_open_confirm:    # "Tự mở": "Tự mở N Rương may mắn không?" + 确定 / 取消
+  layer: dialog
+  z: 2
+  over: [chest.wheel]
+  require: [qty.max, qty.auto_text]
+  close: [638, 227]
+  claims: [box.ok, box.cancel]
+  read:
+    ok: {point: box.ok}
