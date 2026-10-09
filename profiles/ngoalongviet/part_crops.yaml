@@ -33,6 +33,14 @@ sources:
   vkt_room: {path: "corpus/live/134-vkt-create-team.png", origin: [0, 0]}
   vkt_arena: {path: "corpus/live/152-vkt-before-circle.png", origin: [0, 0]}
   vkt_victory: {path: "corpus/live/156-vkt-circle-t3.png", origin: [0, 0]}
+  battle: {path: "corpus/live/087-battle-play-t1.png", origin: [0, 0]}
+  sweep: {path: "corpus/live/259-tower-sweep-typed-2.png", origin: [0, 0]}
+  chest_buy: {path: "corpus/live/215-tinh-tu-mua.png", origin: [0, 0]}
+  chest_auto: {path: "corpus/live/217-tinh-tu-tu-mo.png", origin: [0, 0]}
+  group_room: {path: "corpus/live/367-live-group-create.png", origin: [0, 0]}
+  group_end: {path: "corpus/live/372-live-group-t4.png", origin: [0, 0]}
+  vkt_defeat: {path: "corpus/live/414-live-vkt-exit2.png", origin: [0, 0]}
+  field_dong_trac: {path: "corpus/live/359-live-field.png", origin: [0, 0]}
 
 crops:
   # --- generic -----------------------------------------------------------------------------------
@@ -46,16 +54,19 @@ crops:
   - {name: part.bar.quoc_chinh, source: city, rect: [612, 539, 24, 24]}      # bottom bar icons
   - {name: part.bar.khoa_ky, source: city, rect: [701, 537, 24, 24]}
   - {name: part.bar.trang_bi, source: city, rect: [748, 539, 24, 26]}
+  - {name: part.bar.dinh_phu, source: city, rect: [554, 571, 44, 15]}       # "DinhPhủ" label: still shows under the Tinh Tú dialog
   - {name: part.map.vao_hai_cang, source: city, rect: [286, 492, 80, 20]}    # city map label
   - {name: part.map.hai_chien, source: harbour, rect: [350, 507, 62, 18]}    # harbour map label
   - {name: part.map.vo_khoi_thap, source: world, rect: [203, 361, 70, 18]}   # world map label
   - {name: part.field.next, source: field, rect: [568, 566, 22, 24]}         # "»" next dungeon
+  - {name: part.field.prev, source: field_dong_trac, rect: [411, 566, 22, 24]}  # "«" previous dungeon (the last dungeon has no »)
 
   # --- dialog titles (searched in the title strip of a dialog frame) -----------------------------
   - {name: part.title.tower, source: tower_dialog, rect: [455, 103, 90, 18]}     # Tháp Thí Luyện
   - {name: part.title.research, source: research, rect: [455, 103, 90, 18]}      # Phủ Sách Lược
   - {name: part.title.inventory, source: inventory, rect: [470, 103, 60, 18]}    # Trang bị
   - {name: part.title.tinh_tu, source: tinh_tu, rect: [470, 62, 60, 18]}         # Tinh Tú
+  - {name: part.title.group_battle, source: group_room, rect: [465, 103, 70, 18]}  # Đoàn chiến (group army on the field)
 
   # --- buttons -----------------------------------------------------------------------------------
   - {name: part.btn.building_upgrade, source: building, rect: [345, 316, 58, 20]}  # Tăng cấp (building panel)
@@ -73,11 +84,20 @@ crops:
   - {name: part.result.win, source: tower_win, rect: [470, 183, 60, 28]}           # 战胜 (tower and battles)
   - {name: part.result.lose, source: tower_lose, rect: [470, 183, 60, 28]}         # 战败
   - {name: part.result.continue, source: tower_lose, rect: [432, 399, 56, 18]}     # Tiếp tục (loss only)
+  - {name: part.result.exit, source: tower_win, rect: [524, 401, 34, 15]}          # Thoát (win and loss boxes)
+  - {name: part.battle.nhanh, source: battle, rect: [941, 570, 40, 15]}            # "Nhanh" (battle screen, bottom right)
+  - {name: part.battle.vs, source: battle, rect: [484, 16, 32, 22]}                # "VS" badge (every battle, also group battles)
+  - {name: part.battle.exit, source: group_end, rect: [940, 571, 40, 13]}          # "Thoát" bottom right when a group battle ends
+  - {name: part.result.group_win, source: group_end, rect: [365, 258, 130, 70]}    # 攻方 (of 攻方胜利, the attacker won)
+  - {name: part.tower.sweep, source: sweep, rect: [646, 212, 114, 15]}             # "Hãy nhập số lần vào" (sweep panel)
 
   # --- Tinh Tú -----------------------------------------------------------------------------------
   - {name: part.tinh_tu.spin, source: tinh_tu, rect: [388, 240, 64, 54]}           # 开始抽奖
   - {name: part.tinh_tu.auto_off, source: tinh_tu, rect: [172, 408, 58, 16]}       # "Tự mở"
   - {name: part.tinh_tu.auto_on, source: tinh_tu_auto, rect: [168, 408, 66, 16]}   # "Ngưng mở"
+  - {name: part.qty.max, source: chest_buy, rect: [568, 279, 42, 15]}              # "Tối đa" (quantity box)
+  - {name: part.qty.buy_text, source: chest_buy, rect: [386, 321, 34, 15]}         # "Dùng" (buy N chests)
+  - {name: part.qty.auto_text, source: chest_auto, rect: [402, 321, 38, 15]}       # "Tự mở" (auto-open N chests)
 
   # --- Võ Khôi Tháp ------------------------------------------------------------------------------
   - {name: part.vkt.title, source: vkt_lobby, rect: [460, 4, 80, 18]}              # lobby / team screens
@@ -87,4 +107,5 @@ crops:
   - {name: part.vkt.countdown, source: vkt_arena, rect: [502, 82, 80, 18]}         # "Đếm ngược" (arena)
   - {name: part.vkt.circle, source: vkt_arena, rect: [300, 384, 56, 30]}           # magic circle (find all)
   - {name: part.vkt.victory, source: vkt_victory, rect: [436, 116, 116, 52]}       # 胜利
+  - {name: part.vkt.defeat, source: vkt_defeat, rect: [436, 116, 116, 52]}         # 失败 (round lost / timed out)
   - {name: part.vkt.victory_ok, source: vkt_victory, rect: [474, 418, 40, 20]}     # 确定

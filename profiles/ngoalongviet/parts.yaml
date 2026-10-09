@@ -10,7 +10,7 @@
 # Score them over the corpus:  .venv\Scripts\python.exe tools/part_report.py
 
 # --- generic -------------------------------------------------------------------------------------
-close:                {template: part.close, search: canvas, multi: true}
+close:                {template: part.close, search: [560, 0, 440, 340], multi: true}  # every ✕ seen: x 600-990, y 20-320 (37 ms on the whole canvas, 9 here)
 box.ok:               {template: part.box.ok, search: [330, 280, 340, 130]}
 box.cancel:           {template: part.box.cancel, search: [330, 280, 340, 130]}
 
@@ -20,16 +20,20 @@ hud.home:             {template: part.hud.home, search: [920, 530, 80, 70]}
 bar.quoc_chinh:       {template: part.bar.quoc_chinh, search: [480, 525, 420, 50]}
 bar.khoa_ky:          {template: part.bar.khoa_ky, search: [480, 525, 420, 50]}
 bar.trang_bi:         {template: part.bar.trang_bi, search: [480, 525, 420, 50], threshold: 0.80}  # hover 0.85
+bar.dinh_phu:         {template: part.bar.dinh_phu, search: [480, 565, 420, 30]}  # label strip, visible under Tinh Tú
 map.vao_hai_cang:     {template: part.map.vao_hai_cang, search: [250, 470, 150, 60]}
 map.hai_chien:        {template: part.map.hai_chien, search: [320, 490, 120, 50]}
 map.vo_khoi_thap:     {template: part.map.vo_khoi_thap, search: [170, 340, 140, 50]}
 field.next:           {template: part.field.next, search: [450, 555, 250, 45]}
+field.prev:           {template: part.field.prev, search: [300, 555, 250, 45]}
+field.dungeon_list:   {template: field.dungeon_list.title, search: [400, 350, 200, 40]}  # "Phó bản" list over the name bar (old template)
 
 # --- dialog titles (title strip of the medium / large frame) -------------------------------------
 title.tower:          {template: part.title.tower, search: [400, 95, 200, 32]}
 title.research:       {template: part.title.research, search: [400, 95, 200, 32]}
 title.inventory:      {template: part.title.inventory, search: [400, 95, 200, 32]}
 title.tinh_tu:        {template: part.title.tinh_tu, search: [400, 52, 200, 36]}
+title.group_battle:   {template: part.title.group_battle, search: [400, 95, 200, 32]}
 
 # --- buttons -------------------------------------------------------------------------------------
 btn.building_upgrade: {template: part.btn.building_upgrade, search: [320, 300, 110, 50]}
@@ -47,18 +51,30 @@ tower.auto_label:     {template: part.tower.auto_label, search: [740, 545, 100, 
 result.win:           {template: part.result.win, search: [420, 170, 160, 55]}
 result.lose:          {template: part.result.lose, search: [420, 170, 160, 55]}
 result.continue:      {template: part.result.continue, search: [410, 385, 100, 40]}
+result.exit:          {template: part.result.exit, search: [490, 385, 100, 40], threshold: 0.80}  # Thoát of the 战胜 / 战败 box
+battle.nhanh:         {template: part.battle.nhanh, search: [880, 555, 120, 45], threshold: 0.80}  # clicked to speed up
+battle.vs:            {template: part.battle.vs, search: [440, 0, 120, 60]}
+battle.exit:          {template: part.battle.exit, search: [900, 560, 100, 35], threshold: 0.80}
+result.group_win:     {template: part.result.group_win, search: [320, 230, 220, 120], threshold: 0.80}
+tower.sweep:          {template: part.tower.sweep, search: [600, 200, 210, 40]}
 
 # --- Tinh Tú -------------------------------------------------------------------------------------
 tinh_tu.spin:         {template: part.tinh_tu.spin, search: [360, 220, 120, 100]}
 tinh_tu.auto_off:     {template: part.tinh_tu.auto_off, search: [150, 395, 110, 40], threshold: 0.80}  # hover 0.82
 tinh_tu.auto_on:      {template: part.tinh_tu.auto_on, search: [150, 395, 110, 40]}
+qty.max:              {template: part.qty.max, search: [540, 265, 100, 40], threshold: 0.80}  # "Tối đa" may be clicked
+qty.buy_text:         {template: part.qty.buy_text, search: [330, 312, 200, 32]}   # centred text: x moves
+qty.auto_text:        {template: part.qty.auto_text, search: [330, 312, 200, 32]}
 
 # --- Võ Khôi Tháp --------------------------------------------------------------------------------
 vkt.title:            {template: part.vkt.title, search: [420, 0, 160, 30]}
-vkt.attack:           {template: part.vkt.attack, search: [440, 475, 120, 50]}
-vkt.lap_doi:          {template: part.vkt.lap_doi, search: [720, 485, 100, 40]}
-vkt.khai_chien:       {template: part.vkt.khai_chien, search: [750, 490, 110, 40]}
+vkt.attack:           {template: part.vkt.attack, search: [440, 475, 120, 50], threshold: 0.80}  # clicked: hover glow
+vkt.lap_doi:          {template: part.vkt.lap_doi, search: [720, 485, 100, 40], threshold: 0.80}  # clicked: hover glow
+group.lap_doi:        {template: part.vkt.lap_doi, search: [660, 455, 130, 45], threshold: 0.80}     # same buttons as Võ Khôi Tháp,
+group.khai_chien:     {template: part.vkt.khai_chien, search: [700, 455, 130, 45], threshold: 0.80}  # in the Đoàn chiến dialog
+vkt.khai_chien:       {template: part.vkt.khai_chien, search: [750, 490, 110, 40], threshold: 0.80}  # clicked: hover glow
 vkt.countdown:        {template: part.vkt.countdown, search: [470, 70, 140, 40]}
 vkt.circle:           {template: part.vkt.circle, search: [100, 250, 600, 300], multi: true}
 vkt.victory:          {template: part.vkt.victory, search: [400, 100, 200, 90]}
+vkt.defeat:           {template: part.vkt.defeat, search: [400, 100, 200, 90]}
 vkt.victory_ok:       {template: part.vkt.victory_ok, search: [440, 400, 110, 50]}

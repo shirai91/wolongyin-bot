@@ -2,7 +2,9 @@
 
 For each part in ``parts.yaml``: its best match score inside the part's ``search`` region on every
 canvas capture in ``corpus/live/`` (``--canvas`` searches the whole canvas instead), then how the
-frames split into present (>= --hi), absent (< --lo) and ambiguous (between). A good part has no ambiguous frames and a wide gap between the two groups.
+frames split into present (>= the part's own ``threshold``, or --hi), absent (< --lo, at most
+threshold - 0.1) and ambiguous (between). A good part has no ambiguous frames and a wide gap
+between the two groups.
 
     python tools/part_report.py                       # all parts in parts.yaml
     python tools/part_report.py --part close          # one part, list every frame
@@ -35,7 +37,7 @@ CORPUS = ROOT / "corpus" / "live"
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--part", action="append", help="part name(s); default: all in parts.yaml")
-    ap.add_argument("--hi", type=float, default=0.90, help="score counted as present")
+    ap.add_argument("--hi", type=float, default=None, help="score counted as present (default: the part's threshold)")
     ap.add_argument("--lo", type=float, default=0.75, help="score counted as absent")
     ap.add_argument("--csv", type=Path, help="write frame x part scores")
     ap.add_argument("--canvas", action="store_true", help="ignore search regions")
@@ -61,9 +63,11 @@ def main(argv: list[str] | None = None) -> int:
     print(f"{len(frames)} frames x {len(names)} parts, {ms:.2f} ms per search")
     print(f"{'part':34s} {'present':>7s} {'ambig':>5s} {'absent':>6s}  {'min hit':>7s} {'max miss':>8s}  ambiguous frames")
     for name, scores in rows.items():
-        hit = [s for s in scores if s >= args.hi]
-        amb = [(f.name[:3], s) for f, s in zip(frames, scores) if args.lo <= s < args.hi]
-        miss = [s for s in scores if s < args.lo]
+        hi = args.hi if args.hi is not None else float(parts[name].get("threshold", 0.90))
+        lo = min(args.lo, hi - 0.1)
+        hit = [s for s in scores if s >= hi]
+        amb = [(f.name[:3], s) for f, s in zip(frames, scores) if lo <= s < hi]
+        miss = [s for s in scores if s < lo]
         print(f"{name:34s} {len(hit):7d} {len(amb):5d} {len(miss):6d}  "
               f"{min(hit, default=float('nan')):7.2f} {max(miss, default=float('nan')):8.2f}  "
               + " ".join(f"{n}:{s:.2f}" for n, s in amb[:8]))
