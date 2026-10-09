@@ -5,7 +5,7 @@ one top-level key (the feature). All offsets are canvas-relative at 1000x600; ``
 canvas's top-left corner in client pixels and ``scale`` is canvas width / 1000 (page zoom).
 
 Keys are dotted paths: ``"thap.open_tower"``; list items by index:
-``"nang_cap_cong_trinh.thanh_chinh_buildings.3"``.
+``"quay_ruong.per_spin.1"``.
 """
 
 from __future__ import annotations
