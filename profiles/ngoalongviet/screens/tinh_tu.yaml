@@ -19,6 +19,7 @@ chest.buy:                  # "Mua": quantity box "Dùng 240 vàng, mua N Rươn
   close: [638, 227]
   claims: [box.ok, box.cancel]
   read:
+    qty: {digits: chest.qty}                    # the quantity box (437,286): double-click, Backspace, type
     ok: {point: box.ok}
     max: {point: qty.max}
 
@@ -30,4 +31,5 @@ chest.auto_open_confirm:    # "Tự mở": "Tự mở N Rương may mắn không
   close: [638, 227]
   claims: [box.ok, box.cancel]
   read:
+    qty: {digits: chest.qty}                    # defaults to every chest
     ok: {point: box.ok}

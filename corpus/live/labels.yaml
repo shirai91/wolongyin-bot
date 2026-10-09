@@ -264,3 +264,32 @@
 # the canvas (they carry the old overlay: cyan frame, search boxes, status line removed).
 424-fail-run-215050-city.png:      {base: city, state: {silver: 712694233}, note: "old engine: 'unknown (closest tham_bao)'"}
 425-fail-run-222038-field.png:     {base: field, state: {beam: true}, note: "old engine: stale 'field.army_dialog'; last dungeon (Tư Mã): « but no »"}
+
+# --- Session 5 (2026-10-09): R2 decision loop live tests (docs/08 R2). The browser had been reloaded:
+# every HUD panel open, the top icon row changed (Quà mỗi ngày, VIP Đông added; Tinh Tú moved to x≈558).
+426-r2-start.png:                  {base: city, overlay: [toast], state: {silver: 1367692302, quan_lenh: "121/100"}, note: "client responds after the reload; panels open"}
+427-r2-check-research.png:         {base: city, dialogs: [research], overlay: [toast], state: {tab: "Khoa kỹ"}}
+428-r2-check-closed.png:           {base: city, overlay: [toast]}
+429-r2-city-esc.png:               {base: city, overlay: [toast], note: "ESC on the city map does nothing"}
+430-r2-buy-open.png:               {base: city, dialogs: [chest.wheel, chest.buy], state: {qty: 1, chests: 0}}
+431-r2-buy-dclick.png:             {base: city, dialogs: [chest.wheel, chest.buy], note: "double-click selects the 1 (highlighted): type over it"}
+432-r2-buy-back.png:               {base: city, dialogs: [chest.wheel, chest.buy], state: {qty: 1}, note: "Backspace empties the box and it resets to 1, caret first: typing then gives 61"}
+433-r2-after-gold-confirm.png:     {base: city, dialogs: [chest.wheel], state: {chests: 0}}
+434-r2-buy-open2.png:              {base: city, dialogs: [chest.wheel, chest.buy], state: {qty: 1}}
+435-r2-buy-ok-confirm.png:         {base: city, dialogs: [chest.wheel, confirm.gold], note: "after a browser reload Mua asks 'Dùng 240 vàng ... ☐ Lần sau không nhắc nhở' (looked like gold_skip_wait to the old pop-up guard)"}
+436-r2-close-tower.png:            {base: city}
+437-r2-world-start.png:            {base: world_map, note: "start screen for the Tinh Tú pilot"}
+438-r2-wheel-closed.png:           {base: world_map, state: {quan_lenh: "261/100"}}
+439-r2-wheel-closed2.png:          {base: world_map, state: {quan_lenh: "401/100"}}
+440-r2-field-start.png:            {base: field, note: "start screen (campaign field)"}
+441-r2-wheel-closed3.png:          {base: field, state: {quan_lenh: "521/100"}}
+442-r2-field-legion.png:           {base: field, dialogs: [unknown], note: "Quân Đoàn open: an unrelated dialog (start screen); closed by its ✕"}
+443-r2-wheel-closed4.png:          {base: field, state: {quan_lenh: "621/100"}}
+444-r2-tower-closed.png:           {base: city}
+445-r2-world-start2.png:           {base: world_map, note: "start screen for the tower pilot (climb 31-40, run-20261009-093817)"}
+446-r2-tower-closed2.png:          {base: city}
+447-r2-city-legion.png:            {base: city, dialogs: [unknown], note: "Quân Đoàn open: start screen with an unrelated dialog (climb 41-60, run-20261009-094312)"}
+448-r2-city-start.png:             {base: city, note: "start screen (sweep floor 50 x60, run-20261009-095235)"}
+449-r2-floor61.png:                {base: tower.floor, state: {floor: 61, auto_climb: true, started: false}, note: "ice floor: blue torches / orbs read as markers (18x63 at 813,188; 9x37 at 672,96); the crystal is 386,383 12x38"}
+450-r2-city-start2.png:            {base: city, note: "start screen (Tinh Tú buy 150, Stop after 30 s)"}
+451-r2-after-stop.png:             {base: city, dialogs: [chest.wheel], state: {chests: 123, auto_open: false}, note: "after Stop mid fast-trick"}

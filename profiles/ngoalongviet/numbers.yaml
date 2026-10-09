@@ -21,3 +21,4 @@ tinh_tu.coins:     {rect: [677, 392, 60, 15], when: title.tinh_tu, parse: int}  
 tower.sweep_runs:  {rect: [656, 246, 80, 15], when: tower.sweep, parse: int}             # "Hãy nhập số lần vào" box
 army.troops:       {rect: [442, 320, 94, 15], when: btn.attack, parse: fraction}         # Số lượng "30/30" (empty on some armies)
 building.cost:     {rect: [333, 358, 120, 15], when: btn.building_upgrade, parse: last_int}  # "Tốn bạc: 29766"
+chest.qty:         {rect: [390, 278, 88, 16], when: qty.max, parse: int}                 # quantity box of the Tinh Tú buy / auto-open boxes

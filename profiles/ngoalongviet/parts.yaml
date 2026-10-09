@@ -61,7 +61,7 @@ tower.sweep:          {template: part.tower.sweep, search: [600, 200, 210, 40]}
 # --- Tinh Tú -------------------------------------------------------------------------------------
 tinh_tu.spin:         {template: part.tinh_tu.spin, search: [360, 220, 120, 100]}
 tinh_tu.auto_off:     {template: part.tinh_tu.auto_off, search: [150, 395, 110, 40], threshold: 0.80}  # hover 0.82
-tinh_tu.auto_on:      {template: part.tinh_tu.auto_on, search: [150, 395, 110, 40]}
+tinh_tu.auto_on:      {template: part.tinh_tu.auto_on, search: [150, 395, 110, 40], threshold: 0.80}  # hovered "Ngưng mở" scores lower
 qty.max:              {template: part.qty.max, search: [540, 265, 100, 40], threshold: 0.80}  # "Tối đa" may be clicked
 qty.buy_text:         {template: part.qty.buy_text, search: [330, 312, 200, 32]}   # centred text: x moves
 qty.auto_text:        {template: part.qty.auto_text, search: [330, 312, 200, 32]}
@@ -78,3 +78,9 @@ vkt.circle:           {template: part.vkt.circle, search: [100, 250, 600, 300], 
 vkt.victory:          {template: part.vkt.victory, search: [400, 100, 200, 90]}
 vkt.defeat:           {template: part.vkt.defeat, search: [400, 100, 200, 90]}
 vkt.victory_ok:       {template: part.vkt.victory_ok, search: [440, 400, 110, 50]}
+
+# --- navigation (R2) -----------------------------------------------------------------------------
+icon.tinh_tu:         {template: part.icon.tinh_tu, search: [340, 80, 480, 60]}   # top icon rows: right-aligned, moves as icons are added
+btn.panel_tower:      {template: part.btn.panel_tower, search: [470, 300, 110, 45], threshold: 0.80}  # "Tháp Thí Luyện" in the tower building panel
+hud.icons_hidden:     {template: part.hud.icons_hidden, search: [800, 55, 60, 45]}  # "<<": click it to show the top icon rows again
+box.no_remind:        {template: popup.gold_skip.no_remind, search: [340, 260, 320, 110], threshold: 0.85}  # "☐ Lần sau không nhắc nhở" of a spend-Vàng box

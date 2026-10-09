@@ -140,8 +140,11 @@ class Snapshot:
                 out[n] = self.state(n).values()
         return out
 
-    def describe(self, read: bool = True) -> str:
-        """One line: ``city > tower.dialog{tab=Tháp, page=3} + floating_error ? close@802,119``."""
+    def describe(self, read: bool | str = True) -> str:
+        """One line: ``city > tower.dialog{tab=Tháp, page=3} + floating_error ? close@802,119``.
+
+        ``read``: True reads every reader, False none, ``"seen"`` shows only the values read so far
+        (the decision log: what the rules looked at, at no extra cost)."""
         def fmt(v: Any) -> str:
             if isinstance(v, Point):
                 return f"{v.x},{v.y}"
@@ -154,13 +157,19 @@ class Snapshot:
         def one(n: str) -> str:
             if not read or n == UNKNOWN or not self.book.by_name[n].read:
                 return n
-            vals = self.state(n).values()
+            if read == "seen":
+                st = self._states.get(n)
+                vals = st.seen() if st is not None else {}
+                if not vals:
+                    return n
+            else:
+                vals = self.state(n).values()
             return n + "{" + ", ".join(f"{k}={fmt(v)}" for k, v in vals.items()) + "}"
 
         s = " > ".join(one(n) for n in self.stack)
         if self.overlays:
             s += " + " + " + ".join(one(n) for n in self.overlays)
-        if self.identity.hud and read:
+        if self.identity.hud and read and (read != "seen" or "hud" in self._states):
             s += " | " + one("hud")
         if self.unknown:
             s += " ? " + " ".join(str(h) for h in self.unknown)

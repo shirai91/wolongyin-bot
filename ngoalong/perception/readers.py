@@ -227,3 +227,7 @@ class ScreenState:
 
     def values(self) -> dict[str, Any]:
         return {k: self.get(k) for k in self.keys()}
+
+    def seen(self) -> dict[str, Any]:
+        """Only the values read so far (what a decision looked at), in declaration order."""
+        return {k: self._cache[k] for k in self.keys() if k in self._cache}

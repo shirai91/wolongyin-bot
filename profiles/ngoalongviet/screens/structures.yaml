@@ -7,3 +7,4 @@ city.building_panel:        # click a building: same panel in the city and the h
   read:
     cost: {digits: building.cost}               # "Tốn bạc" of the next level
     upgrade: {point: btn.building_upgrade}      # one press = one level, instant
+    tower: {point: btn.panel_tower}             # "Tháp Thí Luyện": only on the tower building's panel

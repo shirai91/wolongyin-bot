@@ -5,7 +5,16 @@ confirm.ok_cancel:          # 确定 / 取消 box (spend Thí luyện lệnh, le
   layer: dialog
   z: 3
   require: [box.ok, box.cancel]
-  forbid: [qty.max]                             # the Tinh Tú quantity boxes have the same buttons
+  forbid: [qty.max, box.no_remind]              # the Tinh Tú quantity boxes have the same buttons
+  claims: [box.ok, box.cancel]
+  read:
+    ok: {point: box.ok}
+    cancel: {point: box.cancel}
+
+confirm.gold:               # spend-Vàng box: "Dùng 240 vàng, mua 1 Rương may mắn" / "Bỏ qua thời gian chờ tốn N Vàng",
+  layer: dialog             # "☐ Lần sau không nhắc nhở", 确定 / 取消. Shown again after every browser reload.
+  z: 3                      # Never tick the box. popups.yaml answers the skip-wait one by its setting, unless
+  require: [box.no_remind, box.ok, box.cancel]  # the running feature answers it (Feature.answers).
   claims: [box.ok, box.cancel]
   read:
     ok: {point: box.ok}

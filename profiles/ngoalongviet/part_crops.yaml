@@ -41,6 +41,9 @@ sources:
   group_end: {path: "corpus/live/372-live-group-t4.png", origin: [0, 0]}
   vkt_defeat: {path: "corpus/live/414-live-vkt-exit2.png", origin: [0, 0]}
   field_dong_trac: {path: "corpus/live/359-live-field.png", origin: [0, 0]}
+  world_live: {path: "corpus/live/386-live-world-map.png", origin: [0, 0]}
+  tower_building: {path: "corpus/live/304-live-building.png", origin: [0, 0]}
+  icons_hidden: {path: "corpus/live/424-fail-run-215050-city.png", origin: [0, 0]}
 
 crops:
   # --- generic -----------------------------------------------------------------------------------
@@ -60,6 +63,8 @@ crops:
   - {name: part.map.vo_khoi_thap, source: world, rect: [203, 361, 70, 18]}   # world map label
   - {name: part.field.next, source: field, rect: [568, 566, 22, 24]}         # "»" next dungeon
   - {name: part.field.prev, source: field_dong_trac, rect: [411, 566, 22, 24]}  # "«" previous dungeon (the last dungeon has no »)
+  - {name: part.icon.tinh_tu, source: world_live, rect: [494, 102, 26, 23]}  # Tinh Tú wheel in the top icon rows (moves with the account)
+  - {name: part.hud.icons_hidden, source: icons_hidden, rect: [820, 70, 20, 16]}  # "<<": the top icon rows are hidden (">>" when shown)
 
   # --- dialog titles (searched in the title strip of a dialog frame) -----------------------------
   - {name: part.title.tower, source: tower_dialog, rect: [455, 103, 90, 18]}     # Tháp Thí Luyện
@@ -70,6 +75,7 @@ crops:
 
   # --- buttons -----------------------------------------------------------------------------------
   - {name: part.btn.building_upgrade, source: building, rect: [345, 316, 58, 20]}  # Tăng cấp (building panel)
+  - {name: part.btn.panel_tower, source: tower_building, rect: [484, 314, 76, 16]}  # "Tháp Thí Luyện" (tower building panel)
   - {name: part.btn.research_upgrade, source: research, rect: [580, 461, 70, 22]}  # Tăng cấp (Phủ Sách Lược)
   - {name: part.btn.vuot_thap, source: tower_dialog, rect: [334, 460, 70, 20]}
   - {name: part.btn.tu_vuot_thap, source: tower_dialog, rect: [500, 460, 76, 20]}
