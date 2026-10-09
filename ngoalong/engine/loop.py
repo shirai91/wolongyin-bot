@@ -212,6 +212,7 @@ class Loop:
             d.action.then()
 
     def _recover(self, snap: Snapshot, reason: str) -> Decision:
+        self.recovery.entry = self.f.entry  # a feature may change its entry screen (city, then harbour)
         rung, a = self.recovery.next(snap, reason)
         if isinstance(a, Fail) and self._frozen_for() >= FROZEN_HINT_S:
             a = Fail(self._frozen_message())

@@ -90,6 +90,9 @@ class Actor:
         self._fix_size: tuple[int, int] | None = None
         self.inputs = 0  # clicks, keys and texts sent (the frozen-client watchdog counts them)
         self.counters: dict[str, int] = {}
+        # the user's answers to the game's cost questions (Settings.game.<name>, e.g.
+        # spend_gold_skip_wait), for features that answer such a box themselves
+        self.policy: Callable[[str], bool] = lambda name: False
         self._ctx: RunContext | None = None
 
     @classmethod
@@ -113,6 +116,7 @@ class Actor:
                 ctx.count, ctx._on_status, publish,
                 lambda: ctx.debug_enabled() or ctx.overlay_enabled(), ctx.window_label, ctx.task_name)
         a._ctx = ctx
+        a.policy = ctx.policy
         return a
 
     # --- seeing ---------------------------------------------------------------------------------

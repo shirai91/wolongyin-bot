@@ -72,7 +72,7 @@ class Rule:
 class Feature(Task):
     """A Task that runs on the decision loop instead of a script."""
 
-    entry: ClassVar[str]  # the screen the work starts from
+    entry: str  # the screen the work starts from (a feature may set it per run, in begin())
     tick_s: ClassVar[float] = 0.3  # pause of an idle tick
     tidy_panels = False  # the runner's old panel tidier: the loop's interrupts do it instead
     collapse_panels: ClassVar[bool] = True  # interrupts collapse the HUD panels (panels.yaml)

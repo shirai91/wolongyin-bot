@@ -22,6 +22,7 @@ The common fields are keyword-only (``label=``, ``expect=``, ...).
 
 from __future__ import annotations
 
+import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
@@ -127,6 +128,19 @@ class Navigate(Action):
 
     def what(self) -> str:
         return f"navigate {self.screen}"
+
+
+def or_after(pred: Callable[[Snapshot], bool], seconds: float) -> Callable[[Snapshot], bool]:
+    """Expectation for an action that may rightly do nothing (an upgrade at its cap): met when
+    ``pred`` holds or ``seconds`` have passed, so "nothing happened" is an answer the action's
+    ``then`` reads from the Snapshot instead of a trouble for the recovery ladder. Give the action a
+    ``within`` longer than ``seconds``."""
+    t0 = time.monotonic()
+
+    def check(snap: Snapshot) -> bool:
+        return time.monotonic() - t0 >= seconds or bool(pred(snap))
+
+    return check
 
 
 @dataclass

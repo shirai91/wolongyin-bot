@@ -5,6 +5,7 @@
     python -m ngoalong.tools.run_feature thap_thi_luyen --set mode=sweep --set start_floor=21 --set sweep_runs=5
     python -m ngoalong.tools.run_feature quay_ruong --stop-after 12      # press Stop after 12 s, report the latency
     python -m ngoalong.tools.run_feature thap_thi_luyen --debug          # annotated PNG per tick in the run folder
+    python -m ngoalong.tools.run_feature cong_trinh --gold yes           # answer "skip the wait with Vàng" yes for this run
 
 Params start from the ones saved in ``settings.toml`` (the "Tính năng" form) and ``--set`` overrides
 them for this run only; nothing is saved. The run log lines are printed as they come; the run
@@ -31,6 +32,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--window", type=int, default=0, help="index of the game window when several are open")
     ap.add_argument("--debug", action="store_true", help="debug mode: an annotated PNG for every tick")
     ap.add_argument("--stop-after", type=float, default=0.0, help="press Stop after this many seconds")
+    ap.add_argument("--gold", choices=["yes", "no"], default=None,
+                    help="Cài đặt 'Dùng vàng bỏ qua thời gian chờ' for this run only (default: as saved)")
     args = ap.parse_args(argv)
     sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
 
@@ -39,6 +42,8 @@ def main(argv: list[str] | None = None) -> int:
     app = QCoreApplication.instance() or QCoreApplication(sys.argv[:1])  # noqa: F841 - Qt objects need it
     features = registry.discover()
     settings, _ = load_or_import(args.settings, None, features)
+    if args.gold is not None:
+        settings.game.spend_gold_skip_wait = args.gold == "yes"
     services = AppServices(settings, settings_path=None)  # never saves
     cls = registry.get_feature(args.feature)
     raw = settings.feature_params(cls).model_dump()
