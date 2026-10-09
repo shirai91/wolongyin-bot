@@ -7,6 +7,14 @@
 #          medium = 802,119 close; large = 855,85 close; small = title bar + close; panel = no title plaque
 #
 # Every frame: canvas found HIGH at (40, 110) x1.00.
+#
+# Machine-readable for `tools/perceive.py --bench` (docs/08 R1): base / dialogs / overlay are the
+# expected screen stack in the names of profiles/ngoalongviet/screens/*.yaml. A base or dialog that
+# no screen file declares (tavern, hoat_dong_daily, ...) is expected as "unknown" (an unknown base,
+# or an unknown dialog with its ✕ listed); region / resources / event_dungeon are expected as "map".
+# Overlays no screen declares (banner, loading, chat_expanded) are not compared. A `state` key is
+# compared when a screen on the frame has a reader of that name; ranges like "20→11" are skipped.
+# out_of_scope: true frames are skipped.
 
 001-start.png:                    {base: field, dialogs: [field.army_dialog], frame: small, state: {dungeon: "Khăn Vàng", close: [638, 184]}}
 002-field-after-close-army.png:   {base: field, overlay: [toast], state: {dungeon: "Khăn Vàng", toast_close: [985, 314]}}
@@ -17,12 +25,12 @@
 007-tavern-after-esc.png:         {base: tavern, note: "ESC does nothing in full-screen locations"}
 008-city-after-tavern.png:        {base: city}
 009-tham-bao.png:                 {base: city, overlay: [loading], state: {loading_pct: 0}}
-010-tham-bao-loaded.png:          {base: tham_bao, frame: panel, state: {close: [911, 84], explores_left: 3}}
+010-tham-bao-loaded.png:          {base: tham_bao, expect: "unknown > unknown", frame: panel, state: {close: [911, 84], explores_left: 3}}
 011-city-after-tham-bao.png:      {base: city}
 012-hanh-chien.png:               {base: city_siege_lobby, state: {exit: [947, 573], exit_label: "Về thành chính"}}
 013-city-after-hanh-chien.png:    {base: city}
 014-hon-thien.png:                {base: city, overlay: [loading], state: {loading_pct: 21}}
-015-hon-thien-loaded.png:         {base: hon_thien.faction_pick, state: {exit: [872, 570], close: [967, 27]}}
+015-hon-thien-loaded.png:         {base: hon_thien.faction_pick, expect: "unknown > unknown", state: {exit: [872, 570], close: [967, 27]}}
 016-city-after-hon-thien.png:     {base: city, overlay: [banner.trong_thanh]}
 017-loi-dai.png:                  {base: loi_dai, state: {exit: [912, 550], exit_label: "退出"}}
 018-city-after-loi-dai.png:       {base: city}
@@ -82,16 +90,20 @@
 
 # --- Session 2 (2026-10-08): action screens of the 6 supported features -------------------------
 # Ranges: one label per group of consecutive frames of the same state.
-072-field-for-battle.png:          {base: field, state: {dungeon: "Khăn Vàng", beam: true}}
-073-field-army-yellow-click.png:   {base: field, dialogs: [field.army_dialog], state: {army: "Đoàn Viên Vui Vẻ 1", troops: "30/30"}}
-074-field-army-red-click.png:      {base: field, dialogs: [field.army_dialog], note: "a 2nd army click replaces the dialog content in place"}
-075..083:                          {base: field, dialogs: [field.army_dialog], note: "fight resolved without a battle screen (Phát chiến đấu off); dialog stays, troops 30→29"}
+072-field-for-battle.png:          {base: field, state: {dungeon: "Khăn Vàng", beam: false}, note: "no light-blue beam on this capture (pixel check, R1)"}
+073-field-army-yellow-click.png:   {base: field, dialogs: [field.army_dialog], state: {army: "Mừng Trung Thu 5", troops: null}, note: "this army shows no troop count"}
+074-field-army-red-click.png:      {base: field, dialogs: [field.army_dialog], state: {army: "Đoàn Viên Vui Vẻ 1", troops: "30/30"}, note: "a 2nd army click replaces the dialog content in place"}
+075..083:                          {base: field, note: "fight resolved without a battle screen (Phát chiến đấu off): the dialog closes and a green floating line shows the result (075); troops 30→29 on reopening"}
 084-army-dialog-again.png:         {base: field, dialogs: [field.army_dialog], state: {play_battle: false}}
 085-army-dialog-play-ticked.png:   {base: field, dialogs: [field.army_dialog], state: {play_battle: true}, note: "ticked label turns white"}
 086..087:                          {base: battle, state: {round: 1, result: none}}
 088..094:                          {base: battle, dialogs: [battle.result], state: {result: win, buttons: [Xem lại, Thoát]}, note: "战胜 box, Thoát at 540,408"}
 095-field-after-battle-exit.png:   {base: field}
-096..097:                          {base: field, dialogs: [field.army_dialog], note: "Phát chiến đấu restored to off"}
+096-army-dialog-restore.png:       {base: field, dialogs: [field.army_dialog], state: {play_battle: true}}
+097-army-dialog-play-unticked.png: {base: field, dialogs: [field.army_dialog], state: {play_battle: false, troops: "29/30"}, note: "Phát chiến đấu restored to off"}
+098-field-closed.png:              {base: field}
+099-city-for-tower.png:            {base: city}
+100-tower-building.png:            {base: city, dialogs: [city.building_panel], state: {building: "Tháp thí luyện", cost: 29766}}
 101-tower-dialog-2.png:            {base: city, dialogs: [tower.dialog], state: {tab: "Tháp", page: 15, floors: [141]}}
 102-tower-floor-selected.png:      {base: city, dialogs: [tower.dialog], state: {selected: 141}}
 103-tower-confirm.png:             {base: city, dialogs: [tower.dialog, confirm.ok_cancel], state: {meaning: "spend 3 Thí luyện lệnh"}}
@@ -100,13 +112,15 @@
 114..118:                          {base: tower.floor, dialogs: [tower.result], state: {result: lose, buttons: [Tiếp tục, Thoát]}}
 119..120:                          {base: tower.floor, dialogs: [tower.result, confirm.ok_cancel], state: {meaning: "leave unfinished tower?"}}
 121-after-tower-exit-confirm.png:  {base: city, dialogs: [tower.dialog], state: {tokens: 13417}}
+122-city-after-tower-2.png:        {base: city}
+123-world-map-2.png:               {base: world_map}
 124-vo-khoi-thap.png:              {base: vkt.lobby, state: {boss: "Hoả", level: 100, cost_quan_lenh: 23, teams: 0}}
 125..133:                          {base: vkt.lobby, dialogs: [vkt.team_list], state: {teams: 0, buttons: [Lập đội]}}
 134-vkt-create-team.png:           {base: vkt.lobby, dialogs: [vkt.team_room], state: {members: "1/8", buttons: [Mời, Giải tán, Khai trừ, Khai chiến]}}
 135..152:                          {base: vkt.arena, state: {boss_hp: "50000000/50000000", countdown: "02:59→00:53", circles: 3, joined: false}, note: "clicking the boss does nothing"}
 153-vkt-circle-click-t0.png:       {base: vkt.arena, state: {joined: true}, note: "click on the glowing magic circle = join the fight"}
 154-vkt-circle-t1.png:             {base: vkt.arena, state: {joined: true, fighting: true}}
-155..158:                          {base: vkt.arena, dialogs: [vkt.victory], state: {boss_hp: 0, reward_silver: 90000000}, note: "胜利 box, 确定 at 494,424"}
+155..158:                          {base: vkt.arena, dialogs: [vkt.result], state: {result: win, boss_hp: 0, reward_silver: 90000000}, note: "胜利 box, 确定 at 494,424"}
 159-vkt-after-victory-ok.png:      {base: world_map, state: {quan_lenh: 594}}
 160-tham-bao-2.png:                {base: tham_bao, out_of_scope: true}
 161..189:                          {out_of_scope: true, note: "Thám Bảo run; same battle screen + 战胜 box as the dungeon"}
@@ -114,10 +128,13 @@
 191-research-upgrade-1.png:        {base: city, dialogs: [research], overlay: [floating_error], state: {error: "Cấp Phủ sách lược không đủ"}}
 192-research-select-1.png:         {base: city, dialogs: [research], state: {selected: "Binh Đao", level: 35, highlighted_slot: 1}}
 193..194:                          {base: city, dialogs: [research], overlay: [floating_error], note: "all research capped by Phủ Sách Lược level"}
+195-city-after-research.png:       {base: city}
 196..202:                          {base: city, dialogs: [city.building_panel], state: {building: "Tháp thí luyện", cost: "30091→31727", time: "5:52:40→6:06:00"}, note: "each Tăng cấp = one level, instant"}
+203-city-panel-closed.png:         {base: city}
 204-harbour-2.png:                 {base: harbour}
 205-harbour-building-panel.png:    {base: harbour, dialogs: [city.building_panel], state: {building: "Cảng Hàng Hóa", cost: 7033}}
-206-harbour-upgrade-1.png:         {base: harbour, dialogs: [city.building_panel]}
+206-harbour-upgrade-1.png:         {base: harbour, dialogs: [city.building_panel], state: {cost: 7218}}
+207-harbour-panel-closed.png:      {base: harbour}
 208-tinh-tu-2.png:                 {base: harbour, dialogs: [chest.wheel], state: {chests: 21, coins: 5042, auto_open: false}}
 209..214:                          {base: harbour, dialogs: [chest.wheel], state: {chests: 20, spinning: true}, note: "one 开始抽奖 = one chest"}
 215-tinh-tu-mua.png:               {base: harbour, dialogs: [chest.wheel, chest.buy], state: {qty: 1, cost_vang: 240}}
@@ -126,9 +143,14 @@
 218..226:                          {base: harbour, dialogs: [chest.wheel], state: {auto_open: true, button: "Ngưng mở", chests: "20→11"}, note: "~1 chest per 4 s"}
 227-tinh-tu-auto-stopped.png:      {base: harbour, dialogs: [chest.wheel], state: {auto_open: false, chests: 7}}
 228-tinh-tu-fast-5.png:            {base: harbour, dialogs: [chest.wheel], state: {chests: 3}, note: "5 fast on/off cycles in 5.9 s opened 4 chests (~1.5 s each)"}
+229-harbour-after-tinh-tu.png:     {base: harbour, overlay: [banner.location]}
+230-city-for-tower-3.png:          {base: city}
+231-tower-building-3.png:          {base: city, dialogs: [city.building_panel], state: {cost: 31727}}
 232-tower-dialog-3.png:            {base: city, dialogs: [tower.dialog], state: {page: 15, floors: [141]}}
 233-tower-page-back.png:           {base: city, dialogs: [tower.dialog], state: {page: 14, floors: [131-140]}}
 234-tower-page-typed-3.png:        {base: city, dialogs: [tower.dialog], state: {page: 3, floors: [21-30], selected: 21}, note: "page box: double-click, Backspace x3, type, Enter"}
+235-tower21-selected.png:          {base: city, dialogs: [tower.dialog], state: {page: 3, selected: 21}}
+236-tower21-confirm.png:           {base: city, dialogs: [tower.dialog, confirm.ok_cancel], state: {meaning: "spend 3 Thí luyện lệnh"}}
 237..246:                          {base: tower.floor, state: {floor: 21, auto_climb: true, started: false}, note: "own unit at 378,440 here (268,480 on floor 141)"}
 247..253:                          {base: tower.floor, state: {floor: 21, started: true}}
 254..256:                          {base: tower.floor, dialogs: [tower.result], state: {result: win, buttons: [Thoát]}}
@@ -136,16 +158,109 @@
 258-tower-tu-vuot-thap-btn.png:    {base: city, dialogs: [tower.dialog, tower.sweep], state: {runs: 0, floor: 21, cost_vang: 0}}
 259-tower-sweep-typed-2.png:       {base: city, dialogs: [tower.dialog, tower.sweep], state: {runs: 2}}
 260-tower-sweep-ok.png:            {base: city, dialogs: [tower.dialog, tower.sweep, confirm.ok_cancel]}
+261-tower-sweep-confirmed.png:     {base: city, dialogs: [tower.dialog], note: "green floating line with the sweep rewards"}
 262-tower-sweep-after.png:         {base: city, dialogs: [tower.dialog], state: {tokens: 13908}, note: "sweep is instant: 2 runs x 3 tokens"}
 
+263-city-end-session-2.png:        {base: city}
+
 # --- Session 3 (2026-10-08): silver chest purchase (Võ Khôi Tháp loop) ---------------------------
+264-shop-start.png:                {base: city}
 265-shop-trang-bi.png:             {base: city, dialogs: [inventory], frame: medium, state: {tab: "Kho", slots: "60/500"}}
 266-shop-cua-hieu.png:             {base: city, dialogs: [inventory], state: {tab: "Cửa hiệu", scroll: bottom, selected: "1 tỷ bạc", price: 1000000000}}
 267..271:                          {base: city, dialogs: [inventory], state: {tab: "Cửa hiệu", scroll: bottom}, note: "chests at y=410, x=335/390/445/500/553: 5e6, 1e7, 5e7, 1e8, 1e9 (icons identical)"}
 272-shop-select-100m.png:          {base: city, dialogs: [inventory], state: {selected: "1 trăm triệu Bạc", price: 100000000}}
 273-shop-mua-100m.png:             {base: city, dialogs: [inventory], overlay: [floating_success], state: {silver: 858983797}, note: "no confirm; green line 'Mua[1 trăm triệu Bạc] thành công'"}
 274..280:                          {base: city, dialogs: [inventory], state: {tab: "Cửa hiệu", scroll: top}}
+281-shop-closed.png:               {base: city}
 282-shop-reopen.png:               {base: city, dialogs: [inventory], state: {tab: "Kho", slots: "61/500"}, note: "the bought chest is an item in Kho"}
 283-shop-reopen-cua-hieu.png:      {base: city, dialogs: [inventory], state: {tab: "Cửa hiệu", scroll: top}, note: "scroll position is kept between opens"}
 284-shop-kho.png:                  {base: city, dialogs: [inventory], state: {tab: "Kho"}}
 285..292:                          {base: city, dialogs: [inventory], state: {tab: "Cửa hiệu", scroll: "top → bottom"}, note: "▼ at 651,425; bottom after 6 clicks, partial rows"}
+293-city-after-shop.png:           {base: city}
+
+# --- Session 4 (2026-10-09): R1 live check with tools/perceive.py + explore (docs/08 R1) --------
+# Another day on the same account: silver 1.37e9, Quân lệnh 104, the city shows harvest icons, the
+# harbour map is in summer colours, the campaign is on "Đổng Trác" (group armies + a beam).
+294-live-r1-start.png:             {base: city, dialogs: [events], overlay: [toast], state: {close: [854, 85]}}
+295-live-toast-closed.png:         {base: city, dialogs: [events]}
+296-live-events-closed.png:        {base: city, state: {quan_lenh: 104}}
+297-live-research.png:             {base: city, note: "the first bar click did not open the dialog"}
+298-live-research.png:             {base: city, dialogs: [research], state: {tab: "Khoa kỹ", slot: 0, level: 35}}
+299-live-research-slot2.png:       {base: city, dialogs: [research], state: {tab: "Khoa kỹ", slot: 2, level: 35}}
+300-live-research-upgrade.png:     {base: city, dialogs: [research], overlay: [floating_error], state: {slot: 2, level: 35}}
+301-live-research-tab2.png:        {base: city, dialogs: [research], state: {tab: "Chiêu binh"}}
+302-live-research-tab1.png:        {base: city, dialogs: [research], state: {tab: "Khoa kỹ", slot: 2}}
+303-live-research-closed.png:      {base: city}
+304-live-building.png:             {base: city, dialogs: [city.building_panel], state: {building: "Tháp thí luyện", cost: 33047}}
+305-live-building-upgrade.png:     {base: city, dialogs: [city.building_panel], state: {cost: 33047, silver: 1372699520}, note: "Tăng cấp did nothing here (no cost, no level change)"}
+306-live-tower-dialog.png:         {base: city, dialogs: [tower.dialog], state: {tab: "Tháp", page: 3, tokens: 21408, floors: [21-30], selected: 21}}
+307-live-tower-select22.png:       {base: city, dialogs: [tower.dialog], state: {page: 3, selected: 22}}
+308-live-tower-sweep.png:          {base: city, dialogs: [tower.dialog, tower.sweep], state: {runs: 0, selected: 22}}
+309-live-tower-sweep-cancel.png:   {base: city, dialogs: [tower.dialog], state: {selected: 22}}
+310-live-tower-page-next.png:      {base: city, dialogs: [tower.dialog], state: {page: 4, floors: [31-40], selected: 31}, note: "paging selects the first row"}
+311-live-tower-page-prev.png:      {base: city, dialogs: [tower.dialog], state: {page: 3, selected: 21}}
+312-live-tower-climb.png:          {base: city, dialogs: [tower.dialog, confirm.ok_cancel], state: {meaning: "spend 3 Thí luyện lệnh"}}
+313-live-tower-floor.png:          {base: tower.floor, state: {floor: 21, auto_climb: true, started: false}}
+314-live-tower-untick.png:         {base: tower.floor, state: {auto_climb: false, started: false}}
+315-live-tower-retick.png:         {base: tower.floor, state: {auto_climb: true, started: false}}
+316..322:                          {base: tower.floor, state: {floor: 21, started: false}, note: "a click on the 2nd guard (418,390) does nothing; the first guard is the one under the light-blue crystal"}
+323-live-tower-go2.png:            {base: tower.floor, state: {started: true}}
+324..328:                          {base: tower.floor, dialogs: [tower.result], state: {result: win}}
+329-live-tower-after-win.png:      {base: city, dialogs: [tower.dialog], state: {tokens: 21405, page: 3}}
+330-live-tower-closed.png:         {base: city}
+331-live-harbour.png:              {base: harbour}
+332-live-harbour-building.png:     {base: harbour, dialogs: [city.building_panel], state: {building: "Cảng Hàng Hóa", cost: 7218}}
+333-live-harbour-upgrade.png:      {base: harbour, dialogs: [city.building_panel], state: {cost: 7404, silver: 1372692302}, note: "silver -7218"}
+334-live-harbour-panel-closed.png: {base: harbour}
+335-live-tinh-tu.png:              {base: harbour, dialogs: [chest.wheel], state: {chests: 0, coins: 5062, auto_open: false}}
+336..338:                          {base: harbour, dialogs: [chest.wheel, chest.buy], state: {chests: 0}}
+339-live-chest-bought.png:         {base: harbour, dialogs: [chest.wheel], state: {chests: 3}}
+340-live-chest-spin.png:           {base: harbour, dialogs: [chest.wheel], state: {chests: 2}}
+341-live-chest-auto.png:           {base: harbour, dialogs: [chest.wheel, chest.auto_open_confirm]}
+342-live-chest-auto-ok.png:        {base: harbour, dialogs: [chest.wheel], state: {chests: 1, auto_open: true}}
+343-live-chest-auto-run.png:       {base: harbour, dialogs: [chest.wheel], state: {chests: 0, auto_open: false}, note: "auto-open stops by itself at 0; a chest gave Quân lệnh*20"}
+344-live-tinh-tu-closed.png:       {base: harbour, state: {quan_lenh: 124}}
+345-live-city-from-harbour.png:    {base: city}
+346-live-trang-bi.png:             {base: city, dialogs: [inventory], state: {tab: "Kho"}}
+347..354:                          {base: city, dialogs: [inventory], state: {tab: "Cửa hiệu", price: 100000000}, note: "the shop was still scrolled to the bottom"}
+355-live-shop-5m.png:              {base: city, dialogs: [inventory], state: {tab: "Cửa hiệu", price: 5000000}}
+356-live-shop-buy-5m.png:          {base: city, dialogs: [inventory], overlay: [floating_success], state: {silver: 1367692302}, note: "silver -5,000,000"}
+357-live-shop-after-buy.png:       {base: city, dialogs: [inventory], state: {price: 5000000}}
+358-live-shop-closed.png:          {base: city}
+359-live-field.png:                {base: field, state: {beam: true}, note: "beam 15x47 at 826,94 over the army at 835,185"}
+360-live-army-dialog.png:          {base: field, dialogs: [field.army_dialog], state: {group: true, play_battle: false, troops: "80/80"}, note: "group army (Đoàn-Tinh): no Phát chiến đấu box"}
+361-live-army-play-tick.png:       {base: field, dialogs: [field.army_dialog], state: {group: true, play_battle: false}}
+362..366:                          {base: field, dialogs: [field.group_list]}
+367-live-group-create.png:         {base: field, dialogs: [field.group_room]}
+368-live-group-start.png:          {base: battle, note: "battle loading screen (VS bar on top)"}
+369..370:                          {base: battle}
+371..372:                          {base: battle, dialogs: [battle.group_result], state: {result: win}, note: "攻方胜利, Xem lại / Thoát bottom right"}
+373-live-group-exit.png:           {base: field}
+374-live-army2.png:                {base: field, dialogs: [field.army_dialog], state: {group: false, play_battle: false, troops: null}}
+375-live-army2-tick.png:           {base: field, dialogs: [field.army_dialog], state: {play_battle: true}}
+376-live-battle2.png:              {base: battle}
+377..379:                          {base: battle, dialogs: [battle.result], state: {result: win}}
+380-live-battle2-exit.png:         {base: field, state: {quan_lenh: 123}}
+381-live-dungeon-list.png:         {base: field, dialogs: [field.dungeon_list]}
+382-live-dungeon-list-closed.png:  {base: field}
+383-live-army3.png:                {base: field, dialogs: [field.army_dialog], state: {play_battle: true}, note: "the box keeps its last state"}
+384-live-army3-untick.png:         {base: field, dialogs: [field.army_dialog], state: {play_battle: false}}
+385-live-army3-attack.png:         {base: field, state: {quan_lenh: 122}, note: "play off: the dialog closes at once; each attack costs 1 Quân lệnh"}
+386-live-world-map.png:            {base: world_map}
+387-live-world-tinh-tu.png:        {base: world_map, dialogs: [chest.wheel], state: {chests: 0}}
+388-live-world-tinh-tu-closed.png:  {base: world_map}
+389-live-vkt-lobby.png:            {base: world_map, note: "a click on the label did nothing; the tower building opens the lobby"}
+390-live-vkt-lobby.png:            {base: vkt.lobby, note: "boss Mộc Lv.140, cost Quân Lệnh 1"}
+391-live-vkt-teams.png:            {base: vkt.lobby, dialogs: [vkt.team_list]}
+392-live-vkt-room.png:             {base: vkt.lobby, dialogs: [vkt.team_room]}
+393..397:                          {base: vkt.arena, state: {counting: true, circles: 3, boss_hp: 1}}
+398..409:                          {base: vkt.arena, state: {counting: false, circles: 3, boss_hp: 1}, note: "after clicks on circles 2 and 3 the countdown and the player vanished; no fight"}
+410-live-vkt-exit.png:             {base: vkt.arena, dialogs: [confirm.ok_cancel], state: {meaning: "Bạn muốn thoát khỏi Võ Khôi Tháp?"}}
+411-live-vkt-exit-ok.png:          {base: world_map, state: {quan_lenh: 121}}
+412..413:                          {base: vkt.arena, state: {counting: false}, note: "the world-map tower led straight back to the arena"}
+414..423:                          {base: vkt.arena, dialogs: [vkt.result], state: {result: lose, boss_hp: 0}, note: "失败 box after Thoát; then the game froze (no pixel changed, clicks ignored)"}
+
+# --- Failure frames of the 2026-10-08 runs (docs/08 "Why the bot gets lost"), debug renders cut to
+# the canvas (they carry the old overlay: cyan frame, search boxes, status line removed).
+424-fail-run-215050-city.png:      {base: city, state: {silver: 712694233}, note: "old engine: 'unknown (closest tham_bao)'"}
+425-fail-run-222038-field.png:     {base: field, state: {beam: true}, note: "old engine: stale 'field.army_dialog'; last dungeon (Tư Mã): « but no »"}
