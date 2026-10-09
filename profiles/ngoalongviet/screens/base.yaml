@@ -47,12 +47,21 @@ field:                      # Phó Bản dungeon map: name bar with "«" / "»" 
 harbour:                    # Hải Cảng: the city's bottom bar, map label "Hải Chiến" (or the sea on the left)
   layer: base
   require: [hud.home, [bar.dinh_phu, bar.quoc_chinh], [map.hai_chien, harbour.water]]
+  read:
+    labels: {tags: map.lv}                      # building labels "lvN": position + level (structures)
+    levels: {from: labels, pick: numbers}       # their levels, top to bottom (None: not readable on this frame)
+    icons_shown: {present: hud.icons_shown}     # the top icon rows cover labels near the top
+    notice: {present: hud.notice_open}          # the left notice list is open
 
 city:                       # Thành chính: bottom bar with Dinh Phủ / Quốc Chính
   layer: base
   require: [hud.home, [bar.dinh_phu, bar.quoc_chinh]]
   read:
     harbour: {point: map.vao_hai_cang}
+    labels: {tags: map.lv}
+    levels: {from: labels, pick: numbers}
+    icons_shown: {present: hud.icons_shown}
+    notice: {present: hud.notice_open}
 
 world_map:                  # Thế Giới: no Dinh Phủ in the bar; "Võ Khôi Tháp" label (or the sea on the right)
   layer: base
@@ -71,3 +80,4 @@ hud:
   read:
     silver: {digits: hud.silver}                # rejected while it flashes red during spending
     quan_lenh: {digits: hud.quan_lenh}          # (have, cap); covered by the Tinh Tú dialog
+    level: {digits: hud.level}                  # Chúa công level: the cap of every building

@@ -8,7 +8,7 @@
 # --- shared rules ---------------------------------------------------------------------------------
 tab.selected:   {kind: mean, expr: r-b, skip_light: 150, min: 5}       # gold +27..+33, teal -14..-20 (9 dialogs)
 checkbox.tick:  {kind: count, colour: {r: [151, 255], g: [111, 255], b: [0, 99], r-b: [81, 255]}, min: 8}  # yellow tick: 16-18 px, empty box 0-1
-slot.selected:  {kind: count, colour: {r: [171, 255], g: [151, 255], b: [0, 89]}, ring: 6, min: 60}  # yellow frame: 255 px, others 0
+slot.selected:  {kind: count, colour: {r: [171, 255], g: [151, 255], b: [0, 89]}, ring: 6, min: 200}  # yellow frame: 240-255 px, others 0-18; a success line crossing a slot scores more than 60 (R3)
 row.filled:     {kind: mean, expr: g, skip_light: 150, min: 32}        # tower floor rows: 38-39 shown, 25 empty
 row.selected:   {kind: mean, expr: g, skip_light: 150, min: 55}        # 70-73 selected (yellow frame) or hovered
 

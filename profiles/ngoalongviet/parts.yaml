@@ -83,4 +83,11 @@ vkt.victory_ok:       {template: part.vkt.victory_ok, search: [440, 400, 110, 50
 icon.tinh_tu:         {template: part.icon.tinh_tu, search: [340, 80, 480, 60]}   # top icon rows: right-aligned, moves as icons are added
 btn.panel_tower:      {template: part.btn.panel_tower, search: [470, 300, 110, 45], threshold: 0.80}  # "Tháp Thí Luyện" in the tower building panel
 hud.icons_hidden:     {template: part.hud.icons_hidden, search: [800, 55, 60, 45]}  # "<<": click it to show the top icon rows again
+hud.icons_shown:      {template: part.hud.icons_shown, search: [800, 55, 60, 45]}   # ">>": click it to hide the top icon rows
 box.no_remind:        {template: popup.gold_skip.no_remind, search: [340, 260, 320, 110], threshold: 0.85}  # "☐ Lần sau không nhắc nhở" of a spend-Vàng box
+
+# --- structures (R3) ----------------------------------------------------------------------------
+# A building label "lvN": the white "lv" (dark outline) matched on its white ink, so map art, season
+# and animations under it do not matter; the level is read with the digit glyphs right after it.
+map.lv:               {template: part.map.lv, search: [0, 20, 1000, 505], ink: 170, threshold: 0.91, multi: true, max_hits: 40}  # real labels 0.93-1.00, anything else <= 0.89
+hud.notice_open:      {template: part.hud.notice_open, search: [0, 118, 28, 32]}   # "<<" of the left notice list: click it to collapse the list

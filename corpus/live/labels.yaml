@@ -293,3 +293,54 @@
 449-r2-floor61.png:                {base: tower.floor, state: {floor: 61, auto_climb: true, started: false}, note: "ice floor: blue torches / orbs read as markers (18x63 at 813,188; 9x37 at 672,96); the crystal is 386,383 12x38"}
 450-r2-city-start2.png:            {base: city, note: "start screen (Tinh Tú buy 150, Stop after 30 s)"}
 451-r2-after-stop.png:             {base: city, dialogs: [chest.wheel], state: {chests: 123, auto_open: false}, note: "after Stop mid fast-trick"}
+
+# --- Session 6 (2026-10-09): R3 structures + Khoa kỹ (docs/08 R3). Building labels "lvN" read with
+# map.lv (white-ink match) + digits; levels list top to bottom. Gold box "Bỏ qua thời gian chờ tốn N
+# Vàng" over the building panel when no builder is free.
+452-r3-start.png:                  {base: city, dialogs: [chest.wheel], state: {chests: 0}}
+453-r3-city.png:                   {base: city, state: {icons_shown: true, notice: true, level: 140}, note: "the lv140 under the top icon rows reads None"}
+454-r3-panel-lv60.png:             {base: city, dialogs: [city.building_panel], state: {cost: 2823}, note: "Chợ lv60, Thời gian 51:48"}
+455-r3-panel-press1.png:           {base: city, dialogs: [city.building_panel], state: {cost: 2897}, note: "one press = lv61 at once, no gold box; Kiến Trúc Nhàn *1 -> *0"}
+456-r3-panel-press2.png:           {base: city, dialogs: [city.building_panel], state: {cost: 2971}, note: "lv62, still no gold box"}
+457-r3-panel-closed.png:           {base: city}
+458-r3-research-open.png:          {base: city, dialogs: [research], state: {tab: "Khoa kỹ", slot: 0, level: 35}}
+459-r3-research-down1.png:         {base: city, dialogs: [research], state: {slot: 0}, note: "▼ does nothing: 18 slots, no scrolling"}
+460-r3-research-locked.png:        {base: city, dialogs: [research], state: {slot: 8, level: 28}, note: "the dotted tiles are formations (Ngư Lân Trận), not locked slots"}
+461-r3-research-locked-press.png:  {base: city, dialogs: [research], overlay: [floating_error], state: {slot: 8, level: 28}, note: "Cấp Phủ sách lược không đủ"}
+462-r3-research-slot0.png:         {base: city, dialogs: [research], state: {slot: 0, level: 35}}
+463-r3-research-slot0-press.png:   {base: city, dialogs: [research], overlay: [floating_error], state: {slot: 0, level: 35}}
+464-r3-research-closed.png:        {base: city}
+465-r3-city-icons-hidden.png:      {base: city, state: {icons_shown: false, notice: true}, note: "source of part.map.lv; the tower's lv140 reads 145 here (a fire sprite over the 0): a level counts after 2 equal reads"}
+466-r3-panel-lv1.png:              {base: city, dialogs: [city.building_panel], state: {cost: 305}, note: "Thương xã lv1"}
+467-r3-panel-closed2.png:          {base: city}
+468-r3-notice-collapsed.png:       {base: city, state: {notice: false, icons_shown: false, level: 140, levels: [80, 140, 140, 110, 140, 140, 1, 111, 1, 140, 140, 1, 1, 110, 140, 62, 140, 60, 1]}}
+469-r3-after-run1.png:             {base: city, dialogs: [city.building_panel], state: {cost: 33}, note: "Dân cư lv4"}
+470-r3-gold-prompt.png:            {base: city, dialogs: [city.building_panel, confirm.gold], note: "Bỏ qua thời gian chờ tốn 3 Vàng: the box covers Tăng cấp, the panel is known by its ✕"}
+471-r3-gold-cancel.png:            {base: city, dialogs: [city.building_panel], state: {cost: 33}}
+472-r3-world-start.png:            {base: world_map, state: {level: 140}}
+473-r3-click-lv82.png:             {base: city, dialogs: [city.building_panel], state: {cost: 6173}, note: "Tài Vụ lv82; the label shifted left as it grew (lv1 at x 550 -> lv82 at 547)"}
+474-r3-lv110-panel.png:            {base: city, dialogs: [city.building_panel], state: {cost: 9059}, note: "Thương xã lv110"}
+475-r3-lv110-press.png:            {base: city, dialogs: [city.building_panel], state: {cost: 9059}, note: "yellow 'Kiến trúc đã đạt cấp cao nhất': the press changes nothing"}
+476-r3-research-after.png:         {base: city, dialogs: [research], state: {slot: 17, level: 28}}
+477-r3-harbour-bare.png:           {base: harbour, state: {levels: [140, 140, 140, 140, 140], icons_shown: false}, note: "5 harbour buildings, all lv140 after the R3 runs"}
+478-r3-world-2.png:                {base: world_map}
+479-r3-close.png:                  {base: city}
+480-r3-phoban.png:                 {base: field, state: {beam: true}}
+481-r3-qdoan.png:                  {base: harbour, dialogs: [unknown], note: "Quân Đoàn: an unrelated dialog as a start screen"}
+482-r3-chieubinh.png:              {base: harbour, dialogs: [research], state: {tab: "Chiêu binh"}}
+483-soak-world.png:                {base: world_map, note: "soak start screens (run-20261009-1045..1051): world map / Quân Đoàn over the harbour / campaign field"}
+484-soak-qdoan.png:                {base: harbour, dialogs: [unknown]}
+485-soak-field.png:                {base: field}
+486-soak-world.png:                {base: world_map}
+487-soak-field.png:                {base: field}
+488-soak-world.png:                {base: world_map}
+489-soak-qdoan.png:                {base: harbour, dialogs: [unknown]}
+490-soak-field.png:                {base: field}
+491-soak-world.png:                {base: world_map}
+492-soak-field.png:                {base: field}
+493-soak-world.png:                {base: world_map}
+494-soak-qdoan.png:                {base: harbour, dialogs: [unknown]}
+495-soak-field.png:                {base: field}
+496-soak-world.png:                {base: world_map}
+497-soak-field.png:                {base: field}
+498..510:                          {base: city, state: {level: 140}, note: "the client froze after run-20261009-105049 ended (10:51): identical frames for minutes, clicks on Khoa kỹ / the map / Thế Giới ignored; window not hung for Windows. Not reloaded (left to the user)"}

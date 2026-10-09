@@ -2,7 +2,7 @@
 
 city.building_panel:        # click a building: same panel in the city and the harbour
   layer: dialog
-  require: [btn.building_upgrade]
+  require: [[btn.building_upgrade, {part: close, near: [687, 202], tol: 6}]]   # its ✕ alone: a spend-Vàng box covers Tăng cấp
   close: [687, 202]
   read:
     cost: {digits: building.cost}               # "Tốn bạc" of the next level

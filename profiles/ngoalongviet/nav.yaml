@@ -16,9 +16,11 @@ edges:
     chest.wheel: {click: icon.tinh_tu, reveal: hud.icons_hidden}
     city.building_panel: {at: [460, 320], label: "toà Tháp thí luyện"}   # the tall pagoda (lv140) in the city centre
     harbour: {click: map.vao_hai_cang}
+    research: {click: bar.khoa_ky}               # bottom bar "Khoa kỹ" -> Phủ Sách Lược
   harbour:
     city: {click: hud.home}
     chest.wheel: {click: icon.tinh_tu, reveal: hud.icons_hidden}
+    research: {click: bar.khoa_ky}
   world_map:
     city: {click: hud.home}
     chest.wheel: {click: icon.tinh_tu, reveal: hud.icons_hidden}

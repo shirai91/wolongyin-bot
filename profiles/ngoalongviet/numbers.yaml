@@ -6,6 +6,7 @@
 # parse: int (all digits) | before_slash ("858983797/24250000…" -> 858983797; the cap may be cut off
 #        by its box) | fraction ("593/100" -> (593, 100)) | last_int (the number after the last word
 #        gap: for centred labels like "Tầng 141" whose number moves with its length)
+# level: ink threshold of this field (default 150: max(B, G, R) above it is ink)
 #
 # Check over the corpus:  .venv\Scripts\python.exe tools/number_report.py
 
@@ -22,3 +23,4 @@ tower.sweep_runs:  {rect: [656, 246, 80, 15], when: tower.sweep, parse: int}    
 army.troops:       {rect: [442, 320, 94, 15], when: btn.attack, parse: fraction}         # Số lượng "30/30" (empty on some armies)
 building.cost:     {rect: [333, 358, 120, 15], when: btn.building_upgrade, parse: last_int}  # "Tốn bạc: 29766"
 chest.qty:         {rect: [390, 278, 88, 16], when: qty.max, parse: int}                 # quantity box of the Tinh Tú buy / auto-open boxes
+hud.level:         {rect: [9, 104, 24, 12], when: hud.silver_label, parse: int, level: 170}  # Chúa công level, badge under the avatar ("140"; at 150 the badge ring joins "40")

@@ -44,6 +44,8 @@ sources:
   world_live: {path: "corpus/live/386-live-world-map.png", origin: [0, 0]}
   tower_building: {path: "corpus/live/304-live-building.png", origin: [0, 0]}
   icons_hidden: {path: "corpus/live/424-fail-run-215050-city.png", origin: [0, 0]}
+  city_r3: {path: "corpus/live/453-r3-city.png", origin: [0, 0]}
+  city_r3_bare: {path: "corpus/live/465-r3-city-icons-hidden.png", origin: [0, 0]}
 
 crops:
   # --- generic -----------------------------------------------------------------------------------
@@ -65,6 +67,9 @@ crops:
   - {name: part.field.prev, source: field_dong_trac, rect: [411, 566, 22, 24]}  # "«" previous dungeon (the last dungeon has no »)
   - {name: part.icon.tinh_tu, source: world_live, rect: [494, 102, 26, 23]}  # Tinh Tú wheel in the top icon rows (moves with the account)
   - {name: part.hud.icons_hidden, source: icons_hidden, rect: [820, 70, 20, 16]}  # "<<": the top icon rows are hidden (">>" when shown)
+  - {name: part.hud.icons_shown, source: city_r3, rect: [820, 70, 20, 16]}   # ">>": the top icon rows are shown (click: hide them)
+  - {name: part.hud.notice_open, source: city_r3, rect: [2, 129, 17, 17]}    # "<<" of the left notice list (Thu, Được tăng cấp khoa kỹ, ...)
+  - {name: part.map.lv, source: city_r3_bare, rect: [412, 100, 9, 11]}       # "lv" of a building label "lvN" (matched on its white ink, parts.yaml)
 
   # --- dialog titles (searched in the title strip of a dialog frame) -----------------------------
   - {name: part.title.tower, source: tower_dialog, rect: [455, 103, 90, 18]}     # Tháp Thí Luyện

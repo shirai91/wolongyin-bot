@@ -14,6 +14,7 @@ A screen's ``read:`` block in ``screens/*.yaml`` maps a key to one reader::
     rows:     {grid: {at: [x, y, w, h], dy: 25, n: 10, filled: row.filled, selected: row.selected,
                       number: [dx, dy, w, h], page: page, per_page: 10}}   # -> tuple[Slot, ...]
     floors:   {from: rows, pick: numbers}         # numbers | selected_number | selected_index | count
+    labels:   {tags: map.lv}                      # every copy of an ``ink`` part + the number right after it
 """
 
 from __future__ import annotations
@@ -26,7 +27,7 @@ import numpy as np
 
 from ngoalong.core.digits import GlyphSet
 from ngoalong.core.geometry import Point, Rect
-from ngoalong.perception.parts import Hit, PartLibrary, PartScan
+from ngoalong.perception.parts import Hit, PartLibrary, PartScan, white_ink
 from ngoalong.perception.probes import ProbeResult, ProbeSpec, evaluate
 from ngoalong.perception.screens import ScreenSpec
 
@@ -35,6 +36,9 @@ from ngoalong.perception.screens import ScreenSpec
 TAB_ROW = (190, 148, 60, 18)
 TAB_DX = 77
 TAB_PROBE = "tab.selected"
+TAG_WIDTH = 36  # px after the tag's left edge where its number may be ("lv140" is 23 px wide)
+TAG_MIN_H = 6  # inked pieces lower than this are map art, not digits (9 px tall)
+TAG_GAP = 4  # a gap this wide ends the number ("110": its digits are up to 3 px apart)
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,6 +47,7 @@ class NumberField:
     rect: Rect
     when: str
     parse: str
+    level: int | None = None  # ink threshold of this field (default: the glyph set's)
 
 
 @dataclass(frozen=True, slots=True)
@@ -103,9 +108,9 @@ class Senses:
             return self.probe(name).on
         raise KeyError(f"{name!r} is neither a part (parts.yaml) nor a probe (probes.yaml)")
 
-    def read_digits(self, rect: Rect, parse: str) -> Any:
+    def read_digits(self, rect: Rect, parse: str, level: int | None = None) -> Any:
         t0 = time.perf_counter()
-        r = self.glyphs.read(self.canvas[rect.y:rect.bottom, rect.x:rect.right])
+        r = self.glyphs.read(self.canvas[rect.y:rect.bottom, rect.x:rect.right], level)
         self.digit_ms += (time.perf_counter() - t0) * 1000
         return r.parse(parse)
 
@@ -113,7 +118,7 @@ class Senses:
         """A numbers.yaml field, or None when its ``when`` part is missing or the read is rejected."""
         if field not in self._digits:
             f = self.numbers[field]
-            self._digits[field] = self.read_digits(f.rect, f.parse) if self.on(f.when) else None
+            self._digits[field] = self.read_digits(f.rect, f.parse, f.level) if self.on(f.when) else None
         return self._digits[field]
 
     @property
@@ -142,6 +147,40 @@ def _grid(spec: dict[str, Any], state: ScreenState) -> tuple[Slot, ...]:
                 number = per_page * (page - 1) + 1 + i
         out.append(Slot(i, r, sel, number))
     return tuple(out)
+
+
+def _tags(part: str, state: ScreenState) -> tuple[Slot, ...]:
+    """Every copy of an ``ink`` part (a white label prefix such as "lv") with the number drawn right
+    after it: its white ink on the text rows, minus the prefix's own pixels (the font kerns, "lv8"
+    touch), split into glyphs; pieces lower than a digit are dropped and a wide gap ends the number.
+    ``number`` is None when a glyph is unknown or the number runs off the read box (an animation over
+    the label, say); the caller reads it again on the next frame."""
+    s = state.senses
+    spec = s.scan.lib.specs[part]
+    prefix = s.scan.lib.ink_template(part)
+    ph, pw = prefix.shape
+    out = []
+    for i, h in enumerate(sorted(s.hits(part), key=lambda h: (h.rect.y, h.rect.x))):
+        x, y = h.rect.x, h.rect.y
+        box = s.canvas[y + 1:y + ph - 1, x:min(x + TAG_WIDTH, s.canvas.shape[1])]  # the text rows only
+        ink = white_ink(box, spec.ink)
+        own = prefix[1:ph - 1][:box.shape[0], :min(pw, box.shape[1])]
+        ink[:own.shape[0], :own.shape[1]][own > 0] = 0
+        out.append(Slot(i, h.rect, False, _first_number(s.glyphs.read(ink), ink.shape[1])))
+    return tuple(out)
+
+
+def _first_number(r: Any, width: int) -> int | None:
+    text, prev = "", None
+    for ch, b in zip(r.text, r.boxes, strict=True):
+        if b[3] < TAG_MIN_H:
+            continue
+        if prev is not None and b[0] - (prev[0] + prev[2]) >= TAG_GAP:
+            break
+        if b[0] + b[2] >= width:  # runs off the box: not the whole number
+            return None
+        text, prev = text + ch, b
+    return int(text) if text.isdigit() else None
 
 
 def _pick(rows: tuple[Slot, ...], pick: str) -> Any:
@@ -188,6 +227,8 @@ def read(spec: dict[str, Any], state: ScreenState) -> Any:
         return next((k for k, name in arg.items() if s.on(name)), None)
     if kind == "grid":
         return _grid(arg, state)
+    if kind == "tags":
+        return _tags(arg, state)
     if kind == "from":
         return _pick(state.get(arg), spec["pick"])
     raise ValueError(f"unknown reader kind {kind!r}")

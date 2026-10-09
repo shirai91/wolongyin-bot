@@ -53,7 +53,7 @@ def main(argv: list[str] | None = None) -> int:
             m = match_template(img[gy:gy + gh, gx:gx + gw], t.image, t.mask)
             if m is None or m[0] < gate.get("threshold", 0.9):
                 continue
-            r = glyphs.read(img[y:y + h, x:x + w])
+            r = glyphs.read(img[y:y + h, x:x + w], f.get("level"))
             v = r.parse(f["parse"])
             if v is None:
                 bad.append(f"{fid}:{r.text!r}{'<' if r.clipped_left else ''}{'>' if r.clipped_right else ''}")

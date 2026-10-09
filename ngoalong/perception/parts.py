@@ -5,6 +5,10 @@ A part is an icon or label template plus a search region. ``PartScan.find(name)`
 is: one ``Hit`` for a plain part, every copy for a ``multi`` part (✕ of stacked dialogs, magic
 circles, shop chests). The scan caches each answer, so screen rules, readers and the debug view can
 ask for the same part many times at the cost of one search.
+
+An ``ink`` part (``ink: 170``) is matched on the white-text mask (every channel above that level) of
+the region and of its template, not on colours: for white map labels with a dark outline over map
+art that changes with the season and the animations (the building labels "lvN").
 """
 
 from __future__ import annotations
@@ -33,6 +37,8 @@ class PartSpec:
     search: Rect
     threshold: float = DEFAULT_THRESHOLD
     multi: bool = False
+    ink: int = 0  # > 0: match the white-text masks (all channels above this level), not colours
+    max_hits: int = MAX_HITS
 
 
 @dataclass(frozen=True, slots=True)
@@ -71,6 +77,7 @@ class PartLibrary:
     def __init__(self, specs: dict[str, PartSpec], store: TemplateStore) -> None:
         self.specs = specs
         self.store = store
+        self._ink: dict[str, np.ndarray] = {}
 
     @classmethod
     def load(cls, profile_dir: str | Path) -> PartLibrary:
@@ -78,7 +85,8 @@ class PartLibrary:
         raw = yaml.safe_load((d / "parts.yaml").read_text(encoding="utf-8")) or {}
         specs = {
             name: PartSpec(name, v["template"], _rect(v.get("search"), name),
-                           float(v.get("threshold", DEFAULT_THRESHOLD)), bool(v.get("multi", False)))
+                           float(v.get("threshold", DEFAULT_THRESHOLD)), bool(v.get("multi", False)),
+                           int(v.get("ink", 0)), int(v.get("max_hits", MAX_HITS)))
             for name, v in raw.items()
         }
         lib = cls(specs, TemplateStore(d / "templates"))
@@ -92,13 +100,25 @@ class PartLibrary:
     def template(self, name: str) -> Template:
         return self.store.get(self.specs[name].template)
 
+    def ink_template(self, name: str) -> np.ndarray:
+        """The white-text mask of an ``ink`` part's template (uint8 0/255), computed once."""
+        m = self._ink.get(name)
+        if m is None:
+            m = self._ink[name] = white_ink(self.template(name).image, self.specs[name].ink)
+        return m
 
-def _peaks(res: np.ndarray, thr: float, size: tuple[int, int]) -> list[tuple[float, int, int]]:
+
+def white_ink(bgr: np.ndarray, level: int) -> np.ndarray:
+    """uint8 0/255 mask of the pixels whose every channel is above ``level`` (white text)."""
+    return np.where(bgr[:, :, :3].min(axis=2) > level, 255, 0).astype(np.uint8)
+
+
+def _peaks(res: np.ndarray, thr: float, size: tuple[int, int], limit: int = MAX_HITS) -> list[tuple[float, int, int]]:
     """Local maxima >= thr, best first, at least one template size apart."""
     out: list[tuple[float, int, int]] = []
     res = res.copy()
     tw, th = size
-    while len(out) < MAX_HITS:
+    while len(out) < limit:
         _mn, mx, _mnl, (x, y) = cv2.minMaxLoc(res)
         if mx < thr:
             break
@@ -128,12 +148,15 @@ class PartScan:
         t = self.lib.template(name)
         a = spec.search
         region = self.canvas[a.y:a.bottom, a.x:a.right]
-        res = score_map(region, t.image, t.mask)
+        if spec.ink:
+            res = score_map(white_ink(region, spec.ink), self.lib.ink_template(name))
+        else:
+            res = score_map(region, t.image, t.mask)
         hits: tuple[Hit, ...] = ()
         best = -1.0
         if res is not None:
             tw, th = t.size
-            peaks = _peaks(res, spec.threshold, (tw, th)) if spec.multi else []
+            peaks = _peaks(res, spec.threshold, (tw, th), spec.max_hits) if spec.multi else []
             if not spec.multi:
                 _mn, mx, _mnl, (x, y) = cv2.minMaxLoc(res)
                 if mx >= spec.threshold:

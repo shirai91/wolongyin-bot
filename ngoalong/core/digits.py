@@ -203,8 +203,9 @@ class GlyphSet:
             x = prev
         return out[::-1]
 
-    def read(self, bgr: np.ndarray) -> DigitRead:
-        mask = ink_mask(bgr, self.level)
+    def read(self, bgr: np.ndarray, level: int | None = None) -> DigitRead:
+        """``level``: another ink threshold for this read (a number drawn over a bright badge)."""
+        mask = ink_mask(bgr, self.level if level is None else level)
         boxes: list[tuple[int, int, int, int]] = []
         for b in segment(mask):
             boxes.extend(self._split(mask, b) if b[2] > self.max_width + 1 else [b])

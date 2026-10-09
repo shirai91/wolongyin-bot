@@ -198,7 +198,8 @@ class Perceiver:
     def load(cls, profile_dir: str | Path = DEFAULT_PROFILE_DIR) -> Perceiver:
         d = Path(profile_dir)
         raw = yaml.safe_load((d / "numbers.yaml").read_text(encoding="utf-8")) or {}
-        numbers = {n: NumberField(n, Rect(*v["rect"]), v["when"], v.get("parse", "int")) for n, v in raw.items()}
+        numbers = {n: NumberField(n, Rect(*v["rect"]), v["when"], v.get("parse", "int"), v.get("level"))
+                   for n, v in raw.items()}
         return cls(PartLibrary.load(d), load_probes(d / "probes.yaml"), numbers,
                    GlyphSet.load(d / "templates" / "digits" / "game"), ScreenBook.load(d / "screens"))
 
