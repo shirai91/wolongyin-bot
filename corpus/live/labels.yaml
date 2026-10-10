@@ -378,3 +378,9 @@
 551..554:                          {base: vkt.arena, state: {counting: true, joined: false, boss_hp: 1}}
 555..557:                          {base: vkt.arena, state: {counting: true, joined: true, boss_hp: 1}, note: "one click on circle 1: joined, the player walks to the boss (557: halfway after ~6 s)"}
 558..561:                          {base: vkt.arena, dialogs: [vkt.result], state: {result: win}, note: "the fight came by itself ~8-10 s after the single click"}
+562-now.png:                       {base: world_map, state: {silver: 981839284, quan_lenh: "29/100"}}
+563-tt-open.png:                   {base: world_map, dialogs: [chest.wheel], state: {chests: 0}}
+564..566:                          {base: world_map, dialogs: [chest.wheel, chest.buy], note: "566: '200' sent as WM_CHAR after a double-click: the box still shows 1 (selected)"}
+567-tt-dclick2.png:                {base: world_map, dialogs: [chest.wheel, chest.buy]}
+568-tt-typed2.png:                 {base: world_map, dialogs: [chest.wheel, chest.buy], state: {qty: 200}, note: "the same digits as WM_KEYDOWN/UP: typed"}
+569-tt-close-buy.png:              {base: world_map, dialogs: [chest.wheel], state: {chests: 0}}
