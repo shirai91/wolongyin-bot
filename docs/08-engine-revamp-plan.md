@@ -108,7 +108,7 @@ Frames and labels: `corpus/live/` (`labels.yaml`, second section). All flows wer
 - "开始抽奖" (420,268) opens one chest, and a reward line appears in the log.
 - "Mua" → quantity box (+ / − / Tối đa) "Dùng 240 vàng, mua 1 Rương may mắn" → 确定 (438,365).
 - "Tự mở" → "Tự mở N Rương may mắn không?" with a quantity box → 确定. The button then reads **"Ngưng mở"** (button label = auto-open state) and opens about one chest every 4 s.
-- **Fast-open trick** (user tip, verified): toggle Tự mở on and off quickly. 5 cycles of Tự mở → 确定 → Ngưng mở, 0.3 s apart, took 5.9 s and opened 4 chests: about 1.5 s per chest instead of 4 s. The loop stops when the chest count reads 0.
+- **Fast-open trick** (user tip, verified): toggle Tự mở on and off quickly. 5 cycles of Tự mở → 确定 → Ngưng mở, 0.3 s apart, took 5.9 s and opened 4 chests: about 1.5 s per chest instead of 4 s. The loop stops when the chest count reads 0. *2026-10-10*: done blind in bursts the trick opens ~20–75 chests/s (see "Tinh Tú bursts" below).
 - *R1 live check (frames 335–343, 387)*: Mua costs 240 vàng per chest (3 bought). The button already reads "Ngưng mở" while the "Tự mở N" confirm box is open, and auto-open stops by itself at 0 chests. A chest can give Quân lệnh (+20 seen), which is why the Võ Khôi Tháp loop comes here.
 
 ### 6 · Võ Khôi Tháp
@@ -286,7 +286,7 @@ The app's "Kiểm tra" button and the live overlay now show the Snapshot (`AppSe
 
 **Pilots** (`features/quay_ruong.py` "Quay Tinh Tú", `features/thap_thi_luyen.py`), replacing the old scripts; their forms come from the new `Params` (old saved keys are ignored):
 
-- *Quay Tinh Tú*: `opens` (0 = all), `buy` (chests to buy first, 240 Vàng each), `max_minutes`. Buy: Mua → type the number → 确定 → the spend-Vàng box 确定; then the fast trick (Tự mở → 确定 → Ngưng mở) while 2 or more are left, 开始抽奖 for the last one. Every drop of the chest count is a chest opened.
+- *Quay Tinh Tú*: `opens` (0 = all), `buy` (chests to buy first, 240 Vàng each), `max_minutes`. Buy: Mua → type the number → 确定 → the spend-Vàng box 确定; then the fast trick (Tự mở → 确定 → Ngưng mở) while 2 or more are left, 开始抽奖 for the last one (*replaced on 2026-10-10 by bursts, see "Tinh Tú bursts"*). Every drop of the chest count is a chest opened.
 - *Tháp Thí Luyện*: `mode` climb / sweep, `start_floor`, `end_floor`, `sweep_runs`, `battle_timeout_s`, `max_minutes`. Climb: tab Tháp → type the page → select the floor → Vượt Tháp → 确定 → tick Tự Vượt Tháp if needed → click under the crystal (seen on 2 ticks) once → 战胜: next floor / 战败: Thoát → 确定, the run ends. Sweep: only when the next floor is listed (else it fails: "Tầng N chưa thắng"), Tự Vượt Tháp → type the runs → 确定 → 确定; the runs are counted from the Thí luyện lệnh spent.
 - `features/_tower.py` and `coords/thap.yaml` stay: `chua_cong` (Cày cấp chúa công) still uses them; it is the same flow as the new sweep mode, so R3 can drop it. `coords/quay_ruong.yaml` stayed for `vo_khoi_thap` (its spin) until R3 ported it.
 
@@ -352,7 +352,7 @@ Gate runs (run folders under `logs/`, frames in `corpus/live/labels.yaml` sessio
 
 Findings:
 
-- **The client froze again** after the last soak run (10:51): identical frames for minutes, clicks ignored, while Windows does not report the window as hung (frames 498–510). It was not reloaded. The last three fixes (`slot.selected` ≥ 200, 3 s / 2 misses, `map.lv` threshold 0.91) are checked on the corpus only.
+- **The client froze again** after the last soak run (10:51): identical frames for minutes, clicks ignored, while Windows does not report the window as hung (frames 498–510). It was not reloaded. The last three fixes (`slot.selected` ≥ 200, 3 s / 2 misses, `map.lv` threshold 0.91) are checked on the corpus only (*re-checked live on 2026-10-10, see "Tinh Tú bursts and re-checks"*).
 - `Tổng LC` in the player panel dropped from 161,656 to 133,074 during the structure runs; unexplained, probably unrelated (troops).
 - The old templates `field.hud.icons_toggle` and `hud.notice_collapse` (`template_crops.yaml`) are no longer used by these features; R4 removes them with the old engine.
 
@@ -399,12 +399,38 @@ VKT live total ≈ 76 min (8 runs). Seen live: the 2-billion alert (frames 538�
 
 Findings:
 
-- **The "freeze" of 2026-10-09 11:08 was (at least partly) our capture.** The Coowon window was fully covered by other windows (the Claude app and a browser: 0 of 15 probe points visible) and PrintWindow kept returning the same picture, while the game took the clicks: the pagoda clicked at 11:08 had opened the lobby, found there on 10-10. Later, with the window partly visible (6/15), frames changed normally. The watchdog cannot tell a stale capture from a frozen client; keep the game window uncovered (or at least partly visible) while the bot runs.
+- **The "freeze" of 2026-10-09 11:08 was (at least partly) our capture.** The Coowon window was fully covered by other windows (the Claude app and a browser: 0 of 15 probe points visible) and PrintWindow kept returning the same picture, while the game took the clicks: the pagoda clicked at 11:08 had opened the lobby, found there on 10-10. Later, with the window partly visible (6/15), frames changed normally. The watchdog cannot tell a stale capture from a frozen client; keep the game window uncovered (or at least partly visible) while the bot runs. *2026-10-10: covering alone did not reproduce it, see "Tinh Tú bursts and re-checks".*
 - **Clear Phó Bản's work ran out**: the account beat Đổng Trác's last army (the boss 魔王董卓, ~1 win in 3) and the next dungeons (Viên Thuật, Công Tôn, …) show armies but **no beam**, so the gate is ~5 minutes of real work, not 30. Whether a beam appears there later (a quest, a level) is open.
 - Boss armies (魔王董卓 "(Đội-Tướng)") have no "Phát chiến đấu" box like group armies, but Tấn công plays a normal battle (30–45 s) with a 战胜 / 战败 box.
 - "Thế Giới" / "Trang bị" open with a fade: Trang bị's first frame has its ✕ but no title (an unknown dialog, closed and reopened once, frame 541). Harmless; a short settle would avoid it.
 - **Typing**: from some point on 2026-10-10 the game's text boxes ignored posted WM_CHAR (the quantity box kept "1"; earlier the first try of each refill failed and the second worked), while WM_KEYDOWN/UP of the same digits worked (frames 565–568). The Win32 driver now types digits as key presses (the browser turns them into characters); other characters still go as WM_CHAR. Tower page / sweep runs and the Tinh Tú quantity were re-checked live.
 - The silver reward of a win varies a little (20,0xx,xxx: other income lands too); the cap check uses the last gain.
+
+### Tinh Tú bursts and re-checks (2026-10-10)
+
+**Tinh Tú bursts.** The R2 fast trick took one decision (capture, Snapshot, expectation) per click: ~1 chest/s, 200 chests ≈ 3.5 min (`135206`). v1.8.0 clicked the same three points blind with a 5 ms delay (the user's saved `delay_ms = 5`) and opened 200 in seconds. Now the check is per batch:
+
+- `Burst(points, times, interval)` (`engine/actions.py`, run by `Actor.burst`): click the points in order, `times` cycles over, without capturing in between; the expectation is checked on the next ticks like any action. Stop / Pause are checked before each cycle, never inside one. `Win32InputDriver.tap` posts move / down / up with no gaps (the game takes queued clicks in order); the gaps use `time.sleep` (1 ms steps on Windows; `Event.wait`, which `RunControl.sleep` uses, rounds 10 / 20 ms up to 15 / 31 ms).
+- `ChestJob` (Quay Tinh Tú and the Võ Khôi Tháp refill): on the clean wheel, one burst of Tự mở → 确定 → Ngưng mở × min(`batch`, chests left, still to open), then wait until the count reached *before − cycles* with the wheel clean (no box, "Tự mở"), or stopped moving for 1 s (or 3 s with no change at all). One run.log line per burst: `Mở nhanh 50 lượt: rương 200 → 150 (mở 50, 2.2s)`, with "N lượt không mở" when some missed. A confirm box still open after that gets 确定 (the cycle's next click; with 0 chests ✕) and "ngưng mở" stops a running auto-open. Settings: `batch` (50) and `click_ms` (5) in Quay Tinh Tú, `chest_batch` / `chest_click_ms` in Võ Khôi Tháp. The per-click path is gone (a 1-cycle burst opens exactly one chest).
+- **Measured** (scratch bursts, then the feature): every cycle opened its chest at 0, 5, 10, 20 ms between clicks: 10/10, 25/25, 50/50 ×4 in scratch tests, then over 2,000 chests through the feature, **0 missed**. The game answers late: the count keeps falling ~1–1.5 s after the last click, and a box seen right after the burst is the queue still being worked off (it closes by itself), so the expectation waits for the count. Throughput (200 chests, from the first burst to the last count): 20 ms ×50 = 17.6 s (`141825`, 250 chests 22 s), 10 ms ×50 = 11.6 s (`141855`), **5 ms ×50 = 8.8 s** (`141931`, the default), 0 ms ×100 = 4.3 s (`141915`), 0 ms ×200 = 2.7 s (`141944`). 5 ms keeps the game within ~1.5 s of the clicks, so Stop also stops the opening (with 0 ms the whole batch is queued at once).
+- **The label sticks at 0 chests.** The first burst run (`141346`) ended with 0 chests and the button reading "Ngưng mở"; a click on it then only shows "Không đủ Rương may mắn, không thể quay thưởng." (`notice.ok`), the label survives closing and reopening the wheel, and with chests bought a click turns it back to "Tự mở" without opening anything. So at 0 chests the label is ignored (the job is done, "ngưng mở" does not fire, buying is allowed).
+
+| Run (`run-20261010-…`) | Result |
+| --- | --- |
+| `141346` Quay Tinh Tú, buy 46 (20 ms) | 200 opened in 4 bursts of 50 (4.4 s each), then the stuck label at 0: ✕ / ESC / notice loop, failed (fixed above) |
+| `141825` Quay Tinh Tú, 250 on the wheel (20 ms) | 250 opened in 22 s, 0 missed, count 0 read at the end |
+| `141855`, `141931`, `141915`, `141944` Quay Tinh Tú, buy 200 each | 10 ms ×50 / 5 ms ×50 / 0 ms ×100 / 0 ms ×200: 200 opened in 11.6 / 8.8 / 4.3 / 2.7 s (+2.5 s buying), 0 missed |
+| `142025` Quay Tinh Tú, buy 200, one 200-cycle burst at 20 ms, Stop at 7 s (4 s into the burst) | Stop latency 0.01 s; the game worked off the queued clicks for ~0.4 s more (140 → 134) and was left clean (auto-open off, no box). Before it, `142007` (Stop at 6 s while buying, 0.05 s): the quantity typed as "1200" once (the double-click did not select the 1; recovery ✕, retyped) |
+| `142049` Võ Khôi Tháp, defaults (5 ms ×50), 5.5 min, Stop | 23 rounds (cost 93 → 115), **4 refills**: 134 on the wheel (6.8 s), then 3 × buy 200 + open 200 (~11.5 s each, 8.6 s of it opening), Quân lệnh 25 → 325, 33 → 493, 83 → 343, 30 → 470; 0 recoveries (the old trick needed 8 in `135206`) |
+| `142955` Quay Tinh Tú, buy 100, opens 1 | exactly 1 opened (a 1-cycle burst) |
+
+**Re-check of the three R3 fixes** (they were only checked on the corpus after the 10-09 freeze):
+
+- *(c) `map.lv` ≥ 0.91* — `cong_trinh` Cả hai, gold yes (`142706`, 26 s): 17–19 labels in the city and 5 in the harbour, every level read (lv140, three lv110), one transient misread ("1" on one frame) outvoted by the two-reads rule, no stray label. Nothing left to upgrade: buildings are at the Chúa công cap (140) and the three lv110 are at their maximum (as at the end of the R3 gate).
+- *(b) "no effect" after 3 s, twice* — the same run pressed each lv110 building twice, 3 s apart, and left it after ~6.3 s with "bấm Tăng cấp không có tác dụng (cấp cao nhất?)"; no false "max level" on a building that could rise (none could; the gold box after a real press could not be produced again).
+- *(a) `slot.selected` ≥ 200* — `khoa_ky` (`142749`, 38 s): all 18 slots selected one after another with the red "Cấp Phủ sách lược không đủ" line on screen, exactly one slot read as selected each time, every slot capped (Phủ Sách Lược), 0 recoveries (the R3 run `103945` needed 17).
+
+**The covered window.** `Win32Capturer.visible_fraction()` samples 7×7 points of the client area with WindowFromPoint (0 when minimised or DWM-cloaked; 0.3 ms). When the canvas has not changed for 3 s while inputs were sent and the window is fully hidden, the loop logs "Ảnh chụp đứng yên Ns và cửa sổ game bị che, hãy để lộ một phần cửa sổ" once, and the frozen-client failure names the covered window instead of "game không phản hồi". **But covering did not freeze the capture today**: an opaque window over the Coowon window (topmost, normal, foreground) and over the whole monitor, for 6 s to 2.5 min, read `visible_fraction` 0.0 while PrintWindow frames kept changing (animation, and a hover glow 5,000–10,000 px). So the 10-09 freeze had another cause that coincided with the covered window (a locked screen, display sleep or the client itself; not tested: locking the user's session is out of bounds). The warning stays as a hint; the watchdog's frozen-client path is unchanged.
 
 ### When OCR is allowed
 
