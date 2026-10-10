@@ -1,7 +1,7 @@
 """``InputDriver`` interface (docs/06 Core interfaces).
 
 Points are CLIENT coordinates of the target window (the Coowon top-level window in the MVP);
-canvas-relative offsets are converted by ``CoordMap`` before they reach a driver.
+canvas points (1000x600) are converted by the ``Actor`` with the canvas fix before they reach a driver.
 """
 
 from __future__ import annotations
@@ -18,6 +18,8 @@ VK_TAB = 0x09
 VK_RETURN = 0x0D
 VK_ESCAPE = 0x1B
 VK_SPACE = 0x20
+VK_END = 0x23
+VK_HOME = 0x24
 VK_DELETE = 0x2E
 
 

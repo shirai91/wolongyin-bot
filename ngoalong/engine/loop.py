@@ -38,7 +38,6 @@ from ngoalong.engine.recovery import Recovery
 from ngoalong.perception import Perceiver, Snapshot
 
 if TYPE_CHECKING:
-    from ngoalong.engine.context import RunContext
     from ngoalong.engine.feature import Feature
 
 
@@ -359,10 +358,13 @@ class Loop:
             self.actor.log(line, "debug")
 
 
-def run_feature(feature: Feature, ctx: RunContext) -> str:
-    """Run a ``Feature`` on the decision loop with the window, switches and sinks of ``ctx``."""
+def run_feature(feature: Feature, actor: Actor) -> str:
+    """Run a ``Feature`` on the decision loop with the window, switches and sinks of ``actor``."""
     services = feature.services
     profile_dir = str(getattr(services, "profile_dir", DEFAULT_PROFILE_DIR))
     perceiver, nav = load_profile(profile_dir)
-    interrupts = Interrupts(ctx.popups, ctx.panels if feature.collapse_panels else None, ctx.matcher, ctx.policy)
-    return Loop(feature, Actor.from_context(ctx), perceiver, nav, interrupts).run()
+    interrupts = None
+    if actor.matcher is not None:
+        interrupts = Interrupts(actor.popups, actor.panels if feature.collapse_panels else None,
+                                actor.matcher, actor.policy)
+    return Loop(feature, actor, perceiver, nav, interrupts).run()

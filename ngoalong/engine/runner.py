@@ -1,6 +1,6 @@
 """``TaskRunner``: runs one ``Task`` on a ``QThread`` with Start / Pause / Stop (fixes #7).
 
-* ``execute(task, ctx)`` is the Qt-free core: runs the task, maps the outcome to a ``RunResult``
+* ``execute(task, actor)`` is the Qt-free core: runs the task, maps the outcome to a ``RunResult``
   and ALWAYS saves a failure screenshot under ``logs/run-<id>/`` when the task fails.
 * ``TaskRunner`` owns the worker thread and turns log / progress / status callbacks into Qt
   signals (emitted from the worker; Qt queues them to receivers in the UI thread).
@@ -22,9 +22,8 @@ from PySide6.QtCore import QObject, QThread, Signal
 
 from ngoalong.core.errors import Cancelled, TaskStopped
 from ngoalong.core.locator import CanvasFix
-from ngoalong.core.scenes import SceneMatch
 from ngoalong.debug.sink import new_run_dir
-from ngoalong.engine.context import RunContext
+from ngoalong.engine.actor import Actor
 from ngoalong.engine.control import RunControl
 from ngoalong.engine.task import Task
 
@@ -54,71 +53,68 @@ class RunResult:
     meta: dict[str, object] = field(default_factory=dict)
 
 
-def _counters(ctx: RunContext) -> dict[str, int]:
+def _counters(actor: Actor) -> dict[str, int]:
     try:
-        snap = ctx.counter_snapshot()
-    except Exception:  # a stand-in context without counters must not break the result
+        snap = actor.counter_snapshot()
+    except Exception:  # broken counters must not break the result
         log.exception("could not read the run counters")
         return {}
     return {str(k): int(v) for k, v in snap.items()}
 
 
-def execute(task: Task, ctx: RunContext, run_dir: Path | None = None,
+def execute(task: Task, actor: Actor, run_dir: Path | None = None,
             meta: dict[str, object] | None = None) -> RunResult:
     """Run ``task`` to completion, stop or failure. Never raises (except KeyboardInterrupt)."""
     started = time.monotonic()
     started_wall = time.time()
-    ctx.info(f"Bắt đầu: {task.title}")
+    actor.info(f"Bắt đầu: {task.title}")
     shot: Path | None = None
     error: BaseException | None = None
     try:
-        tidy = getattr(ctx, "tidy_panels", None)  # stand-in contexts in tests may not have it
-        if getattr(task, "tidy_panels", True) and callable(tidy):
-            tidy()
-        message = task.run(ctx) or "Hoàn thành"
+        message = task.run(actor) or "Hoàn thành"
         status = RunStatus.DONE
-        ctx.info(f"Xong: {message}")
+        actor.info(f"Xong: {message}")
     except Cancelled:
         status, message = RunStatus.STOPPED, "Đã dừng theo yêu cầu"
-        ctx.warn(message)
+        actor.warn(message)
     except TaskStopped as exc:
         status, message = RunStatus.STOPPED, f"Đã dừng: {exc}"
-        ctx.warn(message)
+        actor.warn(message)
     except Exception as exc:
         status, error = RunStatus.FAILED, exc
         message = f"Lỗi: {exc}" if str(exc) else f"Lỗi: {type(exc).__name__}"
         log.error("task %s failed\n%s", task.id, "".join(traceback.format_exception(exc)))
         try:
-            shot = ctx.save_failure(f"{type(exc).__name__}: {exc}")
+            shot = actor.save_failure(f"{type(exc).__name__}: {exc}")
         except Exception:
             log.exception("could not save the failure screenshot")
-        ctx.log(message + (f" (ảnh: {shot})" if shot else ""), "error")
+        actor.log(message + (f" (ảnh: {shot})" if shot else ""), "error")
     finally:
         try:
-            task.on_stop(ctx)
+            task.on_stop(actor)
         except Exception:
             log.exception("on_stop of %s failed", task.id)
     return RunResult(
         task.id, status, message, run_dir, shot, error, time.monotonic() - started,
         task_title=getattr(task, "title", ""), started_at=started_wall, ended_at=time.time(),
-        counters=_counters(ctx), meta=dict(meta or {}),
+        counters=_counters(actor), meta=dict(meta or {}),
     )
 
 
 @dataclass
 class RunHooks:
-    """What the runner gives the context factory: switches, run folder and callbacks."""
+    """What the runner gives the actor factory: switches, run folder and callbacks."""
 
     run_id: str
     run_dir: Path
     control: RunControl
     on_log: Callable[[str, str], None]
     on_progress: Callable[[int, int | None], None]
-    on_status: Callable[[CanvasFix | None, SceneMatch | None], None]
+    on_status: Callable[[CanvasFix | None, str | None], None]  # canvas, screen stack
     extra: dict[str, object] = field(default_factory=dict)
 
 
-ContextFactory = Callable[[Task, RunHooks], RunContext]
+ActorFactory = Callable[[Task, RunHooks], Actor]
 
 
 class _RunLog:
@@ -140,18 +136,18 @@ class _RunLog:
 
 
 class _Worker(QThread):
-    def __init__(self, runner: TaskRunner, task: Task, ctx: RunContext, run_dir: Path,
+    def __init__(self, runner: TaskRunner, task: Task, actor: Actor, run_dir: Path,
                  meta: dict[str, object] | None = None) -> None:
         super().__init__()
         self._runner = runner
         self._task = task
-        self._ctx = ctx
+        self._actor = actor
         self._run_dir = run_dir
         self._meta = meta
         self.result: RunResult | None = None
 
     def run(self) -> None:  # worker thread
-        self.result = execute(self._task, self._ctx, self._run_dir, self._meta)
+        self.result = execute(self._task, self._actor, self._run_dir, self._meta)
         self._runner._on_worker_done(self.result)
 
 
@@ -159,7 +155,7 @@ class TaskRunner(QObject):
     started = Signal(str)  # task id
     log = Signal(str, str)  # level, message
     progress = Signal(int, int)  # done, total (-1 = unknown)
-    status = Signal(object, object)  # CanvasFix | None, SceneMatch | None
+    status = Signal(object, object)  # CanvasFix | None, str | None (the screen stack)
     state_changed = Signal(str)  # idle | running | paused | stopping
     finished = Signal(object)  # RunResult
 
@@ -198,9 +194,9 @@ class TaskRunner(QObject):
         return run_id, new_run_dir(self.log_dir, run_id)
 
     # --- control --------------------------------------------------------------------------------
-    def start(self, task: Task, make_context: ContextFactory,
+    def start(self, task: Task, make_actor: ActorFactory,
               meta: dict[str, object] | None = None) -> RunHooks:
-        """Build the context (in this thread) and start the task on a worker thread.
+        """Build the actor (in this thread) and start the task on a worker thread.
 
         ``meta`` (routine id, attempt...) is handed back unchanged in ``RunResult.meta``.
         """
@@ -219,14 +215,14 @@ class TaskRunner(QObject):
         def on_progress(done: int, total: int | None) -> None:
             self.progress.emit(int(done), -1 if total is None else int(total))
 
-        def on_status(canvas: CanvasFix | None, scene: SceneMatch | None) -> None:
-            self.status.emit(canvas, scene)
+        def on_status(canvas: CanvasFix | None, screen: str | None) -> None:
+            self.status.emit(canvas, screen)
 
         hooks = RunHooks(run_id, run_dir, control, on_log, on_progress, on_status, dict(meta or {}))
-        ctx = make_context(task, hooks)
+        actor = make_actor(task, hooks)
         self._control = control
         self.current_task = task
-        self._worker = _Worker(self, task, ctx, run_dir, dict(meta or {}))
+        self._worker = _Worker(self, task, actor, run_dir, dict(meta or {}))
         self._set_state("running")
         self.started.emit(task.id)
         self._worker.start()

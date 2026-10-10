@@ -23,7 +23,7 @@ from PySide6.QtCore import QObject, Signal, Slot
 from ngoalong.core.errors import WindowNotFoundError
 from ngoalong.core.locator import CanvasLocator
 from ngoalong.core.window import GameWindow
-from ngoalong.engine.context import RunContext
+from ngoalong.engine.actor import Actor
 from ngoalong.engine.runner import RunHooks, RunResult, TaskRunner
 from ngoalong.engine.task import Task
 
@@ -56,7 +56,7 @@ class WindowSlot:
         return self.runner.is_running()
 
 
-SlotContextFactory = Callable[[WindowSlot, Task, RunHooks], RunContext]
+SlotActorFactory = Callable[[WindowSlot, Task, RunHooks], Actor]
 LocatorFactory = Callable[[], CanvasLocator]
 BusyCheck = Callable[[GameWindow], bool]
 
@@ -96,14 +96,14 @@ class RunnerManager(QObject):
     def __init__(
         self,
         log_dir: str | Path,
-        make_context: SlotContextFactory,
+        make_actor: SlotActorFactory,
         new_locator: LocatorFactory,
         is_busy_elsewhere: BusyCheck | None = None,
         parent: QObject | None = None,
     ) -> None:
         super().__init__(parent)
         self.log_dir = Path(log_dir)
-        self._make_context = make_context
+        self._make_actor = make_actor
         self._new_locator = new_locator
         self._busy_elsewhere = is_busy_elsewhere or (lambda _gw: False)
         self._slots: dict[str, WindowSlot] = {}
@@ -186,7 +186,7 @@ class RunnerManager(QObject):
             raise RuntimeError(f"cửa sổ đang chạy một tác vụ khác: {slot.title}")
         if self._busy_elsewhere(slot.window):
             raise RuntimeError(f"cửa sổ đang chạy ở thẻ Tính năng: {slot.title}")
-        return slot.runner.start(task, lambda t, hooks: self._make_context(slot, t, hooks))
+        return slot.runner.start(task, lambda t, hooks: self._make_actor(slot, t, hooks))
 
     def stop(self, key: str) -> None:
         self.slot(key).runner.stop()

@@ -162,7 +162,7 @@ class GameSettings(BaseModel):
     # False = 取消 and stop the task. Off by default: never spend Vàng unless asked to.
     spend_gold_skip_wait: bool = False
     # Collapse the HUD panels that cover the game (quest tracker, "Sắp mở", chat; not the top icons)
-    # before every run (profiles/<profile>/panels.yaml).
+    # while a feature runs (interrupts; profiles/<profile>/panels.yaml).
     collapse_panels: bool = True
 
 
@@ -220,6 +220,24 @@ class Settings(BaseModel):
         except ValidationError as exc:
             log.warning("saved params of %s are invalid, using defaults: %s", cls.id, exc)
             return cls.Params()
+
+    def forget_features(self, known: Iterable[str]) -> list[str]:
+        """Drop what the saved settings say about features this version does not have (the five
+        removed in 2026-10, e.g. ``thanh_tuu``): their params, the last selected feature and the
+        multi-window choices that name them. The rest is kept. Returns the ids dropped."""
+        ids = set(known)
+        gone = sorted({f for f in self.features if f not in ids}
+                      | {f for f in self.multi_window.assignments.values() if f not in ids}
+                      | ({self.ui.last_feature} - ids - {""}))
+        if not gone:
+            return []
+        self.features = {k: v for k, v in self.features.items() if k in ids}
+        self.multi_window.assignments = {t: f for t, f in self.multi_window.assignments.items() if f in ids}
+        if self.ui.last_feature not in ids:
+            self.ui.last_feature = ""
+        self.legacy_applied = [f for f in self.legacy_applied if f in ids]
+        log.info("settings: forgot the removed features %s", ", ".join(gone))
+        return gone
 
     def set_feature_params(self, fid: str, params: BaseModel) -> None:
         self.features = {**self.features, fid: params.model_dump(mode="json", exclude_none=True)}

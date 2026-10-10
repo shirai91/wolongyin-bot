@@ -1,8 +1,8 @@
 """Entry point and dependency wiring (docs/06 module layout: ``app.py``).
 
 ``AppServices`` owns the long-lived objects (settings, profile data, bound window, debug state,
-sinks, runner, hotkeys) and builds a fresh ``RunContext`` for every run. The drivers are
-factories so tests can swap in ``FileCapturer`` and a recording input driver.
+sinks, runner, hotkeys) and builds a fresh ``Actor`` for every run. The drivers are factories so
+the self-test can build the app without a game window.
 
 Run with ``python -m ngoalong``.
 """
@@ -24,26 +24,21 @@ from ngoalong.config.settings import (
     DEFAULT_INI_PATH, DEFAULT_SETTINGS_PATH, PROJECT_ROOT, Settings, load_or_import, save_settings,
 )
 from ngoalong.core.capture import CachedCapturer, Capturer
-from ngoalong.core.coords import CoordMap
 from ngoalong.core.errors import WindowGoneError, WindowNotFoundError
 from ngoalong.core.geometry import Point, Rect
 from ngoalong.core.input import InputDriver
 from ngoalong.core.locator import CanvasFix, CanvasLocator, Confidence, LocatorConfig, canvas_crop
-from ngoalong.core.ocr import default_ocr
-from ngoalong.core.scenes import SceneDetector, load_scene_defs
 from ngoalong.core.templates import TemplateStore
 from ngoalong.core.vision import Matcher
 from ngoalong.core.window import GameWindow
 from ngoalong.debug.model import DebugFrame
 from ngoalong.debug.sink import FanoutSink, OverlaySink, PanelSink, PngSink
 from ngoalong.engine import registry
-from ngoalong.engine.context import RunContext
-from ngoalong.engine.actor import snapshot_frame
+from ngoalong.engine.actor import Actor, snapshot_frame
 from ngoalong.engine.history import HistoryRecorder, HistoryStore
 from ngoalong.engine.loop import load_profile
 from ngoalong.engine.manager import RunnerManager, WindowSlot, same_window
-from ngoalong.engine.panels import PanelTidier
-from ngoalong.engine.popups import PopupGuard
+from ngoalong.engine.interrupts import Panels, PopupGuard
 from ngoalong.engine.scheduler import (
     RoutineExecutor, RoutineStep, RoutineStore, Scheduler, SchedulerService, build_step_task,
 )
@@ -117,7 +112,7 @@ class OverlayRefresher(QObject):
     Bot frames only arrive while a task runs, so without this the overlay kept showing the last
     bot frame after the user changed the screen by hand. While debug mode is on, every
     ``settings.overlay_refresh_ms`` it captures the bound window on a background thread, locates
-    the canvas, names the scene and redraws the overlay (``AppServices.overlay_snapshot``). A tick
+    the canvas, perceives the Snapshot and redraws the overlay (``AppServices.overlay_snapshot``). A tick
     is skipped while the previous capture still runs, or while the bot is publishing its own
     frames. The timer stops when debug mode is turned off, the window is lost (until the next
     bind) and at shutdown.
@@ -238,12 +233,11 @@ class AppServices:
         self.rebind_windows = rebind_windows and sys.platform == "win32"
 
         self.features: list[type[Task]] = registry.discover()
-        self.coords = CoordMap.load(self.profile_dir / "coords")
+        self.settings.forget_features({c.id for c in self.features})
         self.templates = TemplateStore(self.profile_dir / "templates")
         self.locator_config = LocatorConfig.load(self.profile_dir / "locator.yaml")
-        self.scene_defs = load_scene_defs(self.profile_dir / "scenes")
         self.popups = PopupGuard.load(self.profile_dir / "popups.yaml")
-        self.panels = PanelTidier.load(self.profile_dir / "panels.yaml")
+        self.panels = Panels.load(self.profile_dir / "panels.yaml")
 
         self.window: GameWindow | None = None
         # One locator per bound window: its last good fix is reused between runs (docs/06 Track).
@@ -269,7 +263,7 @@ class AppServices:
         self.hotkey_bridge.debug_toggle_requested.connect(self.debug.toggle)
         # Multi-window: one runner per extra game window ("Nhiều cửa sổ" tab); the stop and pause
         # hotkeys act on every runner.
-        self.manager = RunnerManager(self.runner.log_dir, self._make_slot_context, self.new_locator,
+        self.manager = RunnerManager(self.runner.log_dir, self._make_slot_actor, self.new_locator,
                                      self._primary_busy_on)
         self.hotkey_bridge.stop_requested.connect(self.manager.stop_all)
         self.hotkey_bridge.pause_requested.connect(self.manager.toggle_pause_all)
@@ -381,9 +375,6 @@ class AppServices:
     def new_locator(self) -> CanvasLocator:
         return CanvasLocator(self.locator_config, Matcher(self.templates, history=64))
 
-    def new_scene_detector(self, matcher: Matcher | None = None) -> SceneDetector:
-        return SceneDetector(self.scene_defs, matcher or Matcher(self.templates, history=256))
-
     def perceiver(self) -> Perceiver:
         """The profile's perception layer (loaded once, shared with the decision loop)."""
         return load_profile(str(self.profile_dir))[0]
@@ -438,20 +429,20 @@ class AppServices:
             raise ValueError(f"con trỏ nằm ngoài khung game ({cx}, {cy})")
         return Point(cx, cy)
 
-    def make_context(self, task: Task, hooks: RunHooks) -> RunContext:
-        """A fresh context for one run (``TaskRunner`` context factory)."""
+    def make_actor(self, task: Task, hooks: RunHooks) -> Actor:
+        """A fresh actor for one run (``TaskRunner`` actor factory)."""
         gw = self.require_window()
         if self.manager.running_on(gw):
             raise RuntimeError("cửa sổ này đang chạy ở thẻ Nhiều cửa sổ")
-        return self.build_context(gw, self.locator, task, hooks, self.live_sink)
+        return self.build_actor(gw, self.locator, task, hooks, self.live_sink)
 
-    def _make_slot_context(self, slot: WindowSlot, task: Task, hooks: RunHooks) -> RunContext:
-        """Context factory of the multi-window runners (``RunnerManager``)."""
+    def _make_slot_actor(self, slot: WindowSlot, task: Task, hooks: RunHooks) -> Actor:
+        """Actor factory of the multi-window runners (``RunnerManager``)."""
         gw = slot.window
         if self.rebind_windows and not gw.rebind():
             raise WindowNotFoundError(f"Cửa sổ game đã đóng: {gw.title}")
         # Only the debug panel: the overlay window follows the primary window, not this one.
-        return self.build_context(gw, slot.locator, task, hooks, self.panel_sink)
+        return self.build_actor(gw, slot.locator, task, hooks, self.panel_sink)
 
     def _primary_busy_on(self, gw: GameWindow) -> bool:
         """The "Tính năng" runner drives ``gw``: a run, or a routine (also between its steps)."""
@@ -481,7 +472,8 @@ class AppServices:
         self.history_recorder.watch(self.runner, lambda: self.window)
         self.history_recorder.watch_manager(self.manager)
         self.routine_store = RoutineStore(d / "routines.json" if d is not None else None)
-        self.routine_executor = RoutineExecutor(self.runner, self.build_routine_task, self.make_context,
+        self.routine_store.disable_unknown_steps({c.id for c in self.features})
+        self.routine_executor = RoutineExecutor(self.runner, self.build_routine_task, self.make_actor,
                                                 self.history_recorder)
         self.scheduler = SchedulerService(Scheduler(self.routine_store), self.routine_executor, self.runner)
         # Stop also cancels a routine waiting to retry (the runner is idle then).
@@ -519,32 +511,27 @@ class AppServices:
         except Exception:
             log.exception("notification failed")
 
-    def build_context(
+    def build_actor(
         self, gw: GameWindow, locator: CanvasLocator, task: Task, hooks: RunHooks, debug_sink: object
-    ) -> RunContext:
-        capturer = CachedCapturer(self.capturer_factory(gw), max_age_s=0.05)
-        matcher = Matcher(self.templates, history=256)
-        return RunContext(
-            capturer=capturer,
-            input_driver=self.input_factory(gw),
-            coords=self.coords,
-            matcher=matcher,
-            canvas_source=locator,
-            scenes=self.new_scene_detector(matcher),
-            control=hooks.control,
-            debug_sink=debug_sink,  # type: ignore[arg-type]
-            png_sink=PngSink(hooks.run_dir, enabled=self.debug.enabled),
-            debug_enabled=lambda: self.debug.enabled,
-            overlay_enabled=lambda: self.draw_overlay.enabled,
+    ) -> Actor:
+        return Actor(
+            CachedCapturer(self.capturer_factory(gw), max_age_s=0.05),
+            self.input_factory(gw),
+            locator,
+            hooks.control,
             on_log=hooks.on_log,
             on_progress=hooks.on_progress,
             on_status=hooks.on_status,
-            task_name=task.title,
-            window_label=gw.title,
-            popups=self.popups,
-            ocr=default_ocr(),
-            panels=self.panels if self.settings.game.collapse_panels else None,
+            debug_sink=debug_sink,
+            png_sink=PngSink(hooks.run_dir, enabled=self.debug.enabled),
+            debug_enabled=lambda: self.debug.enabled,
+            overlay_enabled=lambda: self.draw_overlay.enabled,
             policy=lambda name: bool(getattr(self.settings.game, name, False)),
+            popups=self.popups,
+            panels=self.panels if self.settings.game.collapse_panels else None,
+            matcher=Matcher(self.templates, history=256),
+            window=gw.title,
+            task=task.title,
         )
 
     def shutdown(self) -> None:
@@ -624,8 +611,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     ap.add_argument("--ini", default=str(DEFAULT_INI_PATH), help="v1.8.0 NgoaLong_data.ini to import once")
     ap.add_argument("--debug", action="store_true", help="start with debug mode on")
     ap.add_argument("--selftest", action="store_true",
-                    help="run the offline golden checks and exit (0 = passed, 1 = failed)")
-    ap.add_argument("--golden", default=None, help="--selftest: golden expected.yaml (default: bundled)")
+                    help="run the offline checks (perception benchmark on the bundled corpus) and exit "
+                         "(0 = passed, 1 = failed)")
+    ap.add_argument("--corpus", default=None,
+                    help="--selftest: labels.yaml of a corpus (default: the bundled one, else corpus/live)")
     ap.add_argument("--report", default=None, help="--selftest: also write the report to this file")
     ap.add_argument("--no-ui", action="store_true", help="--selftest: skip the offscreen main window check")
     args = ap.parse_args(list(argv) if argv is not None else None)
@@ -634,7 +623,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         from ngoalong import selftest
 
         logging.basicConfig(level=logging.WARNING, format="%(levelname)s %(name)s: %(message)s")
-        return selftest.main(args.golden, args.report, ui=not args.no_ui)
+        return selftest.main(args.corpus, args.report, ui=not args.no_ui)
 
     _setup_logging()
     _install_excepthooks()
@@ -648,6 +637,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         features = registry.discover()
         settings, imported = load_or_import(args.settings, args.ini, features)
+        settings.forget_features({c.id for c in features})
         if args.debug:
             settings.debug = True
             settings.draw_overlay = True
@@ -667,7 +657,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             f"Tệp cài đặt: {args.settings}\n"
             f"Thư mục hồ sơ: {profile}\n\n"
             f"Xem chi tiết trong {APP_LOG_FILE}. Chạy \"AutoNgoaLong.exe --selftest\" để kiểm tra "
-            "hồ sơ (tọa độ, màn hình, ảnh mẫu)."
+            "hồ sơ (ảnh mẫu, màn hình, nhận diện)."
         )
         return 1
     services.attach_tray()

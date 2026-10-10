@@ -54,7 +54,7 @@ class SettingsTab(QWidget):
         )
         gold_note.setWordWrap(True)
         gl.addWidget(gold_note)
-        self.panels_box = QCheckBox("Thu gọn các bảng che game trước khi chạy")
+        self.panels_box = QCheckBox("Thu gọn các bảng che game khi chạy (nhiệm vụ, Sắp mở, chat)")
         self.panels_box.setChecked(services.settings.game.collapse_panels)
         self.panels_box.setToolTip(
             "Trước mỗi tính năng: thu gọn bảng nhiệm vụ bên phải, "

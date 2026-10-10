@@ -1,7 +1,7 @@
 """Run history (docs/06 P3 "Run history"): one record per run, kept in ``data/history.sqlite3``.
 
 A ``RunRecord`` holds the start and end time, the task, the routine that started it (if any), the
-result, the counters (clicks, progress and whatever the feature counted with ``ctx.count``), the
+result, the counters (clicks, progress and whatever the feature counted with ``Actor.count``), the
 failure screenshots and the run's log folder.
 
 * ``HistoryStore`` is the Qt-free SQLite store (thread-safe; ``None`` path = in memory).

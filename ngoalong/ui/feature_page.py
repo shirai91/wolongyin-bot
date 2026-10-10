@@ -174,7 +174,7 @@ class FeaturePage(QWidget):
         self.services.save()
         self.progress.setRange(0, 0)
         try:
-            self.services.runner.start(cls(params).bind_services(self.services), self.services.make_context)
+            self.services.runner.start(cls(params).bind_services(self.services), self.services.make_actor)
         except (NgoaLongError, RuntimeError, OSError) as exc:
             self.progress.setRange(0, 1)
             self.message.emit("error", f"Không chạy được {cls.title}: {exc}")

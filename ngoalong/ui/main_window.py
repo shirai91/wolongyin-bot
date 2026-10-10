@@ -1,4 +1,4 @@
-"""Main window (Vietnamese UI): game window picker, canvas/scene status, feature forms, run
+"""Main window (Vietnamese UI): game window picker, canvas / screen status, feature forms, run
 controls, log view, and the extra tabs from the tab registry (docs/06)."""
 
 from __future__ import annotations
@@ -13,7 +13,6 @@ from PySide6.QtWidgets import (
 )
 
 from ngoalong.core.locator import CanvasFix, Confidence
-from ngoalong.core.scenes import SceneMatch
 from ngoalong.engine.runner import RunResult, RunStatus
 from ngoalong.ui.feature_page import FeaturePage
 from ngoalong.ui.tabs import discover_tabs
@@ -32,22 +31,9 @@ def canvas_text(fix: CanvasFix | None) -> str:
             f"{CONFIDENCE_TEXT.get(fix.confidence, fix.confidence.value)}")
 
 
-def scene_text(scene: SceneMatch | str | None, services: Any = None) -> str:
-    """The status line: a Snapshot description (decision loop, "Kiểm tra") or an old SceneMatch."""
-    if scene is None:
-        return "Màn hình: chưa kiểm tra"
-    if isinstance(scene, str):
-        return f"Màn hình: {scene}"
-    if not scene.found:
-        near = f" (gần nhất: {scene.candidate})" if scene.candidate else ""
-        return f"Màn hình: không rõ{near}"
-    desc = ""
-    if services is not None:
-        try:
-            desc = next((d.description for d in services.scene_defs if d.name == scene.name), "")
-        except Exception:
-            desc = ""
-    return f"Màn hình: {scene.name} ({scene.score:.2f})" + (f" - {desc}" if desc else "")
+def scene_text(screen: str | None) -> str:
+    """The status line: the Snapshot description (decision loop, "Kiểm tra")."""
+    return "Màn hình: chưa kiểm tra" if screen is None else f"Màn hình: {screen}"
 
 
 class _ProbeThread(QThread):
@@ -59,11 +45,11 @@ class _ProbeThread(QThread):
 
     def run(self) -> None:
         try:
-            _frame, fix, scene = self.services.probe()
+            _frame, fix, screen = self.services.probe()
         except Exception as exc:
             self.done.emit(None, None, str(exc) or type(exc).__name__)
             return
-        self.done.emit(fix, scene, "")
+        self.done.emit(fix, screen, "")
 
 
 class MainWindow(QMainWindow):
@@ -184,7 +170,7 @@ class MainWindow(QMainWindow):
             self.services.bind(w)
             self.log_message("info", f"Đã chọn cửa sổ: {w.title}")
 
-    # --- canvas / scene status ------------------------------------------------------------------
+    # --- canvas / screen status ------------------------------------------------------------------
     def check_screen(self) -> None:
         if self._probe is not None and self._probe.isRunning():
             return
@@ -193,18 +179,18 @@ class MainWindow(QMainWindow):
         self._probe.done.connect(self._on_probe_done)
         self._probe.start()
 
-    def _on_probe_done(self, fix: CanvasFix | None, scene: SceneMatch | None, error: str) -> None:
+    def _on_probe_done(self, fix: CanvasFix | None, screen: str | None, error: str) -> None:
         self.check_btn.setEnabled(bool(self._windows))
         if error:
             self.log_message("error", f"Không kiểm tra được màn hình: {error}")
             return
-        self._on_status(fix, scene)
+        self._on_status(fix, screen)
 
-    def _on_status(self, fix: CanvasFix | None, scene: SceneMatch | None) -> None:
+    def _on_status(self, fix: CanvasFix | None, screen: str | None) -> None:
         if fix is not None:
             self.canvas_label.setText(canvas_text(fix))
-        if scene is not None:
-            self.scene_label.setText(scene_text(scene, self.services))
+        if screen is not None:
+            self.scene_label.setText(scene_text(screen))
 
     def _on_routine_change(self, *_args: object) -> None:
         self._on_run_state(self.services.runner.state)

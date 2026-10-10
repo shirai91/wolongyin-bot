@@ -68,7 +68,7 @@ def main(argv: list[str] | None = None) -> int:
     runner = services.runner
     runner.log.connect(show, Qt.ConnectionType.DirectConnection)
     print(f"{cls.id}: {params.model_dump(mode='json')}")
-    hooks = runner.start(cls(params).bind_services(services), services.make_context)
+    hooks = runner.start(cls(params).bind_services(services), services.make_actor)
     stop_at: float | None = None
     try:
         while not runner.wait(0.05):

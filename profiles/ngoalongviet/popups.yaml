@@ -1,5 +1,5 @@
-# Pop-ups the bot closes by itself, whatever feature is running (ngoalong/engine/popups.py).
-# Checked on every frame a feature captures; after a close click the frame is captured again.
+# Pop-ups the bot closes by itself, whatever feature is running (interrupts, ngoalong/engine/interrupts.py).
+# Checked on every tick before the feature's rules; one click per tick, then the next Snapshot.
 #
 # Plain entries are HARMLESS NOTICES only: pop-ups whose button just closes them. A pop-up that
 # costs something is listed only with a `policy` (a setting the user switches on; declined and the
@@ -10,8 +10,8 @@
 #            margin = extra search room on each side (px); threshold = match score needed.
 # dismiss:   the button to click, searched near its own `at` moved by as much as the signature
 #            moved; or {click: signature} to click the signature match itself.
-# Add a new pop-up: capture it (Mẫu ảnh tab), cut its title and its close button as templates,
-# add an entry below, and add the capture to tests/test_popups.py.
+# Add a new pop-up: capture it (python -m ngoalong.tools.explore), add its title and close button
+# to template_crops.yaml, cut them (tools/cut_templates.py) and add an entry below.
 
 gold_skip_wait:
   # "Bỏ qua thời gian chờ tốn N Vàng. Xác nhận?" (the first line depends on the task). Recognised by

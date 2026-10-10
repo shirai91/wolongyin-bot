@@ -10,11 +10,12 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
-from typing import Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from pydantic import BaseModel, ConfigDict
 
-from ngoalong.engine.context import RunContext
+if TYPE_CHECKING:
+    from ngoalong.engine.actor import Actor
 
 
 class TaskParams(BaseModel):
@@ -33,11 +34,8 @@ class Task(ABC):
     description: ClassVar[str] = ""
     order: ClassVar[int] = 100  # position in the UI list (lower first)
     Params: ClassVar[type[TaskParams]] = NoParams
-    # Scene the feature starts from (shown in the UI; the task itself checks it with expect_scene).
+    # Screen the feature starts from, shown on its page ("Màn hình bắt đầu"; a Feature's ``entry``).
     start_scene: ClassVar[str | None] = None
-    # Collapse the HUD panels (quest tracker, "Sắp mở", chat) before ``run``
-    # (``panels.yaml``); a feature that needs one of them open sets this to False.
-    tidy_panels: ClassVar[bool] = True
 
     def __init__(self, params: TaskParams | Mapping[str, Any] | None = None) -> None:
         if params is None:
@@ -49,7 +47,7 @@ class Task(ABC):
         self.params = params
 
     @abstractmethod
-    def run(self, ctx: RunContext) -> str | None:
+    def run(self, actor: Actor) -> str | None:
         """Do the work; return a short Vietnamese summary for the log (or ``None``)."""
 
     @classmethod
@@ -63,16 +61,10 @@ class Task(ABC):
         a feature that keeps app data (e.g. a store under ``data/``) picks it up here."""
         return self
 
-    def on_stop(self, ctx: RunContext) -> None:
+    def on_stop(self, actor: Actor) -> None:
         """Called once after ``run`` ends for any reason (done, stopped or failed)."""
 
     @classmethod
     def import_legacy(cls, ini: Mapping[str, str]) -> dict[str, Any]:
         """Map v1.8.0 ``[PRO5]`` INI values to this feature's params (docs/04); ``{}`` if none."""
         return {}
-
-    @classmethod
-    def required_templates(cls) -> set[str]:
-        """Template names the feature loads directly (not through a scene); ``--selftest`` checks
-        that each one exists in the profile."""
-        return set()

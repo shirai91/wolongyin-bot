@@ -1,4 +1,4 @@
-# Panels collapsed before every run (ngoalong/engine/panels.py; Cài đặt > "Thu gọn các bảng che game").
+# HUD panels collapsed on a map with no dialog (interrupts, ngoalong/engine/interrupts.py; Cài đặt > "Thu gọn các bảng che game").
 # open: a template that shows only while the panel is open; the match is its collapse button and is
 # clicked. at = canvas top-left where the template was cut (1000x600); margin = search room (px).
 # Checked on the 44 live captures (docs/game screenshots/live): open >= 0.98, closed/absent <= 0.53.

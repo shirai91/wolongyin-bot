@@ -40,7 +40,7 @@ from ngoalong.core.errors import Cancelled
 from ngoalong.engine.control import RunControl
 from ngoalong.engine.history import RunRecord
 from ngoalong.engine.registry import get_feature
-from ngoalong.engine.runner import ContextFactory, RunResult, RunStatus
+from ngoalong.engine.runner import ActorFactory, RunResult, RunStatus
 from ngoalong.engine.task import Task, TaskParams
 
 log = logging.getLogger(__name__)
@@ -315,6 +315,22 @@ class RoutineStore:
             self._save()
             return new.model_copy(deep=True)
 
+    def disable_unknown_steps(self, known: set[str]) -> list[str]:
+        """Switch off the steps whose feature this version does not have (the features removed in
+        2026-10); the steps stay, so the routine editor still shows them. Returns "routine: feature"
+        for each step switched off."""
+        changed: list[str] = []
+        with self._lock:
+            for r in self._data.routines:
+                for s in r.steps:
+                    if s.enabled and s.feature_id not in known:
+                        s.enabled = False
+                        changed.append(f"{r.name}: {s.feature_id}")
+            if changed:
+                self._save()
+                log.info("routines: steps of removed features switched off: %s", "; ".join(changed))
+        return changed
+
     def delete(self, routine_id: str) -> bool:
         with self._lock:
             before = len(self._data.routines)
@@ -560,12 +576,12 @@ class RoutineExecutor(QObject):
     routine_finished = Signal(object)  # RoutineOutcome
     log = Signal(str, str)  # level, message
 
-    def __init__(self, runner: Any, build_task: TaskBuilder, make_context: ContextFactory,
+    def __init__(self, runner: Any, build_task: TaskBuilder, make_actor: ActorFactory,
                  recorder: Any = None, parent: QObject | None = None) -> None:
         super().__init__(parent)
         self.runner = runner
         self.build_task = build_task
-        self.make_context = make_context
+        self.make_actor = make_actor
         self.recorder = recorder  # HistoryRecorder: records steps that could not start
         self._run: RoutineRun | None = None
         self._token = ""
@@ -693,7 +709,7 @@ class RoutineExecutor(QObject):
         self.log.emit("info", f"Chuỗi {run.routine.name}: bước {a.index + 1} - {task.title}"
                               + (f" (lần {a.attempt})" if a.attempt > 1 else ""))
         try:
-            self.runner.start(task, self.make_context, meta=self._meta(a))
+            self.runner.start(task, self.make_actor, meta=self._meta(a))
         except Exception as exc:  # no window, runner busy...: a retry may succeed
             msg = str(exc) or type(exc).__name__
             self.log.emit("error", f"Không chạy được {task.title}: {msg}")

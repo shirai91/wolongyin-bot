@@ -43,7 +43,7 @@ from ngoalong.perception.readers import ScreenState
 from ngoalong.perception.screens import UNKNOWN
 
 if TYPE_CHECKING:
-    from ngoalong.engine.context import RunContext
+    from ngoalong.engine.actor import Actor
 
 
 @dataclass
@@ -74,7 +74,6 @@ class Feature(Task):
 
     entry: str  # the screen the work starts from (a feature may set it per run, in begin())
     tick_s: ClassVar[float] = 0.3  # pause of an idle tick
-    tidy_panels = False  # the runner's old panel tidier: the loop's interrupts do it instead
     collapse_panels: ClassVar[bool] = True  # interrupts collapse the HUD panels (panels.yaml)
     # Boxes the feature answers itself, so the pop-up guard's cost questions leave them alone
     # (e.g. "confirm.gold" after the feature's own "buy").
@@ -93,7 +92,7 @@ class Feature(Task):
         self.m = self.Memory()
         self.snap: Snapshot | None = None
         self.services: Any = None
-        self.actor: Any = None  # the loop's Actor (count, progress, log)
+        self.actor: Any = None  # the run's Actor (count, progress, log), set by the loop
 
     def bind_services(self, services: Any) -> Feature:
         self.services = services
@@ -119,7 +118,7 @@ class Feature(Task):
         """What was done so far (the run's message when it stops on a time limit)."""
         return "Đã dừng"
 
-    def run(self, ctx: RunContext) -> str:
+    def run(self, actor: Actor) -> str:
         from ngoalong.engine.loop import run_feature
 
-        return run_feature(self, ctx)
+        return run_feature(self, actor)

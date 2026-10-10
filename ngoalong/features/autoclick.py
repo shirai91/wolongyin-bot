@@ -11,16 +11,51 @@ Differences from v1.8.0, on purpose:
 from __future__ import annotations
 
 from collections.abc import Mapping
+from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from ngoalong.core.geometry import Point
-from ngoalong.engine.context import ClickType, RunContext
+from ngoalong.core.input import MouseButton
+from ngoalong.engine.actor import Actor
 from ngoalong.engine.registry import register
 from ngoalong.engine.task import Task, TaskParams
 
 CANVAS_W, CANVAS_H = 1000, 600
+
+
+class ClickType(StrEnum):
+    """The six click types of v1.8.0's AutoClick combo (#10: now honoured)."""
+
+    LEFT = "left"
+    LEFT_DOUBLE = "left_double"
+    MIDDLE = "middle"
+    MIDDLE_DOUBLE = "middle_double"
+    RIGHT = "right"
+    RIGHT_DOUBLE = "right_double"
+
+    @property
+    def button(self) -> MouseButton:
+        return self.value.split("_")[0]  # type: ignore[return-value]
+
+    @property
+    def double(self) -> bool:
+        return self.value.endswith("_double")
+
+    @property
+    def label(self) -> str:
+        return _CLICK_LABELS[self]
+
+
+_CLICK_LABELS: dict[ClickType, str] = {
+    ClickType.LEFT: "Chuột trái",
+    ClickType.LEFT_DOUBLE: "Chuột trái (nhấp đúp)",
+    ClickType.MIDDLE: "Chuột giữa",
+    ClickType.MIDDLE_DOUBLE: "Chuột giữa (nhấp đúp)",
+    ClickType.RIGHT: "Chuột phải",
+    ClickType.RIGHT_DOUBLE: "Chuột phải (nhấp đúp)",
+}
 
 
 class CanvasPoint(BaseModel):
@@ -67,7 +102,9 @@ class AutoClick(Task):
 
     params: AutoClickParams
 
-    def run(self, ctx: RunContext) -> str:
+    def run(self, actor: Actor) -> str:
+        """Click the points in turn. No screen recognition: the canvas is only located (again when
+        it is a few seconds old or the window changed size) to turn canvas points into window points."""
         p = self.params
         if not p.points:
             raise ValueError("Chưa có tọa độ click: hãy ghi ít nhất một điểm")
@@ -76,13 +113,13 @@ class AutoClick(Task):
         done = 0
         rnd = 0
         while p.rounds == 0 or rnd < p.rounds:
-            for i, pt in enumerate(p.points):
-                ctx.step(f"vòng {rnd + 1} điểm {i + 1}")
-                ctx.click(pt.to_point(), p.click_type, label=f"điểm {i + 1}")
+            for pt in p.points:
+                actor.canvas_fix()
+                actor.click(pt.to_point(), p.click_type.double, p.click_type.button)
                 done += 1
-                ctx.progress(done, total)
+                actor.progress(done, total)
                 if total is None or done < total:
-                    ctx.sleep(p.interval_ms)
+                    actor.sleep(p.interval_ms / 1000)
             rnd += 1
         return f"Đã click {done} lần"
 
