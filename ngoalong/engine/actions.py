@@ -8,6 +8,7 @@ recovery ladder when it is not met in time::
     Click(p, label="tầng 25", expect=lambda s: s.value("tower.dialog", "selected") == 25)
     Click(spin, label="quay", change=lambda s: s.value("chest.wheel", "chests"), within=6)
     Text("3", at=PAGE_BOX, label="trang 3", expect=lambda s: s.value("tower.dialog", "page") == 3)
+    Burst((auto, ok, auto), times=50, interval=0.02, label="mở nhanh", expect=count_settled)  # blind, then verify
     Wait(1.0, label="đang đánh", patience=300)    # nothing to do yet; stuck after 300 s
     Done("Đã mở 40 rương")                        # the goal is reached
     Fail("Tầng 300 chưa mở")                      # stop the run as failed (screenshot + Snapshot dump)
@@ -70,6 +71,21 @@ class Click(Action):
 
     def what(self) -> str:
         return f"{'dclick' if self.double else 'click'} {self.label} @{self.at.x},{self.at.y}"
+
+
+@dataclass
+class Burst(Action):
+    """Click ``points`` in order, ``times`` cycles over, ``interval`` seconds between clicks, blind:
+    no capture between the clicks, the expectation is checked once after the last one. For a gesture
+    the game takes faster than the loop can look (the Tinh Tú toggle: Tự mở → 确定 → Ngưng mở).
+    Stop / Pause are honoured between cycles, so a stop never leaves a cycle half done."""
+
+    points: tuple[Point, ...]
+    times: int = 1
+    interval: float = 0.02
+
+    def what(self) -> str:
+        return f"burst {self.label} ×{self.times} @{self.interval * 1000:g}ms"
 
 
 @dataclass

@@ -30,7 +30,7 @@ import numpy as np
 
 from ngoalong.core.errors import NgoaLongError, TaskStopped
 from ngoalong.core.locator import DEFAULT_PROFILE_DIR, CanvasFix
-from ngoalong.engine.actions import Click, Decision, Done, Fail, Key, Navigate, Text, Wait
+from ngoalong.engine.actions import Burst, Click, Decision, Done, Fail, Key, Navigate, Text, Wait
 from ngoalong.engine.actor import Actor
 from ngoalong.engine.interrupts import Interrupts
 from ngoalong.engine.navigate import Navigator
@@ -139,7 +139,7 @@ class Loop:
         d = self._decide(frame, fix, snap)
         d = self._guard(snap, d)
         self._log(snap, d)
-        clicks = (d.action.at,) if isinstance(d.action, Click) else ()
+        clicks = (d.action.at,) if isinstance(d.action, Click) else d.action.points if isinstance(d.action, Burst) else ()
         self.actor.show(snap, f"{d.rule} -> {d.action.what()}", clicks)
         return self._act(snap, d)
 
@@ -244,7 +244,7 @@ class Loop:
             return d
         if not isinstance(a, Wait):
             self._wait_rule = ""
-        if isinstance(a, (Click, Key, Text)):
+        if isinstance(a, (Click, Key, Text, Burst)):
             key = (snap.top, d.rule, a.what())
             self._repeats = self._repeats + 1 if key == self._repeat_key else 1
             self._repeat_key = key
@@ -275,6 +275,8 @@ class Loop:
             self.actor.key(a.vk)
         elif isinstance(a, Text):
             self.actor.type_into(a.text, a.at, a.clear, a.enter)
+        elif isinstance(a, Burst):
+            self.actor.burst(a.points, a.times, a.interval)
         if a.stop:
             raise TaskStopped(a.stop)
         if a.expects:

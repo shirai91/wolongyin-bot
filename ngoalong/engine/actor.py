@@ -163,6 +163,24 @@ class Actor:
         self.rest_mouse()
         self._invalidate()
 
+    def burst(self, points: tuple[Point, ...], times: int, interval: float) -> None:
+        """Click ``points`` in order, ``times`` cycles over, ``interval`` seconds between clicks,
+        without looking (``Burst``). Stop / Pause are checked before each cycle, never inside one,
+        so a stop leaves no cycle half done (it comes within one cycle: well under a second)."""
+        tap = getattr(self.input, "tap", None) or self.input.click
+        frame_points = [self._point(p) for p in points]
+        for i in range(times):
+            self.control.checkpoint()
+            for j, p in enumerate(frame_points):
+                if i or j:
+                    time.sleep(interval)  # a high-resolution sleep; the switches' sleep has 15 ms steps
+                tap(p)
+            self.inputs += len(frame_points)
+            if self._ctx is not None:
+                self._ctx.click_count += len(frame_points)
+        self.rest_mouse()
+        self._invalidate()
+
     def rest_mouse(self) -> None:
         """Move the mouse off the game, so the clicked button stops glowing (a hovered tower row
         reads as selected, a hovered button scores lower)."""

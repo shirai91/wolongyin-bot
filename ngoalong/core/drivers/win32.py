@@ -101,6 +101,16 @@ class Win32InputDriver:
             self._sleep(self.press_delay_s)
             self._post(hwnd, up, 0, lp)
 
+    def tap(self, p: Point) -> None:
+        """A left click with no gaps between its messages (move, down, up), for bursts of clicks
+        (``Actor.burst``). Posted messages queue up in order, and the game took every one of them
+        (Tinh Tú: 150 clicks posted at once opened the 50 chests asked for, 2026-10-10)."""
+        hwnd = self.hwnd
+        lp = w.make_lparam(p.x, p.y)
+        self._post(hwnd, w.WM_MOUSEMOVE, 0, lp)
+        self._post(hwnd, w.WM_LBUTTONDOWN, w.MK_LBUTTON, lp)
+        self._post(hwnd, w.WM_LBUTTONUP, 0, lp)
+
     def move(self, p: Point) -> None:
         """Move the game's idea of the mouse to ``p`` (no button): the last-clicked button stops
         glowing, a hovered list row stops reading as selected."""
