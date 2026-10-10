@@ -191,6 +191,14 @@ class Win32Capturer:
             raise WindowGoneError(f"window 0x{hwnd:X} is gone")
         return (cr.right - cr.left, cr.bottom - cr.top)
 
+    def visible_fraction(self) -> float:
+        """How much of the window shows on screen (0..1, see ``_winapi.visible_fraction``). The
+        frozen captures of 2026-10-09 came while the window was fully covered; a cover test on
+        2026-10-10 (2.5 min, whole monitor too) kept the capture live, so this is a hint for the
+        frozen-capture message, not a proof (0.3 ms)."""
+        with w.dpi_aware():
+            return w.visible_fraction(self.hwnd)
+
     def grab(self) -> np.ndarray:
         hwnd = self.hwnd
         if not w.IsWindow(hwnd):

@@ -139,6 +139,16 @@ class Actor:
         self.frame = frame
         return frame, self.fix
 
+    def visible_fraction(self) -> float | None:
+        """Share of the game window shown on screen (None when the capturer cannot tell)."""
+        fn = getattr(self.capturer, "visible_fraction", None)
+        if not callable(fn):
+            return None
+        try:
+            return fn()
+        except Exception:  # a window that just went away: the next capture says so
+            return None
+
     @staticmethod
     def canvas(frame: np.ndarray, fix: CanvasFix) -> np.ndarray:
         return Perceiver.canvas(frame, fix)

@@ -18,6 +18,7 @@ if sys.platform != "win32":  # pragma: no cover - MVP is Windows only
 user32 = ctypes.WinDLL("user32", use_last_error=True)
 gdi32 = ctypes.WinDLL("gdi32", use_last_error=True)
 kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+dwmapi = ctypes.WinDLL("dwmapi", use_last_error=True)
 
 HWND = wintypes.HWND
 HDC = wintypes.HDC
@@ -55,6 +56,7 @@ GR_USEROBJECTS = 1
 GA_ROOT = 2
 PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
 MAPVK_VK_TO_VSC = 0
+DWMWA_CLOAKED = 14
 
 # DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2
 DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 = ctypes.c_void_p(-4)
@@ -119,6 +121,10 @@ try:
     )
 except AttributeError:  # pragma: no cover - Windows < 10 1607
     SetThreadDpiAwarenessContext = None
+
+# --- dwmapi ---------------------------------------------------------------------------------------
+DwmGetWindowAttribute = _bind(dwmapi, "DwmGetWindowAttribute", ctypes.c_long, HWND, wintypes.DWORD,
+                              ctypes.c_void_p, wintypes.DWORD)
 
 # --- gdi32 ----------------------------------------------------------------------------------------
 CreateCompatibleDC = _bind(gdi32, "CreateCompatibleDC", HDC, HDC)
@@ -223,6 +229,35 @@ def top_level_windows() -> list[int]:
 def gdi_object_count() -> int:
     """GDI objects held by this process (GetGuiResources GR_GDIOBJECTS)."""
     return int(GetGuiResources(GetCurrentProcess(), GR_GDIOBJECTS))
+
+
+def is_cloaked(hwnd: int) -> bool:
+    """DWM hides the window (another virtual desktop, a suspended app)."""
+    value = wintypes.DWORD(0)
+    hr = DwmGetWindowAttribute(hwnd, DWMWA_CLOAKED, ctypes.byref(value), ctypes.sizeof(value))
+    return hr == 0 and value.value != 0
+
+
+def visible_fraction(hwnd: int, grid: int = 7) -> float:
+    """Share of a ``grid`` x ``grid`` set of points over the client area where ``hwnd`` is the
+    top-level window on screen (WindowFromPoint), 0 when minimised or cloaked. Click-through
+    overlays do not count as covering (WindowFromPoint skips them)."""
+    if IsIconic(hwnd) or is_cloaked(hwnd):
+        return 0.0
+    rect = wintypes.RECT()
+    origin = wintypes.POINT(0, 0)
+    if not (GetClientRect(hwnd, ctypes.byref(rect)) and ClientToScreen(hwnd, ctypes.byref(origin))):
+        return 0.0
+    w, h = rect.right - rect.left, rect.bottom - rect.top
+    if w <= 0 or h <= 0:
+        return 0.0
+    seen = 0
+    for i in range(grid):
+        for j in range(grid):
+            pt = wintypes.POINT(origin.x + int(w * (i + 0.5) / grid), origin.y + int(h * (j + 0.5) / grid))
+            hit = WindowFromPoint(pt)
+            seen += bool(hit) and GetAncestor(hit, GA_ROOT) == hwnd
+    return seen / (grid * grid)
 
 
 def make_lparam(x: int, y: int) -> int:

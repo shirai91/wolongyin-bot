@@ -43,6 +43,8 @@ if TYPE_CHECKING:
 
 
 FROZEN_HINT_S = 8.0  # when recovery gives up on a canvas unchanged this long, say the client froze
+OCCLUDED_CHECK_S = 3.0  # canvas unchanged this long while inputs were sent: is the window covered?
+OCCLUDED_MESSAGE = "cửa sổ game bị che, hãy để lộ một phần cửa sổ"
 
 
 class LoopFailed(NgoaLongError):
@@ -102,6 +104,7 @@ class Loop:
         self._changed_at = time.monotonic()
         self._inputs_at_change = 0
         self._no_canvas_since: float | None = None
+        self._occluded_warned = False
         self.started = time.monotonic()
         self.ticks = 0
 
@@ -314,9 +317,21 @@ class Loop:
         if self._small is None or float(np.abs(small - self._small).mean()) > 0.3:
             self._changed_at = now
             self._inputs_at_change = self.actor.inputs
+            self._occluded_warned = False
         self._small = small
-        if self._frozen_for() > self.limits.frozen_s:
+        frozen = self._frozen_for()
+        if frozen > OCCLUDED_CHECK_S and not self._occluded_warned and self._occluded():
+            self._occluded_warned = True
+            self.actor.log(f"Ảnh chụp đứng yên {frozen:.0f}s và {OCCLUDED_MESSAGE}", "warning")
+        if frozen > self.limits.frozen_s:
             self._fail(snap, self._frozen_message())
+
+    def _occluded(self) -> bool:
+        """The game window is fully covered (or minimised, or on another virtual desktop). The
+        captures froze while it was fully covered on 2026-10-09, so a frozen canvas then is
+        reported as a covered window rather than a frozen client."""
+        seen = self.actor.visible_fraction()
+        return seen is not None and seen == 0.0
 
     def _frozen_for(self) -> float:
         """Seconds the canvas has not changed while the bot's inputs were ignored (0 otherwise)."""
@@ -325,6 +340,10 @@ class Loop:
         return time.monotonic() - self._changed_at
 
     def _frozen_message(self) -> str:
+        if self._occluded():
+            return (f"{OCCLUDED_MESSAGE[0].upper()}{OCCLUDED_MESSAGE[1:]}: ảnh chụp đứng yên "
+                    f"{time.monotonic() - self._changed_at:.0f}s trong khi cửa sổ game bị che kín (hoặc thu nhỏ). "
+                    "Để lộ một phần cửa sổ game rồi chạy lại; nếu vẫn đứng yên, tải lại trình duyệt (F5)")
         return (f"game không phản hồi: màn hình đứng yên {time.monotonic() - self._changed_at:.0f}s, "
                 f"{self.actor.inputs - self._inputs_at_change} thao tác không có tác dụng. "
                 "Hãy tải lại trình duyệt (F5) rồi chạy lại")

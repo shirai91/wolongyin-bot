@@ -58,6 +58,11 @@ class CachedCapturer:
         fn = getattr(self._inner, "client_size", None)
         return fn() if callable(fn) else None
 
+    def visible_fraction(self) -> float | None:
+        """The inner capturer's share of the window shown on screen; None if it cannot tell."""
+        fn = getattr(self._inner, "visible_fraction", None)
+        return fn() if callable(fn) else None
+
     @property
     def last_frame(self) -> np.ndarray | None:
         return self._frame
