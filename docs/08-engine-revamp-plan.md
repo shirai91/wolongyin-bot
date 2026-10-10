@@ -1,5 +1,17 @@
 # 08 · Engine revamp plan: perceive → read state → decide
 
+## Final state (2026-10-10, after R4)
+
+The revamp is done: the old engine is gone and the bot runs only on the perceive → read state → decide loop.
+
+- **Engine.** Every tick: capture (`PrintWindow`) → canvas (`CanvasLocator`) → **Snapshot** (`ngoalong/perception/`: 69 UI parts, 19 colour probes, 15 digit fields, 35 screens with their readers; no OCR) → watchdogs → the last action's expectation → interrupts (pop-ups, cost questions, HUD panels) → the feature's goal → its rules → navigation to its entry screen (`nav.yaml`, 37 edges) → one action through the run's `Actor`, with an expectation and a time limit; a recovery ladder (✕ → ESC → navigate to the entry → fail) handles anything unmet. `TaskRunner` hands every task an `Actor` built by `AppServices.build_actor`.
+- **Features.** Six, all ported and run live in R2–R3: Quay Tinh Tú (bursts, ~20 chests/s), Tháp Thí Luyện (climb and sweep), Nâng cấp công trình (city, harbour, both), Nâng cấp khoa kỹ, Clear Phó Bản, Võ Khôi Tháp (long loop with the 2-billion silver purchase and Quân lệnh refills). AutoClick stays a plain clicker on the `Actor`. Every game feature starts from any screen.
+- **Removed in R4.** Thám Bảo, Tri Kỷ, Mở thẻ bài, Chạy Thành Tựu, Cày cấp chúa công (and `_tower.py`); `core/scenes.py`, `engine/context.py` (`RunContext`), `core/coords.py` and every coords file, `core/ocr.py` with RapidOCR, `drivers/file.py`, the "Mẫu ảnh" tab with `tools/template_tool.py`, `tools/annotate.py`, 112 templates; `popups.py` / `panels.py` folded into `interrupts.py`. Saved settings and routine steps that name a removed feature are cleaned at start.
+- **Checks.** `tools/perceive.py --bench`: 501/501 feature frames and 38/38 other frames stacked right, every labelled reader value right, no OCR module loaded. `--selftest` runs the same benchmark on 57 frames bundled into the build (lossless WebP), plus the profile, the seven features, the Win32 driver and the main window. `build.ps1` has no pytest step.
+- **Open.** The R4 live smoke test could not run: the game client froze (Flash at 100 % of a core, no pixel changing, see "R4 status"), so neither the features after the R4 changes nor the new text-box gesture were run live in R4. Not observed live yet: a lost Võ Khôi Tháp round followed by a retry, a confirm box after the shop's Mua. The campaign shows no beam after Đổng Trác on the test account. FlashBrowser support is not started (06).
+
+---
+
 Draft of 2026-10-08. Replaces the "Scene recognition" and feature-flow parts of [06](06-rewrite-design.md); window binding, capture, input, canvas location, the runner, the UI shell, routines, history and notifications stay.
 
 ## Why the bot gets lost
@@ -273,7 +285,7 @@ Findings while building it:
 | `engine/navigate.py` + `nav.yaml` | The screen graph: edges `click: part` / `at: [x, y]` / `key` / `close: true`, with `reveal` (click this first when the part is hidden: the "<<" of the top icon rows), `over` and `within`; `close:` entries for dialogs not closed by their ✕ (boxes answer 取消, the sweep panel). `Navigator.step(snap, target)`: cost = dialogs to close + shortest path from each screen of the stack; only the first edge is checked against the frame. A dialog not on the way (also an `unknown` one) is closed by its ✕, else ESC. |
 | `engine/interrupts.py` | `popups.yaml` (reward, toast, `gold_skip_wait` by its setting) and `panels.yaml` (quest tracker, Sắp mở, chat: at most 2 clicks each per run, only on a map with no dialog), checked every tick before the feature's rules. |
 | `engine/recovery.py` | Ladder, one rung per trouble, back to 0 when a feature rule's expectation is met: 1 close the top dialog by its ✕ → 2 ESC → 3 `Navigate(entry)` for up to 45 s, ignoring the feature's rules → 4 fail with the screenshot and the Snapshot dump in run.log. |
-| `engine/actor.py` | `Actor`: capture, canvas fix, clicks / keys / typing in canvas points, the mouse moved to (600, 2) after every click (no hover glow), run counters and progress, the debug frame of a Snapshot (`snapshot_frame`: parts found green, unclaimed ✕ red, the stack as the status line). Built from the old `RunContext` for now (`Actor.from_context`). |
+| `engine/actor.py` | `Actor`: capture, canvas fix, clicks / keys / typing in canvas points, the mouse moved to (600, 2) after every click (no hover glow), run counters and progress, the debug frame of a Snapshot (`snapshot_frame`: parts found green, unclaimed ✕ red, the stack as the status line). Built from the old `RunContext` for now (`Actor.from_context`); *since R4 built by `AppServices.build_actor`, with the counters and the failure screenshot.* |
 | `tools/run_feature.py` | `python -m ngoalong.tools.run_feature <id> --set k=v [--debug] [--stop-after S]`: one feature through `AppServices` → `TaskRunner` → `Feature.run`, the same path as the "Bắt đầu" button, with the run log on the console. |
 
 The app's "Kiểm tra" button and the live overlay now show the Snapshot (`AppServices.probe`, `overlay_snapshot`), and the status line follows the stack while a feature runs. run.log has one line per new decision, the values the rules looked at (`Snapshot.describe(read="seen")`) and the action with its expectation:
@@ -288,7 +300,7 @@ The app's "Kiểm tra" button and the live overlay now show the Snapshot (`AppSe
 
 - *Quay Tinh Tú*: `opens` (0 = all), `buy` (chests to buy first, 240 Vàng each), `max_minutes`. Buy: Mua → type the number → 确定 → the spend-Vàng box 确定; then the fast trick (Tự mở → 确定 → Ngưng mở) while 2 or more are left, 开始抽奖 for the last one (*replaced on 2026-10-10 by bursts, see "Tinh Tú bursts"*). Every drop of the chest count is a chest opened.
 - *Tháp Thí Luyện*: `mode` climb / sweep, `start_floor`, `end_floor`, `sweep_runs`, `battle_timeout_s`, `max_minutes`. Climb: tab Tháp → type the page → select the floor → Vượt Tháp → 确定 → tick Tự Vượt Tháp if needed → click under the crystal (seen on 2 ticks) once → 战胜: next floor / 战败: Thoát → 确定, the run ends. Sweep: only when the next floor is listed (else it fails: "Tầng N chưa thắng"), Tự Vượt Tháp → type the runs → 确定 → 确定; the runs are counted from the Thí luyện lệnh spent.
-- `features/_tower.py` and `coords/thap.yaml` stay: `chua_cong` (Cày cấp chúa công) still uses them; it is the same flow as the new sweep mode, so R3 can drop it. `coords/quay_ruong.yaml` stayed for `vo_khoi_thap` (its spin) until R3 ported it.
+- `features/_tower.py` and `coords/thap.yaml` stay: `chua_cong` (Cày cấp chúa công) still uses them; it is the same flow as the new sweep mode, so R3 can drop it (*deleted in R4*). `coords/quay_ruong.yaml` stayed for `vo_khoi_thap` (its spin) until R3 ported it.
 
 **Live gate** (2026-10-09, the test account, `run_feature` through the runner): see the table in "Phases and gates". Findings:
 
@@ -432,7 +444,50 @@ Findings:
 
 **The covered window.** `Win32Capturer.visible_fraction()` samples 7×7 points of the client area with WindowFromPoint (0 when minimised or DWM-cloaked; 0.3 ms). When the canvas has not changed for 3 s while inputs were sent and the window is fully hidden, the loop logs "Ảnh chụp đứng yên Ns và cửa sổ game bị che, hãy để lộ một phần cửa sổ" once, and the frozen-client failure names the covered window instead of "game không phản hồi". **But covering did not freeze the capture today**: an opaque window over the Coowon window (topmost, normal, foreground) and over the whole monitor, for 6 s to 2.5 min, read `visible_fraction` 0.0 while PrintWindow frames kept changing (animation, and a hover glow 5,000–10,000 px). So the 10-09 freeze had another cause that coincided with the covered window (a locked screen, display sleep or the client itself; not tested: locking the user's session is out of bounds). The warning stays as a hint; the watchdog's frozen-client path is unchanged.
 
+### R4 status: the old engine removed (2026-10-10)
+
+**Deleted** (git keeps all of it): 6,577 lines removed and 1,061 added from `7300c3a` to `fa463e3`, besides 112 template PNGs.
+
+| What | Lines |
+| --- | --- |
+| Out-of-scope features: `chua_cong.py`, `tham_bao.py`, `tri_ky.py`, `mo_the_bai.py`, `thanh_tuu.py`, `_tower.py`, their form widgets (`thanh_tuu_maps.py`, `check_list.py`) and coords files | 2,558 |
+| Old engine: `core/scenes.py`, `engine/context.py`, `core/coords.py` and `coords/common.yaml`, `core/ocr.py`, `drivers/file.py`, `engine/popups.py` + `panels.py` (folded into `interrupts.py`), the empty `scenes/` folder | 1,741 |
+| Tools: the "Mẫu ảnh" tab (`ui/tabs/templates.py`, `ui/widgets/capture_view.py`, `tools/template_tool.py`) and `tools/annotate.py` | 1,345 |
+| Templates no code or YAML searches (112 of 204, checked with a usage scan): every v1.8.0 legacy image and old scene / object template, including `clear_map.*`, `vo_khoi_thap.*`, `tham_bao.*`, `tri_ky.*`, `field.enemy_flag`, `field.hud.icons_toggle`, `hud.notice_collapse`, with their 113 `template_crops.yaml` crops and 97 sources | ~250 (YAML) |
+| Dependencies: `rapidocr`, `onnxruntime`, `rapidfuzz`, `pytest`; `build.ps1`'s pytest step and `-SkipTests` | |
+
+**Kept**: `core/` (window, locator, capture, input, Win32 driver, the recording input driver for the self-test, the CDP stub, templates, vision, digits, detection), `perception/`, the engine (loop, actions, feature, navigate, interrupts, recovery, actor, runner, control, manager, scheduler, history, registry), the six features and AutoClick, `debug/`, the UI without the "Mẫu ảnh" tab, `tools/explore.py` and `tools/run_feature.py`, and the profile: `parts.yaml`, `probes.yaml`, `numbers.yaml`, `screens/`, `nav.yaml`, `popups.yaml`, `panels.yaml`, `locator.yaml`, the crop lists, 92 templates. The reward pop-up's source screenshot, lost with `tests/` in R0, is back in `docs/game screenshots/live/50-reward-modal-chuc-mung.png`, so `tools/cut_templates.py --check` passes again for both crop lists.
+
+**The Actor replaces RunContext.** `AppServices.build_actor` makes one per run (cached capturer, input driver, the window's locator, debug and PNG sinks, the cost-question policy, the interrupt data); `execute(task, actor)` and `Task.run(actor)` take it. It now also owns the run-history counters, the click count and the failure screenshot (the frame the loop hands over, drawn with its Snapshot). AutoClick clicks with it (`canvas_fix()` re-locates only when the fix is older than 5 s or the window changed size); `ClickType` moved into `autoclick.py`. The status signal carries the screen stack as text.
+
+**Settings migration.** `Settings.forget_features(known)` runs at start (in `main` and in `AppServices`): params of removed features, a `last_feature` or multi-window choice naming one, and their `legacy_applied` entries are dropped and logged. `RoutineStore.disable_unknown_steps` switches off (keeps) routine steps of removed features. Checked with the developer's own `settings.toml` (last feature `thanh_tuu`, params of `chua_cong`, `mo_the_bai`, `thanh_tuu`): the app starts on Nâng cấp công trình with the seven features.
+
+**Self-test.** `ngoalong/perception/bench.py` holds the benchmark (`tools/perceive.py --bench` prints it and applies the R1 gate, plus "no wrong reader value"). The spec calls `selftest.write_bundle`, which copies the frames of `BUNDLE_FRAMES` from `corpus/live/` as lossless WebP (35 MB instead of 58 MB of PNG) with a `labels.yaml` of just those frames. The 57 frames are a greedy cover over the labels: each of the 33 screens of the six features (with their overlays), each of the 47 distinct feature screen stacks, each of the 41 labelled readers, and the 9 kinds of other screens, at least once (frames 002 … 564, listed in `selftest.py`). A frame missing on the build machine is left out with a warning; with no corpus the self-test prints `SKIP [perception] corpus: KHÔNG có bộ ảnh mẫu (corpus) đi kèm …` and does not fail. Timing is reported, not judged (a slow build machine must not fail it). The other checks: the profile (locator, perception + navigation consistency, every template of the locator, the interrupts and both crop lists), exactly the seven features (each `Params`, each feature's rules and entry screen), the Win32 driver imports, the main window offscreen with 7 forms.
+
+Build (`.\build.ps1`, 2026-10-10): PyInstaller OK, 57 frames bundled, 234 MB, and the exe's self-test:
+
+```text
+AutoNgoaLong self-test (bản build), thư mục: …\dist\AutoNgoaLong
+OK   [profile] folder · locator: 3 mốc · perception: 69 phần giao diện, 19 đầu dò màu, 15 ô số, 35 màn hình, 37 đường đi
+OK   [profile] templates: 79 mẫu ảnh (mốc khung, popup, bảng, danh sách cắt), đủ cả
+OK   [features] registry: 7 tính năng (+ one line per feature: params, rules, entry screen)
+OK   [driver] win32: Win32Capturer, Win32InputDriver, GameWindow nạp được
+OK   [perception] benchmark (selftest): 48/48 ảnh của 6 tính năng và 9/9 ảnh khác đúng màn hình; 55 giá trị đọc đúng, 0 sai; Snapshot tối đa 125 ms; OCR: không
+OK   [ui] main_window: 7 thẻ (Tính năng, Nhiều cửa sổ, Chuỗi tác vụ, Gỡ lỗi, Lịch sử, Thông báo, Cài đặt), 7 biểu mẫu tính năng
+15/15 đạt, 0 lỗi, 4.7 giây
+```
+
+The built exe, started by hand: the "Tính năng" list shows exactly the seven features, and "Kiểm tra" shows `Khung game: (40, 110) 1000×600 ×1.00 - tin cậy` and the Snapshot (`harbour{…} > chest.wheel{chests=99, …} + toast | hud{silver=1641839284, …, level=140}`), read through UI Automation.
+
+**Text boxes** (the "1200" of run `142007`: the double-click did not select the old "1" and "200" went after it). `Actor.type_into` now always clears: double-click, End, Backspace ×6, the text (digits as key presses), Delete ×6, Enter. End puts the caret after the old number whether or not it was selected, the Backspaces remove it, and the Deletes remove the "1" an emptied quantity box puts back in front of the caret (R2, frames 430–432); a box that does not refill (the tower page box) is left with just the text. The quantity boxes no longer type over a selection (`clear=0`). When the box read back does not show the value in time and the same screen is still on top, the loop types it again (`Text.retype` = 2) before the recovery ladder, and the rules that confirm a box (`xác nhận mua`, `确定 tự vượt`) only fire on the exact value, so a wrong number is never confirmed. **Not checked live** (below).
+
+**Live smoke test: not run.** Before the live work (14:45), the client was frozen: the canvas was found HIGH, but no pixel changed between captures for over 25 minutes, the reward-log countdown stayed at "21:25:35", a click on the toast's ✕ changed nothing, and a screen-DC capture of the window (brought to the front with SetForegroundWindow, `visible_fraction` 1.0) showed the same still picture, so it was not the capture. Windows did not report the window as hung; Coowon's Flash process (`--type=ppapi`) used a whole core (≈ 0.9 CPU-seconds per second) while the renderer and GPU processes were idle. The last run (`142955`, 14:30) had ended normally, and a toast appeared after it, so the game froze between 14:30 and 14:45. Per the R4 rules the browser was not reloaded, so the six features, AutoClick and the new text-box gesture were not run live in R4. A first thing to do after a reload: `run_feature quay_ruong --set buy=200 --set opens=1` (types 200 into a box that shows 1) and `thap_thi_luyen --set mode=sweep` (page and runs boxes), then one short run of each feature.
+
+Commits: `b143a03` (out-of-scope features), `2b5277b` (Actor replaces RunContext; scenes, coords, OCR; settings migration), `a482104` (templates), `71ba3ce` (self-test and build), `fa463e3` (text boxes), and the docs commit.
+
 ### When OCR is allowed
+
+*R4: nothing in the bot needs OCR; `core/ocr.py` and RapidOCR were removed with Chạy Thành Tựu. The rules below stay for the day a feature needs a text no glyph set can read (a cross-platform engine, RapidOCR, not Windows OCR).*
 
 OCR (RapidOCR) costs hundreds of milliseconds, against a few milliseconds for a template or colour probe. It is used only:
 
@@ -491,14 +546,14 @@ The overlay, the debug panel and the PNGs draw the Snapshot: each part's box, th
 
 | Area | Fate |
 | --- | --- |
-| `core/window.py`, `core/drivers/*`, `core/capture.py`, `core/input.py`, `core/geometry.py`, `core/templates.py`, `core/vision.py` (Matcher), `core/ocr.py`, `core/locator.py` | **Keep.** They work: the canvas was found HIGH on 44/46 live captures. |
+| `core/window.py`, `core/drivers/*`, `core/capture.py`, `core/input.py`, `core/geometry.py`, `core/templates.py`, `core/vision.py` (Matcher), `core/ocr.py`, `core/locator.py` | **Keep.** They work: the canvas was found HIGH on 44/46 live captures. *R4: `core/ocr.py` and `drivers/file.py` removed (no users left).* |
 | `engine/control.py`, `engine/runner.py` (`TaskRunner`, `execute`), `engine/manager.py`, `engine/scheduler.py`, `engine/history.py`, `engine/registry.py`, `notify.py`, `hotkeys.py`, `config/`, `ui/` shell, `debug/` sinks | **Keep**, with small adapters (a run's counters come from the feature's Memory). |
-| `core/scenes.py` + `profiles/*/scenes/*.yaml` | **Replace** with `perception/` (`parts.py`, `probes.py`, `screens.py`, `readers.py`, `snapshot.py`) + `profiles/*/parts.yaml`, `probes.yaml`, `screens/*.yaml`, `nav.yaml`. Existing templates are reused as part detectors where they still hold. *Perception built in R1; `nav.yaml` is R2.* |
-| `engine/context.py` (`RunContext` with `expect_scene` / `wait_for` / `click`) | **Replace** with `engine/loop.py` (tick, decide, act, verify), `engine/actions.py`, `engine/recovery.py`, `engine/navigate.py`. A thin `Actor` keeps click/key/text and the debug recording. *Built in R2 (see "Decision loop"); `RunContext` stays until R4 for the features not ported yet, and the new loop takes its window, switches and sinks through `Actor.from_context`.* |
-| `engine/popups.py`, `engine/panels.py` | **Fold into** interrupt rules; their YAML stays. *R2: `engine/interrupts.py` runs them inside the loop; the old `RunContext` path still uses them directly until R4.* |
-| `features/*.py` | **Rewrite** one by one as rule sets. The old modules are deleted as each one is ported. |
-| `profiles/*/coords/*.yaml` | **Shrink.** Offsets stay only for things that have no recognisable part (a spot on the map). Buttons are found through their screen. |
-| `tools/annotate.py` | **Extend** into `tools/perceive.py`: prints and draws the Snapshot for screenshots or the live window, and runs the benchmark below. *Done in R1 (`tools/perceive.py`); `annotate.py` stays until R4.* |
+| `core/scenes.py` + `profiles/*/scenes/*.yaml` | **Replace** with `perception/` (`parts.py`, `probes.py`, `screens.py`, `readers.py`, `snapshot.py`) + `profiles/*/parts.yaml`, `probes.yaml`, `screens/*.yaml`, `nav.yaml`. Existing templates are reused as part detectors where they still hold. *Perception built in R1; `nav.yaml` is R2. R4: `core/scenes.py` and the `scenes/` folder deleted.* |
+| `engine/context.py` (`RunContext` with `expect_scene` / `wait_for` / `click`) | **Replace** with `engine/loop.py` (tick, decide, act, verify), `engine/actions.py`, `engine/recovery.py`, `engine/navigate.py`. A thin `Actor` keeps click/key/text and the debug recording. *Built in R2 (see "Decision loop"); `RunContext` stays until R4 for the features not ported yet, and the new loop takes its window, switches and sinks through `Actor.from_context`. R4: `RunContext` deleted; the `Actor` is built directly by `AppServices.build_actor` and is what `Task.run` receives.* |
+| `engine/popups.py`, `engine/panels.py` | **Fold into** interrupt rules; their YAML stays. *R2: `engine/interrupts.py` runs them inside the loop; the old `RunContext` path still uses them directly until R4. R4: both modules folded into `engine/interrupts.py`.* |
+| `features/*.py` | **Rewrite** one by one as rule sets. The old modules are deleted as each one is ported. *R4: the five out-of-scope modules and `_tower.py` deleted.* |
+| `profiles/*/coords/*.yaml` | **Shrink.** Offsets stay only for things that have no recognisable part (a spot on the map). Buttons are found through their screen. *R4: the folder is gone; the few fixed spots (a map building, the quantity box) are constants in the feature or `at:` edges in `nav.yaml`.* |
+| `tools/annotate.py` | **Extend** into `tools/perceive.py`: prints and draws the Snapshot for screenshots or the live window, and runs the benchmark below. *Done in R1 (`tools/perceive.py`); `annotate.py` deleted in R4; the benchmark itself moved to `ngoalong/perception/bench.py` so `--selftest` can run it.* |
 
 ## Phases and gates
 
@@ -510,19 +565,19 @@ Each phase ends at a gate checked on the real game, as in 06.
 | **R1 · Perception** | *Started 2026-10-09: 40 part templates (`part_crops.yaml` → `templates/part/`), `parts.yaml` with search regions, `tools/part_report.py`. All 40 separate cleanly over 293 frames, 1.75 ms per search. Digit reader with 8 number fields (`numbers.yaml`): 435 correct reads over the corpus, none wrong. **Gate passed 2026-10-09** (see "Perception"): 56 parts, 17 colour probes, 33 screens (9 bases, 20 dialogs, 3 overlays, the HUD), 12 number fields; stack correct on 364/364 feature frames and 31/31 other frames of 395 labelled, 0 OCR calls, parts ≤ 33 ms, Snapshot with every reader ≤ 81 ms; both kept failure frames read correctly (the third run left no PNG); live check over every screen of the six features (frames 294–423). The live "Kiểm tra" button is `tools/perceive.py --live` for now; wiring it into the UI is left to R2.* Parts, screen rules, readers (colour, template, `digits`), Snapshot, `tools/perceive.py --bench` (per-screen precision/recall, per-reader accuracy, ms per Snapshot, OCR calls). Cut title, icon and digit-glyph templates. Live "Kiểm tra" shows the Snapshot. | Screen stack correct on ≥ 98% of the corpus with **zero OCR calls**, no "unknown" on any frame a feature needs; parts ≤ 80 ms and full Snapshot with its readers ≤ 150 ms; the 3 failing frames above read correctly |
 | **R2 · Decision loop** | *Gate passed 2026-10-09 (see "Decision loop"): both pilots ran ~30 min in all on the live game through `TaskRunner` (`tools/run_feature.py`), every start screen reached the goal, Stop ended in 0.01–0.02 s; table below.* `engine/loop.py`, actions with expectations, interrupts, recovery ladder, navigation graph, decision log, overlay of the Snapshot. One pilot feature: **Quay rương** (small), then **Tháp Thí Luyện** (dialog + battle + result). | Both pilots run 30 minutes live; starting each from city, world map, field or with a dialog open still reaches the goal; Stop ends within 1 s |
 | **R3 · Port the features** | Only the four remaining supported features, one at a time: Nâng cấp công trình (city and harbour), Nâng cấp khoa kỹ, Clear Phó Bản, Võ Khôi Tháp (long loop). *User decision 2026-10-09: the game's own auto-play covers everything else, so Thám Bảo, Tri Kỷ, Mở thẻ bài, Chạy Thành Tựu and Cày cấp chúa công are not ported; they are deleted in R4. AutoClick stays a plain clicker.* Delete each old module and its coords when its port passes. *2026-10-09: Nâng cấp công trình and Nâng cấp khoa kỹ are ported and were run live (see "Structures and Khoa kỹ"); the account ran out of upgradeable levels, so their gate time is ~18 and ~8 minutes, then the client froze. 2026-10-10: Clear Phó Bản and Võ Khôi Tháp are ported and run live (see "Campaign and Võ Khôi Tháp"): Võ Khôi Tháp ~76 min with the silver alert, 2 × 1B and repeated Quân lệnh refills; Clear Phó Bản ~5 min, then the account's campaign had no beam left. R3 is done.* | Each feature passes a 30-minute live run with no stuck loop; every recovery is logged with its Snapshot |
-| **R4 · Remove the old engine** | Delete `core/scenes.py`, `RunContext`, `scenes/*.yaml`, unused coords; update `selftest.py`, `build.ps1`, docs 06 and the user guide | `--selftest` runs the perception benchmark on the bundled corpus; build passes |
+| **R4 · Remove the old engine** | Delete `core/scenes.py`, `RunContext`, `scenes/*.yaml`, unused coords; update `selftest.py`, `build.ps1`, docs 06 and the user guide. *Done 2026-10-10 (see "R4 status"): the old engine, the five out-of-scope features, coords, OCR, the template tool and 112 templates deleted; `--selftest` benchmarks 57 bundled frames (57/57, 0 wrong values) and `build.ps1` passes; the live smoke test could not run (frozen client).* | `--selftest` runs the perception benchmark on the bundled corpus; build passes |
 
 ## Tests
 
 **Done 2026-10-08:** the whole `tests/` folder (with its fixture screenshots) and every scene definition (`profiles/ngoalongviet/scenes/*.yaml`) were removed, so no old assumption constrains the new design. They can be restored from commit `39cdd96` if a piece is needed for reference.
 
-Consequences until R1/R4 replace them:
+Consequences until R1/R4 replace them (*all resolved by R4*):
 
-- Features that call `expect_scene` fail with "unknown scene" (no scenes are defined). The app still starts, since the `scenes/` folder is kept empty.
-- `build.ps1` runs pytest, and `AutoNgoaLong.spec` / `selftest.py` bundle golden screenshots from `tests/fixtures/`. The build fails until R4 points the self-test at the new corpus.
-- `tools/annotate.py` still locates the canvas but names no scene.
+- Features that call `expect_scene` fail with "unknown scene" (no scenes are defined). The app still starts, since the `scenes/` folder is kept empty. *Gone with those features.*
+- `build.ps1` runs pytest, and `AutoNgoaLong.spec` / `selftest.py` bundle golden screenshots from `tests/fixtures/`. The build fails until R4 points the self-test at the new corpus. *R4: no pytest step; the self-test benchmarks a corpus subset bundled at build time.*
+- `tools/annotate.py` still locates the canvas but names no scene. *Deleted.*
 
-**New tests are corpus-driven**: the perception benchmark (labelled frames in `corpus/` → Snapshot), and rule tests that feed a feature a sequence of labelled Snapshots and check the actions it picks. No test asserts click coordinates of a flow.
+**Checks are corpus-driven**: the perception benchmark (labelled frames in `corpus/` → Snapshot) and live gates per phase. *User decision (R4): no unit tests; the rule tests imagined here were not written.* No check asserts click coordinates of a flow.
 
 ## Risks and open questions
 

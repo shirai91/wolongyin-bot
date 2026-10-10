@@ -2,6 +2,8 @@
 
 Measured canvas positions, scenes and on-screen objects from the reference screenshots in [`game screenshots/`](game%20screenshots/). Used by the canvas locator, the scene detector and the debug overlay in [06 Rewrite design](06-rewrite-design.md). Index of all parts: [README.md](README.md)
 
+> **Historical (2026-10-10).** The canvas measurements still hold (the locator uses them). The scenes and object offsets below were the first engine's; the scene detector and the coords files were removed in R4. Screens are now recognised from UI parts and labelled live frames: see [08](08-engine-revamp-plan.md) "Perception", `profiles/ngoalongviet/screens/*.yaml` and `corpus/live/labels.yaml`.
+
 All 6 bright screenshots show the game canvas at exactly **1000×600 px**, but its top-left corner moves by up to 6 px between captures. The dark tower-battle screen defeats a simple black-border search. Most v1.8.0 offsets still land on the right buttons, which confirms they are canvas-relative and still valid on this server.
 
 ## Canvas measurements

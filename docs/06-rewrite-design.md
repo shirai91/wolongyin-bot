@@ -4,6 +4,8 @@ Working draft of the Python rewrite: target browsers, automatic screen detection
 
 The proposal keeps v1.8.0's proven idea, background `PostMessage` clicks at `origin + offset`, and rebuilds everything around it. The new parts are a worker thread with real cancellation, OpenCV matching with a score threshold, a window binding that survives restarts, and offsets and flows stored as data instead of code.
 
+> **Engine replaced (2026-10-08 → 10-10).** The first engine (scenes + `RunContext` + feature scripts, sections "Scene recognition" and "Pop-up guard" as first written) got lost on the live game. It was replaced by the perceive → read state → decide loop of [08](08-engine-revamp-plan.md) (phases R0–R4), and the bot now supports six features plus AutoClick. Window binding, capture, input, the canvas locator, the runner, the UI shell, routines, history, notifications and the build stay as described here; the sections below are updated to the final state.
+
 ## Target browsers
 
 The MVP supports one host: **Coowon** on Windows. **FlashBrowser** (Windows, macOS, Linux) is out of scope for the MVP and comes after it. Both are Chromium-based, so FlashBrowser on Windows should later reuse the Win32 driver; macOS and Linux would need a driver built on the Chrome DevTools Protocol (CDP).
@@ -32,23 +34,23 @@ The user never sets the root coordinate (*Tọa độ gốc*) or presses F9. The
     - **Layout prior**: the canvas is centred horizontally and top-aligned in the page. Used to place search regions, never on its own.
 3. **Validate.** Accept a rectangle when two detectors agree within 3 px. Otherwise keep the last good rectangle, mark it low-confidence, and retry on the next capture.
 4. **Track.** Re-run on window move or resize (WinEvent `EVENT_OBJECT_LOCATIONCHANGE`), on scene change, and every 10 s. Cache the result between runs.
-5. **Scale.** `scale = canvas width / 1000`. All offsets in `coords.yaml` and `scenes.yaml` are canvas-relative at 1000×600, so page zoom works without re-recording.
+5. **Scale.** `scale = canvas width / 1000`. Every position in the profile (parts, probes, number fields, navigation) is canvas-relative at 1000×600, and the perception layer works on the canvas rescaled to 1000×600, so page zoom works without re-recording.
 
-## Scene recognition
+## Screen recognition and state (replaced by 08)
 
-Each scene is declared in `profiles/ngoalongviet/scenes.yaml`: a name, signature anchors that must all match, and the objects it contains (template or fixed offset, search region, threshold). `SceneDetector` checks modal dialogs first, then full screens, and returns the scene name with a score. Features wait on scenes instead of blind sleeps: `ctx.expect_scene("tower.confirm", timeout_s=5)` replaces v1.8.0's `Sleep` + hope. The first 7 scenes (`city`, `field`, `world_map`, `tower.dialog`, `tower.confirm`, `tower.battle`, `chest.wheel`) and their objects are listed in [07 Screen catalogue](07-screen-catalogue.md).
+*First design (P0–P3): each scene was a flat name with signature templates at fixed places (`scenes/*.yaml`, `SceneDetector`), and features waited on it with `ctx.expect_scene(...)`. Live it got lost: one template at one position named the city, a scene had no state inside it, and the bot never asked "what screen is this?" while it worked. Removed in R4.*
 
-## Pop-up guard
+Now (details in [08](08-engine-revamp-plan.md)): every tick the bot captures, locates the canvas and perceives a **Snapshot**: UI parts found in search regions (templates, colour probes, the game's digit font; no OCR), the screen stack built from rules over them (a base screen, the dialogs on top, overlays), and typed readers per screen (tab, page, counts, levels, results). A feature is a goal plus rules over the Snapshot; every action carries an expectation that the next Snapshots must meet; navigation (`nav.yaml`), interrupts and a recovery ladder are built in.
 
-The game opens reward and notice pop-ups on its own, on top of whatever a feature is doing. On 2026-10-06 a "Chúc mừng ngài được … M.C+4500" reward modal opened over a tower battle, and the run waited for the battle result until its time limit. Since then, `RunContext.observe()`, which every `find`, `wait_for`, `expect_scene` and `detect_scene` call goes through, asks the `PopupGuard` (`ngoalong/engine/popups.py`) about each captured frame first:
+## Interrupts: pop-ups and panels
 
-1. The guard checks the pop-ups listed in `profiles/ngoalongviet/popups.yaml`. Each entry has a signature template (for example the title "Chúc mừng ngài được") and a close button (its 确定 or ✕), searched near where they were cut. The button region moves with the signature, so a taller box still works.
-2. When one is shown, the context clicks the close button, logs "Tự đóng popup: …", counts it in the run history (`popups`), waits 0.6 s and captures again. It closes at most 3 pop-ups per capture, so the bot can't fall into a click loop.
-3. The feature then sees the screen underneath. No feature code is involved.
+The game opens reward and notice pop-ups on its own, on top of whatever a feature is doing (on 2026-10-06 a "Chúc mừng ngài được … M.C+4500" reward modal opened over a tower battle and the run waited until its time limit). The decision loop asks the interrupts (`ngoalong/engine/interrupts.py`) on every tick, before the feature's rules:
 
-**Only harmless pop-ups are listed**: boxes whose only button closes them. Dialogs a feature answers itself (`tower.confirm`, battle results, buy or exchange boxes) must never go in `popups.yaml`, and a test enforces this for the tower ones. Listed today: `reward` (title + 确定) and `toast` (the corner notice: "Xem ngay" + ✕). A new pop-up is added by cutting its title and close button as templates and adding an entry, with no code change.
+1. **Pop-ups** (`profiles/ngoalongviet/popups.yaml`): each entry has a signature template and a button, searched near where they were cut (the button region moves with the signature). A harmless one (`reward`, `toast`, the `story` box) is closed with one click, with the expectation that it is gone.
+2. **Cost questions** have a `policy`: an accept and a decline button, answered by `Settings.game.<policy>` at the moment the question shows. On: accept, the run goes on. Off: decline, and the run ends as **stopped** with the entry's `stop_message`. The only one is `gold_skip_wait` ("Bỏ qua thời gian chờ tốn N Vàng. Xác nhận?", recognised by the unchanging "☐ Lần sau không nhắc nhở" line plus both buttons); setting **Cài đặt → Trong game → "Dùng vàng bỏ qua thời gian chờ"**, off by default. The bot never ticks "Lần sau không nhắc nhở". A feature that asks such a box itself (the Tinh Tú purchase) lists it in `Feature.answers`, and the guard leaves it alone.
+3. **Panels** (`panels.yaml`): the quest tracker, "Sắp mở" and the chat log are collapsed on a map with no dialog, at most twice each per run (setting "Thu gọn các bảng che game khi chạy").
 
-**Pop-ups with a cost are answered by a setting.** An entry with a `policy` names an accept button (`dismiss`) and a decline button (`decline`), and the guard reads `Settings.game.<policy>` at the moment the question appears. On: it clicks accept and the run goes on, counting the answer in the run history. Off: it clicks decline and the run ends as **stopped** (`TaskStopped`) with the entry's `stop_message`. The only such entry today is `gold_skip_wait`: "Bỏ qua thời gian chờ tốn N Vàng. Xác nhận?". It appears after "Tăng cấp" and similar actions when the game's warning is enabled (the HUD gear setting), and the first line varies per task. It is recognised by the unchanging "☐ Lần sau không nhắc nhở" line plus both buttons. Setting: **Cài đặt → Trong game → "Dùng vàng bỏ qua thời gian chờ"**, off by default: 确定 (left) when on; 取消 (right) and stop when off. The bot never ticks "Lần sau không nhắc nhở", since that would let the game spend Vàng without asking.
+Only harmless pop-ups are listed without a policy. Boxes a feature answers itself (tower confirm, battle results, buy boxes) are screens the feature's rules handle.
 
 ## Debug mode and overlay
 
@@ -68,11 +70,11 @@ Debug mode draws what the bot sees: one rectangle per object it looked for, gree
 
 How it works:
 
-- **One data model, three outputs.** Every `Matcher.find`, `wait_for` and `expect_scene` call records a `Detection` (name, rectangle, score, threshold, found) into a `DebugFrame`, together with the canvas, the scene and planned clicks. The overlay is a by-product of normal detection, not separate code. Three sinks render the same `DebugFrame`:
+- **One data model, three outputs.** Every tick's Snapshot becomes a `DebugFrame` (`engine/actor.py` `snapshot_frame`): each UI part found as a `Detection` (name, rectangle, score), the ✕ no screen claimed in red, the screen stack as the status line, planned clicks. The overlay is a by-product of normal detection, not separate code. Three sinks render the same `DebugFrame`:
     1. **Live overlay window**: a frameless, transparent, click-through, top-most Qt window (`WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW`) kept on top of the render widget's screen rectangle. Visible only while the game is on screen; the bot itself keeps working in the background.
     2. **Debug panel** in the app: the last capture with the same annotations, so debugging works while the game is behind other windows.
     3. **Annotated PNGs**: in debug mode every step is saved to `logs/run-<id>/NNN-<step>.png`. On any failure the last frame is always saved, debug mode or not.
-- **Offline testing.** `FileCapturer` replays screenshots instead of a live window. `python -m ngoalong.tools.annotate "docs/game screenshots/*.png" --out build/annotated` runs the canvas locator and scene detector on stored screenshots and writes annotated copies. `pytest` golden tests assert the canvas rectangle and scene name for each reference screenshot, with expected values from [07](07-screen-catalogue.md).
+- **Offline checking.** `python tools/perceive.py <png or folder> --draw DIR` prints and draws the Snapshot of stored canvas captures; `--live` does it on the game window; `--bench` runs the perception benchmark over the labelled corpus (`corpus/live/labels.yaml`). `--selftest` runs the same benchmark on the 57 frames bundled into the build. There is no unit-test suite (removed in R0 by choice).
 - **No cost when off.** With debug mode off, detections are still recorded (they are cheap) but nothing is drawn or saved except failure frames.
 
 ## Stack
@@ -89,52 +91,45 @@ How it works:
 | Config | `pydantic` models saved as TOML (user settings); YAML for offsets and flows | Validated inputs (#15), readable files, and versioned profiles |
 | Hotkeys | `RegisterHotKey` on a message thread, configurable, with a modifier by default (Ctrl+Alt+F10 = stop) | No more stolen F-keys (#8) |
 | Packaging | PyInstaller one-folder build, later Nuitka | Simple distribution. The templates folder stays editable. |
-| Quality | `pytest`, screenshot fixtures for vision, a fake input driver that records clicks | Flows can be tested without the game running |
+| Quality | A labelled corpus of live canvas captures and the perception benchmark (`tools/perceive.py --bench`, `--selftest` in the build); live gates per phase | Perception is checked frame by frame without the game; flows are checked on the live game |
 
 ## Module layout
 
+As built (2026-10-10, after R4). The bot structure page ([bot-structure.html](bot-structure.html)) draws it.
+
 ```text
 ngoalong/
-  app.py                 # entry point: Qt app, DI wiring
-  config/
-    settings.py          # pydantic models, load/save settings.toml, migrate NgoaLong_data.ini
+  app.py                 # entry point, AppServices (DI wiring, one Actor per run), command line
+  paths.py  selftest.py  hotkeys.py  notify.py
+  config/settings.py     # pydantic settings (settings.toml), one-time INI import, removed features forgotten
   core/
-    window.py            # GameWindow: auto-discover Coowon render widget, bind by (pid, exe, class, title), re-find, liveness
+    window.py            # GameWindow: discover Coowon windows, bind by pid/exe/class/title, rebind
     locator.py           # CanvasLocator: anchors + black-border box + layout prior -> canvas rect, scale, confidence
-    scenes.py            # SceneDetector: loads scenes.yaml, returns current scene + score
-    input.py             # InputDriver interface: click/double/right, key down+up, text
-    capture.py           # Capturer interface, frame cache, debug dumps
-    drivers/
-      win32.py           # Win32InputDriver (PostMessage) + Win32Capturer (PrintWindow): Coowon (MVP); FlashBrowser on Windows later
-      cdp.py             # CdpInputDriver + CdpCapturer over DevTools Protocol: FlashBrowser on macOS/Linux (post-MVP)
-      file.py            # FileCapturer: replays screenshots for offline tests and the annotate tool
-    vision.py            # Matcher: find / find_any / wait_for, threshold, ROI, mask, centre point
-    coords.py            # CoordMap: origin + offset * scale; loads profiles/<name>/coords.yaml
+    capture.py  input.py # Capturer / InputDriver interfaces, frame cache, VK codes
+    drivers/             # win32.py (PostMessage + PrintWindow), fake.py (recording input), cdp.py (stub)
+    templates.py vision.py  # TemplateStore, Matcher / score maps (OpenCV)
+    digits.py            # the game's digit font reader (no OCR)
+    geometry.py errors.py cancel.py detection.py _winapi.py
+  perception/            # canvas -> Snapshot (docs/08 "Perception")
+    parts.py probes.py screens.py readers.py snapshot.py
+    bench.py             # the perception benchmark (tools/perceive.py --bench, --selftest)
   engine/
-    context.py           # RunContext: click(key), find(name), wait_for(name, timeout), sleep(ms) - all cancellable
-    task.py              # Task base class: params model, run(ctx), on_stop
-    runner.py            # TaskRunner QThread: start/pause/stop, progress + log signals, crash screenshots
-  features/              # one module per feature, registered by decorator
-    quay_ruong.py  mo_the_bai.py  khoa_ky.py  cong_trinh.py  chua_cong.py
-    thap_thi_luyen.py  clear_map.py  tham_bao.py  vo_khoi_thap.py  tri_ky.py  autoclick.py
-  debug/
-    model.py             # Detection, DebugFrame
-    render.py            # draw a DebugFrame onto an image (green / red / cyan / crosshair / status line)
-    overlay_window.py    # transparent click-through Qt window glued to the render widget
-    sink.py              # DebugSink: live overlay, debug panel, PNG files
-  tools/
-    annotate.py          # CLI: run locator + scene detector on screenshots, write annotated PNGs
-  ui/
-    main_window.py  tabs/  widgets/log_view.py  widgets/debug_panel.py
-  hotkeys.py
-profiles/
-  browsers.yaml          # per browser: window class rules, driver (win32 | cdp), launch flags, zoom
-  ngoalongviet/
-    coords.yaml          # canvas-relative offsets at 1000x600
-    scenes.yaml          # scenes: signature anchors + objects (template | offset, region, threshold)
-    templates/**         # cut from docs/game screenshots
-tests/
-  fixtures/screens/      # = docs/game screenshots, with expected canvas rect + scene per file
+    task.py feature.py   # Task (Params, run(actor)); Feature = entry + Memory + rules + goal
+    loop.py actions.py   # the decision loop; Click / Burst / Key / Text / Wait / Done / Fail / Navigate
+    navigate.py interrupts.py recovery.py actor.py
+    runner.py control.py # TaskRunner (QThread), execute(), Stop / Pause
+    registry.py manager.py scheduler.py history.py
+  features/              # quay_ruong, thap_thi_luyen, cong_trinh, khoa_ky, clear_map, vo_khoi_thap, autoclick
+  debug/                 # DebugFrame model, renderer, overlay window, sinks (overlay, panel, PNG)
+  tools/                 # explore.py (capture + click for the corpus), run_feature.py (one feature from the console)
+  ui/                    # main window, feature page + generated forms, tabs/, widgets/
+profiles/ngoalongviet/
+  parts.yaml probes.yaml numbers.yaml screens/*.yaml   # perception
+  nav.yaml popups.yaml panels.yaml locator.yaml        # navigation, interrupts, canvas anchors
+  part_crops.yaml template_crops.yaml digit_samples.yaml  # reproducible template cuts
+  templates/**           # part/, digits/game/, anchor/, popup/, overlay/, hud/, field/
+tools/                   # perceive.py, part_report.py, number_report.py, cut_templates.py, cut_digits.py
+corpus/live/             # labelled live captures (labels.yaml in git, PNGs local only)
 ```
 
 ## Core interfaces
@@ -142,46 +137,44 @@ tests/
 ```python
 class GameWindow:
     @classmethod
-    def discover(cls) -> list["GameWindow"]: ...  # Coowon render widgets whose title contains "Ngoa Long"
-    def pick_under_cursor(self) -> None: ...      # manual fallback only
+    def discover(cls) -> list["GameWindow"]: ...  # Coowon windows whose title contains "Ngọa Long"
     def rebind(self) -> bool: ...                 # find again by pid/exe/class/title
-    def is_alive(self) -> bool: ...
-    def client_size(self) -> tuple[int, int]: ...
 
 class CanvasLocator:                               # replaces the root coordinate (Tọa độ gốc) and F9
     def locate(self, frame: np.ndarray) -> CanvasFix: ...   # rect, scale, confidence, detectors that agreed
 
-class SceneDetector:
-    def detect(self, frame: np.ndarray, canvas: CanvasFix) -> SceneMatch: ...  # name + score
+class Perceiver:                                   # perception/snapshot.py
+    def perceive(self, canvas: np.ndarray) -> Snapshot: ... # base, dialogs (top last), overlays, unknown, hud
+# snap.top, snap.has("tower.dialog"), snap["tower.dialog"].page, snap.value("chest.wheel", "chests")
 
-@dataclass
-class Detection:                                   # recorded by every find / wait_for / expect_scene
-    name: str; rect: Rect; score: float; threshold: float; found: bool
+class Feature(Task):                               # engine/feature.py
+    entry: str                                     # the loop navigates here when no rule applies
+    class Memory(BaseModel): ...
+    def rules(self) -> list[Rule]: ...             # Rule(name, on=screen, when=..., do=... -> Action)
+    def goal(self, snap: Snapshot) -> str | None: ...
 
-class DebugSink(Protocol):                         # live overlay, debug panel, PNG files
-    def publish(self, frame: DebugFrame) -> None: ...
+# engine/actions.py: every action that touches the game says what it expects next
+Click(at, expect="confirm.ok_cancel", within=3) | Burst(points, times, interval) | Key(vk)
+Text("200", at=box, expect=lambda n: n.value("chest.buy", "qty") == 200) | Wait(s) | Done(msg) | Fail(msg) | Navigate(screen)
 
-class InputDriver(Protocol):                       # Win32InputDriver | CdpInputDriver
+class Actor:                                       # engine/actor.py: one per run, built by AppServices
+    def look(self) -> tuple[np.ndarray, CanvasFix]: ...
+    def click(self, p: Point, double=False, button="left") -> None: ...   # canvas point; mouse rests at (600, 2)
+    def burst(self, points, times, interval) -> None: ...
+    def type_into(self, text, at, clear, enter) -> None: ...
+    def log(self, message, level="info") -> None: ...; def progress(self, done, total) -> None: ...
+    def count(self, name, n=1) -> int: ...         # run-history counters
+
+class InputDriver(Protocol):                       # Win32InputDriver | CdpInputDriver (stub)
     def click(self, p: Point, button: str = "left", double: bool = False) -> None: ...
     def key(self, vk: int) -> None: ...            # key down + key up
-    def text(self, s: str) -> None: ...           # WM_CHAR per character (Win32) / Input.insertText (CDP)
+    def text(self, s: str) -> None: ...           # digits as key presses, other characters as WM_CHAR
 
-class Capturer(Protocol):                          # Win32Capturer | CdpCapturer
-    def grab(self) -> np.ndarray: ...             # BGR frame of the render widget / page
-
-class Matcher:
-    def find(self, name: str, roi: Rect | None = None, threshold: float | None = None) -> Match | None: ...
-    def find_any(self, names: list[str]) -> Match | None: ...
-
-class RunContext:                                  # what every feature receives
-    def click(self, target: str | Point | Match) -> None: ...   # "tower.open" resolves through CoordMap
-    def wait_for(self, name: str, timeout_s: float) -> Match: ... # raises Timeout; checks cancel
-    def expect_scene(self, scene: str, timeout_s: float) -> SceneMatch: ...
-    def sleep(self, ms: int) -> None: ...                         # raises Cancelled when Stop is pressed
-    def progress(self, done: int, total: int | None) -> None: ...
+class Capturer(Protocol):                          # Win32Capturer
+    def grab(self) -> np.ndarray: ...             # BGR frame of the client area (PrintWindow)
 ```
 
-Each feature becomes a `Task` subclass with a pydantic `Params` model, so the UI form, validation and saved settings all come from one definition.
+Each feature is a `Task` subclass with a pydantic `Params` model, so the UI form, validation and saved settings all come from one definition.
 
 ## Old to new mapping
 
@@ -194,8 +187,8 @@ Each feature becomes a `Task` subclass with a pydantic `Params` model, so the UI
 | `LVS_MOUSECLICK`, `ACP_BUTTON` | `InputDriver.click` | One code path. Click type honoured. Fixes #10. |
 | `_LVS_SEND_TEXT` plus `ControlSend` | `InputDriver.key` and `InputDriver.text` | Proper key-down/up and `WM_CHAR`, no doubled keys. Fixes #9. |
 | `IMAGESEARCHEX*` and `_BMPSEARCH` shellcode | `Capturer` plus `Matcher` | No leaks, a score threshold, centre point, caching. Fixes #1, #3, #14. |
-| `While … And ON == True`, `Sleep` | `ctx.sleep` and `ctx.wait_for(timeout)` | Every wait can be stopped and has a time limit. Fixes #2. |
-| Hard-coded `X_GOC + n` | `profiles/*/coords.yaml` via `CoordMap` | Editable without rebuilding. A scale factor handles zoom. |
+| `While … And ON == True`, `Sleep` | The decision loop: one tick at a time, every action with an expectation and a time limit, Stop / Pause checked every tick | Every wait can be stopped and has a time limit. Fixes #2. |
+| Hard-coded `X_GOC + n` | UI parts found in search regions (`parts.yaml`), screens and navigation as data (`screens/*.yaml`, `nav.yaml`) | Buttons are found where they are; a fixed point is kept only for spots with no part. Editable without rebuilding; zoom is handled by the canvas scale. |
 | `[PRO5]` INI | `settings.toml` with a one-time INI importer | Typed, validated, saved continuously |
 | GUIGetMsg loop and MsgBox at the end | Qt UI, `TaskRunner` thread, log panel, tray notification | UI stays responsive, with Start, Pause and Stop per run. Fixes #7. |
 | IE ad banner, blog update scrape | Removed, or an optional GitHub Releases check | Fixes #11 |
@@ -214,9 +207,9 @@ Build in five phases. Each phase ends at a gate that must be checked against the
 
 P0 replaces the parts behind the high-severity bugs (#1–#4), so every later phase is built on fixed foundations.
 
-## Implementation status (2026-10-06)
+## Implementation status (2026-10-10)
 
-Built phase by phase; every phase has offline pytest coverage (stored screenshots through `FileCapturer`, clicks recorded by a fake `InputDriver`). Live checks are opt-in (`NGOALONG_LIVE=1`).
+P0–P4 were built on the first engine (2026-10-06) with an offline pytest suite. The suite and the scene definitions were removed on 2026-10-08 (R0) and the engine was replaced phase by phase (R1–R4, [08](08-engine-revamp-plan.md)); the table keeps what each phase built, with what the revamp changed.
 
 | Phase | Built | Where |
 | --- | --- | --- |
@@ -224,28 +217,29 @@ Built phase by phase; every phase has offline pytest coverage (stored screenshot
 | P1 · Offset-only features | Mở thẻ bài, Nâng cấp khoa kỹ, Nâng cấp công trình, Cày cấp chúa công, Tháp Thí Luyện (shared tower steps), each checking its screen before clicking | `ngoalong/features/*.py`, `profiles/ngoalongviet/coords/*.yaml` |
 | P2 · Template-driven features | Clear Phó Bản, Thám Bảo, Võ Khôi Tháp, Tri Kỷ; templates cut reproducibly (`template_crops.yaml`, `tools/cut_templates.py`), every wait time-limited | `ngoalong/features`, `profiles/ngoalongviet/scenes`, `templates` |
 | P3 · New features | Routine chains + scheduler, multiple windows, template capture tool, notifications (tray, Telegram, Discord), run history, Thám Bảo x2 reward | `engine/scheduler.py`, `engine/manager.py`, `engine/history.py`, `notify.py`, `tools/template_tool.py`, `ui/tabs/*` |
-| P4 · Release | PyInstaller one-folder build (`AutoNgoaLong.spec`, `build.ps1`) with `profiles/` next to the exe; `--selftest` (profile, features, 15 bundled golden screenshots, offscreen main window; exit code 0/1); app paths for source and build (`ngoalong/paths.py`); Vietnamese user guide; developer README | `AutoNgoaLong.spec`, `build.ps1`, `ngoalong/selftest.py`, `docs/user-guide-vi.md`, `README.md` |
+| P4 · Release | PyInstaller one-folder build (`AutoNgoaLong.spec`, `build.ps1`) with `profiles/` next to the exe; `--selftest` (exit code 0/1); app paths for source and build (`ngoalong/paths.py`); Vietnamese user guide; developer README | `AutoNgoaLong.spec`, `build.ps1`, `ngoalong/selftest.py`, `docs/user-guide-vi.md`, `README.md` |
+| R0–R4 · Engine revamp ([08](08-engine-revamp-plan.md)) | Live corpus (569 labelled frames, 539 of them in scope); perception without OCR (69 parts, 19 probes, 15 number fields, 35 screens); decision loop with expectations, navigation, interrupts, recovery; the six supported features ported and run live; out-of-scope features, scenes, `RunContext`, coords, OCR, the template tool and 112 templates removed; `--selftest` runs the perception benchmark on 57 bundled frames; `build.ps1` without pytest | `ngoalong/perception`, `ngoalong/engine`, `ngoalong/features`, `profiles/ngoalongviet` |
+
+Changed by the revamp: P0's `SceneDetector`, `CoordMap` and `RunContext` are gone (perception, the loop and the `Actor` replace them); P1–P2's features are rewritten as rule sets, and Mở thẻ bài, Cày cấp chúa công, Thám Bảo and Tri Kỷ are removed (with Chạy Thành Tựu, added later); P3's template capture tool ("Mẫu ảnh" tab) and the Thám Bảo x2 reward are removed.
 
 Deferred or still open:
 
 - **FlashBrowser / CDP**: only the empty `CdpInputDriver` / `CdpCapturer` stub (`core/drivers/cdp.py`); no `profiles/browsers.yaml`; macOS and Linux unsupported.
 - **P4 leftovers**: no installer (distribute the zipped `dist\AutoNgoaLong\` folder), no GitHub Releases update check, no code signing (SmartScreen warns), Nuitka not tried.
-- **Not yet verified on ngoalongviet.com**: screens that still use v1.8.0 images or have no scene signature: Thám Bảo, Tri Kỷ portraits, the Võ Khôi Tháp fight screens after "Tấn công", the card-drawing screen (Mở thẻ bài) and the Hải cảng screen.
-- **Live exit gates**: the roadmap's live gates (P0 1-hour soak, P1 parity checklist, P2 30-minute runs, P3 beta week) need the real game; the offline equivalents (GDI-leak regression, golden screenshots, stop latency, bounded loops) are in the test suite.
-- **OCR** (added 2026-10-06 for Chạy Thành Tựu): `ngoalong/core/ocr.py`, RapidOCR (PaddleOCR PP-OCRv6 on ONNX Runtime). Cross-platform, pip only, models bundled in the wheel. `RunContext.read_text(region)` returns lines in canvas coordinates; names are compared with `normalize` + `similarity` because accented letters get dropped. Windows.Media.Ocr was tried and rejected because it is Windows-only.
-- **Later ideas**: OCR of token and silver counts (the engine is in place); template profiles per server or website.
+- **Live gates**: the revamp's live gates (R2 pilots 30 min, R3 per feature) are in 08; the account ran out of upgradeable work for structures, Khoa kỹ and the campaign, so those were shorter.
+- **OCR**: RapidOCR was added on 2026-10-06 for Chạy Thành Tựu and removed in R4 with it. Nothing reads text: numbers use the game's digit font (`core/digits.py`). If OCR is ever needed again, it must stay cross-platform (RapidOCR, not Windows.Media.Ocr) and outside screen identification (08 "When OCR is allowed").
+- **Later ideas**: template profiles per server or website.
 
 ## New features to add after parity
 
-- [x] **Routine chains and scheduler**: run a saved sequence such as Thám Bảo → Boss → Trial Tower at set times, with retries. (P3: "Chuỗi tác vụ" tab, `engine/scheduler.py`.)
+- [x] **Routine chains and scheduler**: run a saved sequence such as Khoa kỹ → Công trình → Trial Tower → Boss at set times, with retries. (P3: "Chuỗi tác vụ" tab, `engine/scheduler.py`.)
 - [x] **Multiple windows**: one `TaskRunner` per bound game window, so several accounts run in parallel. The target server allows bots. (P3: "Nhiều cửa sổ" tab, `engine/manager.py`.)
 - [ ] **Template profiles per server or website**: delivers the selector that v1.8.0 promised but never implemented.
-- [x] **Template capture tool**: drag a rectangle on a live capture to save a template, then test its match score on the spot. (P3: "Mẫu ảnh" tab, `ngoalong/tools/template_tool.py`; each save also writes a `template_crops.yaml` line and a scene entry.)
+- [ ] ~~**Template capture tool**~~: built in P3 ("Mẫu ảnh" tab), removed in R4 with the scenes it wrote to. Templates are now cut reproducibly from `part_crops.yaml` / `template_crops.yaml` (`tools/cut_templates.py`), frames captured with `python -m ngoalong.tools.explore`.
 - [x] **Notifications**: tray alerts plus optional Telegram or Discord messages on finish, stop or error, including a screenshot. (P3: "Thông báo" tab, `notify.py`.)
 - [x] **Run history**: logs, counters (spins, floors, bosses), and failure screenshots saved per run. (P3: "Lịch sử" tab, `engine/history.py`.)
-- [x] **Thám Bảo x2 reward**: implement the option the checkbox already advertises, using `TB_QuaX2.bmp`. (P3: "Nhận quà x2", template `tham_bao.reward_x2`; still the v1.8.0 image until the screen is captured live.)
-- [x] OCR engine (RapidOCR), used by Chạy Thành Tựu.
-- [ ] **Later**: read token and silver counts with it, so runs stop on resources instead of fixed counts.
+- [ ] ~~**Thám Bảo x2 reward**~~: built in P3, removed in R4 with Thám Bảo (out of scope).
+- [x] **Resource-aware runs**: silver, Quân lệnh, chests, Thí luyện lệnh, levels and costs are read every tick with the digit reader (no OCR); Võ Khôi Tháp buys silver chests before the 2-billion cap and refills Quân lệnh from Tinh Tú chests.
 - [ ] **FlashBrowser support**: Windows first through the existing Win32 driver, then macOS and Linux through a CDP driver once a spike shows Pepper Flash accepts CDP input.
 
 ## Decisions (2026-10-06)
