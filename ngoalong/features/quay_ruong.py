@@ -14,7 +14,7 @@ the top icon rows (``nav.yaml``) and closes whatever dialog is in the way. They 
   ~1–1.5 s after the burst (the server answers late), so the burst's expectation waits until the
   count reached ``before − cycles``, or stopped falling for a second. A confirm box left over by a
   missed click is closed (✕), auto-open left running is stopped (Ngưng mở), and the next burst
-  takes what is left. Measured 2026-10-10: every cycle opened its chest with the clicks posted 0,
+  takes what is left. Measured 2026-10-10: every cycle opened its chest with the clicks posted 0, 5,
   10 or 20 ms apart (50 of 50 each); v1.8.0 clicked the same points blind the same way.
 * **Count**: every drop of the chest count is a chest opened; the run ends when the count reads 0
   or the requested number is opened.
@@ -228,7 +228,7 @@ class ChestJob:
 class QuayRuong(Feature):
     id = "quay_ruong"
     title = "Quay Tinh Tú"
-    description = ("Mở rương may mắn Tinh Tú (bật/tắt Tự mở liên tục theo từng đợt, khoảng 10 rương mỗi giây), "
+    description = ("Mở rương may mắn Tinh Tú (bật/tắt Tự mở liên tục theo từng đợt, khoảng 20 rương mỗi giây), "
                    "có thể mua thêm rương trước. Bắt đầu từ bất kỳ bản đồ nào: bot tự mở bảng Tinh Tú")
     order = 50
     Params = QuayRuongParams
