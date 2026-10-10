@@ -5,9 +5,9 @@
 .DESCRIPTION
     1. Creates .venv (Python 3.12+ through the "py" launcher) and installs the project with its
        dev extras when the venv or PyInstaller is missing.
-    2. Runs the offline pytest suite (skip with -SkipTests).
-    3. Runs PyInstaller with AutoNgoaLong.spec (profiles\ is copied next to the exe).
-    4. Runs "AutoNgoaLong.exe --selftest" on the build and fails when it fails (skip with
+    2. Runs PyInstaller with AutoNgoaLong.spec (profiles\ is copied next to the exe; the self-test
+       corpus is bundled from corpus\live when it is on this machine).
+    3. Runs "AutoNgoaLong.exe --selftest" on the build and fails when it fails (skip with
        -SkipSelftest). The report is written to build\selftest-report.txt. The self-test is
        stopped and the build fails after -SelftestTimeoutSec seconds (default 300).
 
@@ -15,12 +15,11 @@
 
 .EXAMPLE
     .\build.ps1
-    .\build.ps1 -SkipTests
+    .\build.ps1 -SkipSelftest
     .\build.ps1 -Python 3.13
 #>
 [CmdletBinding()]
 param(
-    [switch]$SkipTests,
     [switch]$SkipSelftest,
     [string]$Python = "3",
     [ValidateRange(1, 86400)][int]$SelftestTimeoutSec = 300
@@ -62,13 +61,7 @@ if ($LASTEXITCODE -ne 0) {
     Invoke-Checked $VenvPy @("-m", "pip", "install", "-e", ".[dev]") "pip install"
 }
 
-# --- 2. tests -----------------------------------------------------------------------------------
-if (-not $SkipTests) {
-    Step "Running the offline test suite (pytest)"
-    Invoke-Checked $VenvPy @("-m", "pytest", "-q") "pytest"
-}
-
-# --- 3. PyInstaller -----------------------------------------------------------------------------
+# --- 2. PyInstaller -----------------------------------------------------------------------------
 Step "Building $AppName with PyInstaller"
 # Never touch the folder while the app runs from it: files it holds open (data\history.sqlite3)
 # cannot be deleted, and a half-deleted build loses the user's files.
@@ -106,7 +99,7 @@ if (-not (Test-Path (Join-Path $DistDir "profiles\ngoalongviet\locator.yaml"))) 
     throw "profiles\ was not copied next to the exe"
 }
 
-# --- 4. self-test of the build ------------------------------------------------------------------
+# --- 3. self-test of the build ------------------------------------------------------------------
 if (-not $SkipSelftest) {
     Step "Running $AppName.exe --selftest"
     if (Test-Path $Report) { Remove-Item -Force $Report }

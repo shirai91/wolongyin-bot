@@ -2,9 +2,9 @@
 """PyInstaller spec: one-folder build of AutoNgoaLong v2 (docs/06 Stack: Packaging).
 
 Output: dist/AutoNgoaLong/
-    AutoNgoaLong.exe        windowed app (``--selftest`` runs the offline golden checks)
-    _internal/              Python, Qt, OpenCV, the ``ngoalong`` package, selftest/ screenshots
-    profiles/               copied next to the exe: coords, scenes and templates stay editable
+    AutoNgoaLong.exe        windowed app (``--selftest`` runs the offline checks)
+    _internal/              Python, Qt, OpenCV, the ``ngoalong`` package, selftest/ (corpus frames + labels)
+    profiles/               copied next to the exe: parts, screens, navigation and templates stay editable
     HUONG-DAN.md            the Vietnamese user guide (docs/user-guide-vi.md)
 
 Build with ``.\\build.ps1`` (or ``pyinstaller --noconfirm --clean AutoNgoaLong.spec``).
@@ -14,7 +14,7 @@ import shutil
 import sys
 from pathlib import Path
 
-from PyInstaller.utils.hooks import collect_data_files, collect_submodules
+from PyInstaller.utils.hooks import collect_submodules
 
 ROOT = Path(SPECPATH).resolve()  # noqa: F821 - defined by PyInstaller
 sys.path.insert(0, str(ROOT))
@@ -24,23 +24,30 @@ from ngoalong.selftest import write_bundle  # noqa: E402
 
 APP_NAME = "AutoNgoaLong"
 
-# The golden screenshots for ``--selftest`` (a subset of tests/fixtures/screens/expected.yaml).
-selftest_dir = write_bundle(Path(workpath) / "selftest-bundle").parent  # noqa: F821 - PyInstaller global
+# The corpus for ``--selftest``: the frames of ngoalong.selftest.BUNDLE_FRAMES with their labels, read
+# from corpus/live/ on this machine (its PNGs are not in git). Without the corpus the build still
+# goes on and the self-test reports that no corpus is bundled.
+selftest_dir, selftest_missing = write_bundle(Path(workpath) / "selftest-bundle")  # noqa: F821 - PyInstaller global
+selftest_count = len(list(selftest_dir.glob("*.webp")))
+if selftest_missing:
+    print(f"[spec] WARNING: {len(selftest_missing)} self-test frames are not in corpus/live: {', '.join(selftest_missing)}")
+print(f"[spec] self-test corpus: {selftest_count} frames bundled")
+selftest_datas = [(str(selftest_dir), "selftest")] if selftest_count else []
 
 # Features, UI tabs and widgets are found with pkgutil at run time: collect every submodule.
-hiddenimports = collect_submodules("ngoalong") + collect_submodules("rapidocr")
+hiddenimports = collect_submodules("ngoalong")
 
 a = Analysis(  # noqa: F821
     [str(ROOT / "ngoalong" / "__main__.py")],
     pathex=[str(ROOT)],
     binaries=[],
-    # rapidocr: its ONNX models (~32 MB) and config.yaml live inside the package
-    datas=[(str(selftest_dir), "selftest"), *collect_data_files("rapidocr")],
+    datas=selftest_datas,
     hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=["tkinter", "pytest", "_pytest", "PyInstaller", "IPython", "matplotlib", "pandas"],
+    excludes=["tkinter", "pytest", "_pytest", "PyInstaller", "IPython", "matplotlib", "pandas", "rapidocr",
+              "onnxruntime"],
     noarchive=False,
     optimize=0,
 )
