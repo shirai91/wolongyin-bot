@@ -8,22 +8,28 @@ the top icon rows (``nav.yaml``) and closes whatever dialog is in the way. They 
 * **Buy** (setting ``buy``): Mua → quantity box (double-click selects the number, type over it;
   an emptied box resets to 1) → 确定 → the spend-Vàng box 确定 (shown after a browser reload, its
   "don't remind" box is never ticked); the chest count must rise. Three failed tries (not enough Vàng, ...) give up buying and go on opening.
-* **Open, fast**: the user's trick, verified live: Tự mở → 确定 → Ngưng mở at once opens one chest
-  per cycle in ~1.5 s instead of one every ~4 s with auto-open left on. The last chest of a
-  requested number is opened with 开始抽奖 (exactly one).
+* **Open, fast**: the user's trick (Tự mở → 确定 → Ngưng mở opens one chest per cycle), done in
+  **bursts**: one ``Burst`` action clicks the three points ``batch`` cycles over (at most the
+  chests left), ``click_ms`` apart, without looking; then the loop looks again. The count drops
+  ~1–1.5 s after the burst (the server answers late), so the burst's expectation waits until the
+  count reached ``before − cycles``, or stopped falling for a second. A confirm box left over by a
+  missed click is closed (✕), auto-open left running is stopped (Ngưng mở), and the next burst
+  takes what is left. Measured 2026-10-10: every cycle opened its chest with the clicks posted 0,
+  10 or 20 ms apart (50 of 50 each); v1.8.0 clicked the same points blind the same way.
 * **Count**: every drop of the chest count is a chest opened; the run ends when the count reads 0
   or the requested number is opened.
 """
 
 from __future__ import annotations
 
+import time
 from collections.abc import Callable, Mapping
 from typing import Any
 
 from pydantic import BaseModel, Field
 
 from ngoalong.core.geometry import Point
-from ngoalong.engine.actions import Action, Click, Text
+from ngoalong.engine.actions import Action, Burst, Click, Text
 from ngoalong.engine.feature import Feature, Rule
 from ngoalong.engine.registry import register
 from ngoalong.engine.task import TaskParams
@@ -36,6 +42,11 @@ AUTO = "chest.auto_open_confirm"
 GOLD = "confirm.gold"  # "Dùng 240 vàng, mua N Rương may mắn" (asked again after a browser reload)
 MUA = Point(783, 143)  # "Mua" next to the chest count (large dialog, fixed place)
 QTY_BOX = Point(437, 286)  # quantity box of the buy / auto-open boxes
+AUTO_OK = Point(438, 364)  # 确定 of the "Tự mở N Rương may mắn không?" box
+AUTO_CLOSE = Point(638, 227)  # its ✕
+BATCH = 50  # chests per burst (default)
+CLICK_MS = 5  # between the clicks of a burst (default; v1.8.0 used 5 ms too)
+QUIET_S = 1.0  # the count has not moved this long after a burst: every chest it opened is counted
 BUY_TRIES = 3
 VANG_PER_CHEST = 240
 
@@ -45,6 +56,9 @@ class QuayRuongParams(TaskParams):
                        description="0 = mở đến khi hết rương")
     buy: int = Field(0, ge=0, le=10_000, title="Mua thêm rương trước khi mở",
                      description=f"{VANG_PER_CHEST} Vàng mỗi rương; 0 = không mua")
+    batch: int = Field(BATCH, ge=1, le=500, title="Số rương mỗi đợt mở nhanh",
+                       description="mỗi đợt bấm Tự mở → 确定 → Ngưng mở liền N lần rồi đọc lại số rương")
+    click_ms: int = Field(CLICK_MS, ge=0, le=1000, title="Khoảng cách giữa các click khi mở nhanh (ms)")
     max_minutes: int = Field(0, ge=0, le=24 * 60, title="Thời gian chạy tối đa (phút)",
                              description="0 = không giới hạn")
 
@@ -64,7 +78,8 @@ class ChestState(BaseModel):
 
 
 class ChestJob:
-    """The Tinh Tú wheel rules: buy ``buy()`` chests, then open ``opens()`` (0 = every chest).
+    """The Tinh Tú wheel rules: buy ``buy()`` chests, then open ``opens()`` (0 = every chest) in
+    bursts of ``speed()``.
 
     ``state`` returns the ChestState to work on (a feature may start a new one per job); ``active``
     switches the rules off while the feature does something else. The feature calls ``track`` from
@@ -72,12 +87,14 @@ class ChestJob:
     """
 
     def __init__(self, feature: Feature, state: Callable[[], ChestState], opens: Callable[[], int],
-                 buy: Callable[[], int], active: Callable[[], bool] = lambda: True) -> None:
+                 buy: Callable[[], int], active: Callable[[], bool] = lambda: True,
+                 speed: Callable[[], tuple[int, int]] = lambda: (BATCH, CLICK_MS)) -> None:
         self.f = feature
         self.state = state
         self.opens = opens
         self.buy = buy
         self.active = active
+        self.speed = speed  # (chests per burst, ms between its clicks)
 
     # --- memory ---------------------------------------------------------------------------------
     def track(self, snap: Snapshot) -> int | None:
@@ -106,17 +123,22 @@ class ChestJob:
         return st.chests or 0
 
     def finished(self, snap: Snapshot) -> bool:
-        """The job is done: on the wheel, auto-open off, nothing to buy, the number opened or 0 left."""
+        """The job is done: on the wheel, nothing to buy, 0 left, or the number opened with auto-open
+        off. At 0 chests the button may still read "Ngưng mở" (it opens nothing then, and a click
+        on it only shows "Không đủ Rương may mắn"), so it is not looked at."""
         n = chests_of(snap)
-        if snap.top != WHEEL or n is None or snap.value(WHEEL, "auto_open") or self.buying():
+        if snap.top != WHEEL or n is None or self.buying():
             return False
-        return bool(self.opens() and self.state().opened >= self.opens()) or n == 0
+        if n == 0:
+            return True
+        return bool(self.opens() and self.state().opened >= self.opens()) and not snap.value(WHEEL, "auto_open")
 
     # --- rules ----------------------------------------------------------------------------------
     def rules(self) -> list[Rule]:
         on = self.active
         return [
-            Rule("mua rương", on=WHEEL, when=lambda s: on() and not s.auto_open and self.buying(), do=self._open_buy),
+            Rule("mua rương", on=WHEEL, when=lambda s: on() and (not s.auto_open or s.chests == 0) and self.buying(),
+                 do=self._open_buy),
             Rule("số lượng mua", on=BUY, when=lambda s: on() and self.buying() and s.qty != self._want_buy(),
                  do=lambda s: Text(str(self._want_buy()), at=QTY_BOX, clear=0, label="số rương mua",
                                    within=2, expect=lambda n: n.value(BUY, "qty") == self._want_buy())),
@@ -126,17 +148,54 @@ class ChestJob:
             Rule("xác nhận Vàng", on=GOLD, when=lambda s: on() and self.buying() and WHEEL in self.f.snap.stack,
                  do=lambda s: Click(s.ok, label=f"dùng {self._want_buy() * VANG_PER_CHEST} Vàng", within=5,
                                     expect=self._more_chests, then=self._bought)),
-            Rule("ngưng mở", on=WHEEL, when=lambda s: on() and s.auto_open,
+            Rule("ngưng mở", on=WHEEL, when=lambda s: on() and s.auto_open and (s.chests or 0) > 0,
                  do=lambda s: Click(s.auto_button, label="Ngưng mở", within=3, settle=0.2,
                                     expect=lambda n: n.value(WHEEL, "auto_open") is False)),
-            Rule("tự mở", on=WHEEL, when=lambda s: on() and (s.chests or 0) > 0 and self.remaining() >= 2,
-                 do=lambda s: Click(s.auto_button, label="Tự mở", expect=AUTO, within=2, settle=0.15)),
-            Rule("xác nhận tự mở", on=AUTO, when=lambda s: on() and self.remaining() >= 2 and not self.buying(),
-                 do=lambda s: Click(s.ok, label="确定 tự mở", within=2, settle=0.2,
-                                    expect=lambda n: n.top == WHEEL)),
-            Rule("mở một rương", on=WHEEL, when=lambda s: on() and (s.chests or 0) > 0 and self.remaining() == 1,
-                 do=lambda s: Click(s.spin, label="开始抽奖", change=chests_of, within=8)),
+            # a box a burst left open (rare: the expectation waits until the clicks are worked off):
+            # 确定 is the cycle's next click (one more chest, then "ngưng mở"); with none left, ✕
+            Rule("hộp tự mở còn lại", on=AUTO, when=lambda s: on() and not self.buying(),
+                 do=lambda s: Click(AUTO_OK, label="确定 hộp Tự mở còn lại", within=3, settle=0.2,
+                                    expect=lambda n: n.top == WHEEL)
+                 if (chests_of(self.f.snap) or 0) > 0 else
+                 Click(AUTO_CLOSE, label="✕ hộp Tự mở còn lại", within=3, expect=lambda n: n.top == WHEEL)),
+            Rule("mở nhanh", on=WHEEL,
+                 when=lambda s: on() and (s.chests or 0) > 0 and self.remaining() >= 1 and not self.buying(),
+                 do=self._burst),
         ]
+
+    def _burst(self, s: ScreenState) -> Action:
+        """One burst of the toggle trick on as many chests as are left (at most ``batch``)."""
+        batch, click_ms = self.speed()
+        before = int(s.chests)
+        k = max(1, min(batch, before, self.remaining()))
+        t0 = time.monotonic()
+        seen = {"n": before, "at": t0}
+
+        def settled(snap: Snapshot) -> bool:
+            """The game has worked off the clicks: every chest counted and the wheel clean, or the
+            count stopped moving (a missed click; the rules then tidy up and open the rest)."""
+            n = chests_of(snap)
+            if n is None:
+                return False
+            now = time.monotonic()
+            if n != seen["n"]:
+                seen["n"], seen["at"] = n, now
+            clean = snap.top == WHEEL and not snap.value(WHEEL, "auto_open")
+            quiet = now - seen["at"]
+            return (n <= before - k and clean) or (n < before and quiet >= QUIET_S) or quiet >= 3 * QUIET_S
+
+        def report() -> None:
+            after = chests_of(self.f.snap) if self.f.snap is not None else None
+            if after is None:
+                return
+            opened = before - after
+            line = f"Mở nhanh {k} lượt: rương {before} → {after} (mở {opened}, {time.monotonic() - t0:.1f}s)"
+            if opened < k:
+                line += f", {k - opened} lượt không mở"
+            self.f.actor.log(line)
+
+        return Burst((s.auto_button, AUTO_OK, s.auto_button), times=k, interval=click_ms / 1000,
+                     label="Tự mở → 确定 → Ngưng mở", within=10, settle=0.1, expect=settled, then=report)
 
     def _more_chests(self, snap: Snapshot) -> bool:
         n = chests_of(snap)
@@ -169,8 +228,8 @@ class ChestJob:
 class QuayRuong(Feature):
     id = "quay_ruong"
     title = "Quay Tinh Tú"
-    description = ("Mở rương may mắn Tinh Tú (bật/tắt Tự mở liên tục: ~1,5 giây mỗi rương), có thể mua thêm "
-                   "rương trước. Bắt đầu từ bất kỳ bản đồ nào: bot tự mở bảng Tinh Tú")
+    description = ("Mở rương may mắn Tinh Tú (bật/tắt Tự mở liên tục theo từng đợt, khoảng 10 rương mỗi giây), "
+                   "có thể mua thêm rương trước. Bắt đầu từ bất kỳ bản đồ nào: bot tự mở bảng Tinh Tú")
     order = 50
     Params = QuayRuongParams
     entry = WHEEL
@@ -185,7 +244,8 @@ class QuayRuong(Feature):
 
     def __init__(self, params: Any = None) -> None:
         super().__init__(params)
-        self.job = ChestJob(self, lambda: self.m.chest, lambda: self.params.opens, lambda: self.params.buy)
+        self.job = ChestJob(self, lambda: self.m.chest, lambda: self.params.opens, lambda: self.params.buy,
+                            speed=lambda: (self.params.batch, self.params.click_ms))
 
     def goal(self, snap: Snapshot) -> str | None:
         self.job.track(snap)

@@ -44,7 +44,7 @@ from ngoalong.engine.actions import Action, Click, Fail, Wait, or_after
 from ngoalong.engine.feature import Feature, Rule
 from ngoalong.engine.registry import register
 from ngoalong.engine.task import TaskParams
-from ngoalong.features.quay_ruong import VANG_PER_CHEST, ChestJob, ChestState
+from ngoalong.features.quay_ruong import BATCH, CLICK_MS, VANG_PER_CHEST, ChestJob, ChestState
 from ngoalong.perception import Snapshot
 from ngoalong.perception.readers import ScreenState
 from ngoalong.perception.screens import UNKNOWN
@@ -114,6 +114,8 @@ class VoKhoiThapParams(TaskParams):
     chest_quantity: int = Field(100, ge=1, le=10_000, title="Số rương Tinh Tú mua mỗi lần",
                                 description=f"{VANG_PER_CHEST} Vàng mỗi rương")
     max_refills: int = Field(0, ge=0, le=100_000, title="Số lần mở rương tối đa (0 = không giới hạn)")
+    chest_batch: int = Field(BATCH, ge=1, le=500, title="Số rương Tinh Tú mỗi đợt mở nhanh")
+    chest_click_ms: int = Field(CLICK_MS, ge=0, le=1000, title="Khoảng cách giữa các click khi mở rương (ms)")
     max_minutes: int = Field(0, ge=0, le=24 * 60, title="Thời gian chạy tối đa (phút)",
                              description="0 = không giới hạn")
 
@@ -206,7 +208,8 @@ class VoKhoiThap(Feature):
     def __init__(self, params: Any = None) -> None:
         super().__init__(params)
         self.job = ChestJob(self, lambda: self.m.chest, lambda: 0, self._chests_to_buy,
-                            active=lambda: self.m.phase == "refill")
+                            active=lambda: self.m.phase == "refill",
+                            speed=lambda: (self.params.chest_batch, self.params.chest_click_ms))
         self._boss_sig: np.ndarray | None = None
         self._grid_sig: np.ndarray | None = None
         self._last_box = ""
