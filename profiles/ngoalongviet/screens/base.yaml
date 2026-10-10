@@ -26,13 +26,17 @@ vkt.arena:                  # Võ Khôi Tháp boss arena: HP bar, Đếm ngượ
   read:
     boss_hp: {value: vkt.boss_hp}               # fraction of the HP bar still green (1.0 full; 0.0 after a win AND a loss)
     counting: {present: vkt.countdown_running}  # the mm:ss under "Đếm ngược" is shown (it goes when the round ends)
-    circles: {find_all: vkt.circle}             # click one to join the fight
+    circles: {find_all: vkt.circle}             # click ONE to join the fight
+    joined: {present: vkt.joined_line}          # "Ngài gia nhập thành công…": the player walks to the boss (5-15 s); another click restarts the walk
+    exit: {point: vkt.exit}                     # Thoát: asks "Bạn muốn thoát khỏi Võ Khôi Tháp?" (the round is lost)
 
 vkt.lobby:                  # Võ Khôi Tháp lobby: boss, Quân Lệnh cost, Tấn công, Thoát
   layer: base
   require: [vkt.title]
   read:
     attack: {point: vkt.attack}
+    cost: {digits: vkt.cost}                    # Quân lệnh of this round: +1 per round, 1 again each new day (any boss)
+    exit: {point: vkt.lobby_exit}               # Thoát: back to the world map
 
 # --- maps with the HUD ----------------------------------------------------------------------------
 field:                      # Phó Bản dungeon map: name bar with "«" / "»" at the bottom centre (first map: no «, last: no »)
@@ -43,6 +47,9 @@ field:                      # Phó Bản dungeon map: name bar with "«" / "»" 
     beams: {blobs: field.beam}                  # the next army is under the beam
     next_map: {point: field.next}               # None on the last dungeon
     prev_map: {point: field.prev}
+    won: {present: field.win_line}              # green "Thắng Trận" line after an attack (Phát chiến đấu off)
+    icons_shown: {present: hud.icons_shown}     # the top icon rows cover armies near the top: hide them first
+    notice: {present: hud.notice_open}          # the left notice list covers armies on the left
 
 harbour:                    # Hải Cảng: the city's bottom bar, map label "Hải Chiến" (or the sea on the left)
   layer: base

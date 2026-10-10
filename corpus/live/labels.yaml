@@ -114,12 +114,12 @@
 121-after-tower-exit-confirm.png:  {base: city, dialogs: [tower.dialog], state: {tokens: 13417}}
 122-city-after-tower-2.png:        {base: city}
 123-world-map-2.png:               {base: world_map}
-124-vo-khoi-thap.png:              {base: vkt.lobby, state: {boss: "Hoả", level: 100, cost_quan_lenh: 23, teams: 0}}
+124-vo-khoi-thap.png:              {base: vkt.lobby, state: {boss: "Hoả", level: 100, cost: 23, teams: 0}, note: "cost 23 = the 23rd round of that day"}
 125..133:                          {base: vkt.lobby, dialogs: [vkt.team_list], state: {teams: 0, buttons: [Lập đội]}}
 134-vkt-create-team.png:           {base: vkt.lobby, dialogs: [vkt.team_room], state: {members: "1/8", buttons: [Mời, Giải tán, Khai trừ, Khai chiến]}}
 135..152:                          {base: vkt.arena, state: {boss_hp: "50000000/50000000", countdown: "02:59→00:53", circles: 3, joined: false}, note: "clicking the boss does nothing"}
 153-vkt-circle-click-t0.png:       {base: vkt.arena, state: {joined: true}, note: "click on the glowing magic circle = join the fight"}
-154-vkt-circle-t1.png:             {base: vkt.arena, state: {joined: true, fighting: true}}
+154-vkt-circle-t1.png:             {base: vkt.arena, state: {fighting: true}, note: "the player walked to the boss; the join line is gone"}
 155..158:                          {base: vkt.arena, dialogs: [vkt.result], state: {result: win, boss_hp: 0, reward_silver: 90000000}, note: "胜利 box, 确定 at 494,424"}
 159-vkt-after-victory-ok.png:      {base: world_map, state: {quan_lenh: 594}}
 160-tham-bao-2.png:                {base: tham_bao, out_of_scope: true}
@@ -250,7 +250,7 @@
 387-live-world-tinh-tu.png:        {base: world_map, dialogs: [chest.wheel], state: {chests: 0}}
 388-live-world-tinh-tu-closed.png:  {base: world_map}
 389-live-vkt-lobby.png:            {base: world_map, note: "a click on the label did nothing; the tower building opens the lobby"}
-390-live-vkt-lobby.png:            {base: vkt.lobby, note: "boss Mộc Lv.140, cost Quân Lệnh 1"}
+390-live-vkt-lobby.png:            {base: vkt.lobby, state: {cost: 1}, note: "boss Mộc Lv.140, cost Quân Lệnh 1: the first round of a new day (the cost is the day's round number, not the boss)"}
 391-live-vkt-teams.png:            {base: vkt.lobby, dialogs: [vkt.team_list]}
 392-live-vkt-room.png:             {base: vkt.lobby, dialogs: [vkt.team_room]}
 393..397:                          {base: vkt.arena, state: {counting: true, circles: 3, boss_hp: 1}}
@@ -344,3 +344,37 @@
 496-soak-world.png:                {base: world_map}
 497-soak-field.png:                {base: field}
 498..510:                          {base: city, state: {level: 140}, note: "the client froze after run-20261009-105049 ended (10:51): identical frames for minutes, clicks on Khoa kỹ / the map / Thế Giới ignored; window not hung for Windows. Not reloaded (left to the user)"}
+
+# --- Session 7 (2026-10-09): R3 campaign + Võ Khôi Tháp. The client was found on the world map after
+# the 10:51 freeze (silver and Quân lệnh unchanged), then froze again: from 11:08 no pixel changed and
+# clicks on the tower, Khoa kỹ and the map were ignored (512-518); not reloaded by the bot.
+511-alive-check-a.png:             {base: world_map, state: {silver: 1367316672, quan_lenh: "981/100", level: 140}, note: "source of part.hud.world / part.hud.pho_ban"}
+512..518:                          {base: world_map, note: "frozen again: identical frames, clicks ignored (the pagoda at 232,318, Khoa kỹ)"}
+
+# --- Session 8 (2026-10-10): the client responds again (still covered by other windows). R3 live gate
+# of Clear Phó Bản and Võ Khôi Tháp. The VKT cost is the day's round number (any boss), see docs/08 §6.
+519..521:                          {base: vkt.lobby, state: {cost: 2}, note: "Hoả Lv.100; found here after the 'freeze': the pagoda clicks of 11:08 had worked, the capture was stale"}
+522-lobby-exit-test.png:           {base: world_map, overlay: [toast], state: {silver: 1344708090, quan_lenh: "1000/100"}, note: "story box '(任意点击继续)' (popups.yaml story); 'Lện1000/100': the 1 covers the n, the old tight box read 0"}
+523-army-930.png:                  {base: field, dialogs: [field.army_dialog], state: {beam: true, group: true, troops: "20/20"}, note: "魔王董卓 (Đội-Tướng) Lv40: a boss army with no Phát chiến đấu box; Tấn công plays the battle"}
+524..527:                          {base: field, state: {beam: false}, note: "Viên Thuật after Đổng Trác 100%: armies but no beam"}
+528-vienthuat-army.png:            {base: field, dialogs: [field.army_dialog], state: {group: true, troops: "30/30"}, note: "纪灵军团 (Đoàn-Tinh) Lv50"}
+529-to-city.png:                   {base: city}
+530-dungeon-list.png:              {base: field, dialogs: [field.dungeon_list], note: "Công Tôn (snow), the list: Công Tôn, Lưu Chương, Viên Thiệu, Mạnh Hoạch, Hàn Huyền, Tây Khương, Tứ Di ..."}
+531-to-city2.png:                  {base: city}
+532..533:                          {base: vkt.lobby, state: {cost: 1}, note: "533: Mộc Lv.140 (the 3rd boss)"}
+534..535:                          {base: vkt.lobby, state: {cost: 1}, note: "the 2nd boss (Lv.120); ‹ changed the boss within 0.6 s"}
+536..537:                          {base: vkt.lobby, state: {cost: 1}, note: "536: Hoả Lv.100 (the 1st boss: ‹ changes nothing)"}
+538..539:                          {base: vkt.arena, dialogs: [vkt.result, vkt.silver_alert], state: {result: win}, note: "THE 2-billion silver alert (538 by the user, 539 by the bot): inside the 胜利 box (Bạc*20000000) 'Bạc đã đạt tối đa, số vượt quá 2 tỷ đã bị ác tặc cướp mất' + Cường hóa (453,330) / Hủy bỏ (546,330); HUD silver was 1,984,708,090 before the round; the box's 确定 does nothing until the alert is answered (the bot clicked it 118 times)"}
+540-silver-alert-after-cancel.png: {base: vkt.arena, dialogs: [vkt.result, notice.ok], note: "after Hủy bỏ on the silver alert: 'Dùng Bạc mới nhận được Bạc' + 确定 (navigation answers 确定)"}
+541-trang-bi-fading-in.png:        {base: world_map, dialogs: [unknown], state: {silver: 2000000000}, note: "Trang bị while it fades in (no title yet): read as an unknown dialog, closed by its ✕ and opened again; silver red at the 2e9 cap"}
+542-stuck-lap-doi.png:             {base: vkt.lobby, dialogs: [vkt.team_list], note: "Lập đội did nothing: Quân lệnh 16 < cost 53 (the HUD read 'Lệnh16' as 116: the h scored 0.76 as a 1)"}
+543-lap-doi-msg.png:               {base: vkt.lobby, dialogs: [vkt.team_list], note: "green line 'Hiện không có Quân Lệnh.' 0.3 s after Lập đội"}
+544-world-ql15.png:                {base: vkt.lobby, state: {cost: 53}}
+545-world-ql.png:                  {base: world_map, state: {quan_lenh: "16/100"}, note: "'Lệnh16/100': 2 digits show the whole word; the h (5 px wide) is not a 1 (4 px)"}
+546-arena-nojoin.png:              {base: vkt.arena, state: {counting: true, joined: true}, note: "'Ngài gia nhập thành công, hiện đang trong nhóm chiến đấu.' after a circle click; the bot clicked again every 6 s, which restarted the walk: 100 clicks, no fight"}
+547..548:                          {base: vkt.lobby, state: {cost: 54}}
+549-m-attack.png:                  {base: vkt.lobby, dialogs: [vkt.team_list]}
+550-m-lapdoi.png:                  {base: vkt.lobby, dialogs: [vkt.team_room]}
+551..554:                          {base: vkt.arena, state: {counting: true, joined: false, boss_hp: 1}}
+555..557:                          {base: vkt.arena, state: {counting: true, joined: true, boss_hp: 1}, note: "one click on circle 1: joined, the player walks to the boss (557: halfway after ~6 s)"}
+558..561:                          {base: vkt.arena, dialogs: [vkt.result], state: {result: win}, note: "the fight came by itself ~8-10 s after the single click"}

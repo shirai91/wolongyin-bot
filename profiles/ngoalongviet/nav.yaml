@@ -17,19 +17,32 @@ edges:
     city.building_panel: {at: [460, 320], label: "toà Tháp thí luyện"}   # the tall pagoda (lv140) in the city centre
     harbour: {click: map.vao_hai_cang}
     research: {click: bar.khoa_ky}               # bottom bar "Khoa kỹ" -> Phủ Sách Lược
+    inventory: {click: bar.trang_bi}             # bottom bar "Trang Bị" -> Trang bị (Cửa hiệu: silver chests)
+    world_map: {click: hud.world}                # bottom-right cluster "Thế Giới"
+    field: {click: hud.pho_ban}                  # bottom-right cluster "Phó Bản": the campaign field
   harbour:
     city: {click: hud.home}
     chest.wheel: {click: icon.tinh_tu, reveal: hud.icons_hidden}
     research: {click: bar.khoa_ky}
+    inventory: {click: bar.trang_bi}
+    world_map: {click: hud.world}
+    field: {click: hud.pho_ban}
   world_map:
     city: {click: hud.home}
     chest.wheel: {click: icon.tinh_tu, reveal: hud.icons_hidden}
+    inventory: {click: bar.trang_bi}
+    field: {click: hud.pho_ban}
+    vkt.lobby: {at: [232, 325], label: "toà Võ Khôi Tháp", within: 15}   # the pagoda over the label (the label itself does nothing); may lead straight into a running arena
   field:
     city: {click: hud.home}
     chest.wheel: {click: icon.tinh_tu, reveal: hud.icons_hidden}
+    inventory: {click: bar.trang_bi}
+    world_map: {click: hud.world}
   map:
     city: {click: hud.home}
     chest.wheel: {click: icon.tinh_tu, reveal: hud.icons_hidden}
+    world_map: {click: hud.world}
+    field: {click: hud.pho_ban}
 
   # --- Tháp Thí Luyện -----------------------------------------------------------------------------
   city.building_panel:
@@ -42,6 +55,21 @@ edges:
     tower.dialog: {click: result.exit}           # a loss asks "Chưa hoàn thành vượt Tháp, xác nhận thoát?"
   confirm.ok_cancel:
     tower.dialog: {click: box.ok, over: tower.floor}
+    world_map: {click: box.ok, over: vkt.arena}  # "Bạn muốn thoát khỏi Võ Khôi Tháp?"
+
+  # --- campaign: battle screens back to the field -------------------------------------------------
+  battle.result:
+    field: {click: result.exit}                  # 战胜 / 战败 box: Thoát
+  battle.group_result:
+    field: {click: battle.exit}                  # 攻方胜利: Thoát bottom right
+
+  # --- Võ Khôi Tháp (full-screen: ESC does nothing) -----------------------------------------------
+  vkt.lobby:
+    world_map: {click: vkt.lobby_exit}
+  vkt.arena:
+    world_map: {click: vkt.exit}                 # asks first (confirm above); the round is lost
+  vkt.result:
+    world_map: {at: [494, 424], label: "确定"}   # its 确定 is not found while the reward line animates
 
 close:
   confirm.ok_cancel: {click: box.cancel}         # a question that is not on the way: answer no
@@ -49,3 +77,7 @@ close:
   notice.ok: {click: box.ok}
   tower.sweep: {at: [754, 464], label: "Hủy"}    # side panel of the tower dialog: 取消
   tower.result: {click: result.exit}
+  field.dungeon_list: {at: [490, 578], label: "thanh tên phó bản"}   # no ✕: the name bar closes it
+  vkt.team_list: {click: vkt.lobby_exit}         # the lobby's Thoát shows under the team list (no ✕)
+  vkt.team_room: {click: vkt.khai_chien}         # no ✕ and no Thoát; never Giải tán: start, then leave the arena
+  vkt.result: {at: [494, 424], label: "确定"}

@@ -7,7 +7,7 @@ field.army_dialog:          # click an army on the field (small frame)
   close: [638, 184]
   read:
     play_battle: {present: army.play_tick}      # "Phát chiến đấu": off = instant result, no battle screen
-    group: {present: army.no_play_box}          # a group army (Đoàn-Tinh): Tấn công opens Đoàn chiến
+    group: {present: army.no_play_box}          # no "Phát chiến đấu" box: a group army (Đoàn-Tinh, Tấn công opens Đoàn chiến) or a boss army (魔王董卓, the battle is played)
     troops: {digits: army.troops}               # (left, max); None when the army shows no count
     attack: {point: btn.attack}
 

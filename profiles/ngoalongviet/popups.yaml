@@ -35,3 +35,10 @@ toast:
   description: "Thông báo góc phải (Bảo vật, Tửu Quán, ...)"
   signature: {template: overlay.toast.view, at: [886, 423], margin: 20, threshold: 0.85}
   dismiss: {template: overlay.toast.close, at: [976, 304], margin: 12, threshold: 0.85}
+
+story:
+  # A story box with a portrait ("Giờ là mùa hè năm 189, lần Trưng thu hè +3."), no button and no ✕:
+  # "(任意点击继续)" = click anywhere to go on. Seen on the world map after a new game day (frame 522).
+  description: "Hộp thoại cốt truyện (bấm để tiếp tục)"
+  signature: {template: part.popup.story, at: [548, 322], margin: 80, threshold: 0.85}
+  dismiss: {click: signature}

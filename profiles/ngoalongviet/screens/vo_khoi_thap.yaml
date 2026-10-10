@@ -22,3 +22,11 @@ vkt.result:                 # 胜利 box with the rewards, or 失败 with every 
   read:
     result: {first_of: {win: vkt.victory, lose: vkt.defeat}}
     ok: {point: vkt.victory_ok}
+
+vkt.silver_alert:           # inside the 胜利 box when silver passed the 2,000,000,000 cap: "Bạc đã đạt tối đa, số vượt quá 2 tỷ
+  layer: dialog             # đã bị ác tặc cướp mất" (the excess is lost), Cường hóa / Hủy bỏ. Modal: the box's 确定 does nothing
+  z: 4                      # until it is answered. Answer Hủy bỏ (Cường hóa opens enhancement, which spends silver).
+  over: [vkt.arena]
+  require: [vkt.silver_alert]
+  read:
+    cancel: {point: vkt.alert_cancel}

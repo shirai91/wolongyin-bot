@@ -30,6 +30,8 @@ CHAR_FILES = {v: k for k, v in FILE_CHARS.items()}
 
 GLYPH_HEIGHT = 9  # digits are 9 px tall at canvas scale 1.0
 WORD_GAP = 4  # blank columns between words; digits of one number are 0-2 px apart
+TAIL_SCORE = 0.95  # "Quân Lệnh23" (lobby): digits 1.0, the 9 px "h" 0.76 as "1"
+TAIL_FRACTION_SCORE = 0.75  # "Lện594/100" (HUD): kerned digits score 0.79-0.82; the "n" is dropped by height
 CARET_MIN_ROWS = 12  # an inked column taller than this is a text caret ("3|" in an input box)
 
 
@@ -87,10 +89,35 @@ class DigitRead:
                 start = i
         return DigitRead(self.text[start:], self.scores[start:], self.boxes[start:], False, self.clipped_right)
 
+    def _wide_one(self, i: int) -> bool:
+        """A "1" wider than the glyph (4 px): the letter "h" of "Lệnh16/100" reads as "1" at 0.76."""
+        return self.text[i] == "1" and self.boxes[i][2] >= 5
+
+    def tail(self, min_score: float = TAIL_SCORE, chars: str = "0123456789") -> DigitRead:
+        """The characters at the end that are full-height glyphs matching well ("Quân Lệnh23" ->
+        "23", "Lện121/100" -> "121/100"): for a number glued to a word. Letters drop out by height
+        ("n" is 7 px, digits 9) or by score ("h" is 9 px tall but scores 0.76 as "1")."""
+        start = len(self.text)
+        while (start > 0 and self.text[start - 1] in chars and self.scores[start - 1] >= min_score
+               and self.boxes[start - 1][3] >= GLYPH_HEIGHT - 1 and not self._wide_one(start - 1)
+               and (start == len(self.text) or self.boxes[start][0] - sum(self.boxes[start - 1][::2]) < WORD_GAP)):
+            start -= 1
+        return DigitRead(self.text[start:], self.scores[start:], self.boxes[start:], False, self.clipped_right)
+
     def parse(self, kind: str) -> int | tuple[int, int] | None:
-        """``int`` | ``fraction`` | ``before_slash`` | ``last_int`` (numbers.yaml ``parse``)."""
+        """``int`` | ``fraction`` | ``before_slash`` | ``last_int`` | ``tail_int`` | ``tail_fraction`` (numbers.yaml ``parse``)."""
         if kind == "last_int":
             return self.last_group().value()
+        if kind == "tail_int":
+            return self.tail().value()
+        if kind == "tail_fraction":
+            tail = self.tail(TAIL_FRACTION_SCORE, "0123456789/")
+            k = len(self.text) - len(tail.text)
+            if (k > 0 and self.text[k - 1].isdigit() and self.boxes[k - 1][3] >= GLYPH_HEIGHT - 1
+                    and not self._wide_one(k - 1) and tail.boxes
+                    and tail.boxes[0][0] - sum(self.boxes[k - 1][::2]) < WORD_GAP):
+                return None  # a full-height digit left out (score too low): never read 1121 as 121
+            return tail.fraction()
         if kind == "int":
             return self.value()
         if kind == "fraction":

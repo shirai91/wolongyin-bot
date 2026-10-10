@@ -5,13 +5,15 @@
 # when:  the part (parts.yaml) that must be on screen for the field to exist
 # parse: int (all digits) | before_slash ("858983797/24250000…" -> 858983797; the cap may be cut off
 #        by its box) | fraction ("593/100" -> (593, 100)) | last_int (the number after the last word
-#        gap: for centred labels like "Tầng 141" whose number moves with its length)
+#        gap: for centred labels like "Tầng 141" whose number moves with its length) | tail_int /
+#        tail_fraction (the characters at the end that match their glyph at >= 0.95: a number glued
+#        to a word, "Quân Lệnh23", "Lện593/100"; a damaged digit glued in front rejects the read)
 # level: ink threshold of this field (default 150: max(B, G, R) above it is ink)
 #
 # Check over the corpus:  .venv\Scripts\python.exe tools/number_report.py
 
 hud.silver:        {rect: [138, 30, 130, 15], when: hud.silver_label, parse: before_slash}
-hud.quan_lenh:     {rect: [114, 106, 48, 15], when: hud.silver_label, parse: fraction}   # "Lện593/100"; covered by the Tinh Tú dialog
+hud.quan_lenh:     {rect: [100, 106, 62, 15], when: hud.silver_label, parse: tail_fraction}   # "Lện593/100", centred: at 4 digits the 1 covers the n ("Lện1000/100" read 0 in a tight box; now rejected); covered by the Tinh Tú dialog
 tinh_tu.chests:    {rect: [681, 135, 40, 15], when: title.tinh_tu, parse: int}           # after "X "
 tower.tokens:      {rect: [419, 374, 60, 15], when: title.tower, parse: int}             # Thí luyện lệnh
 tower.page:        {rect: [226, 469, 40, 16], when: title.tower, parse: int}             # page box (caret ignored)
@@ -24,3 +26,4 @@ army.troops:       {rect: [442, 320, 94, 15], when: btn.attack, parse: fraction}
 building.cost:     {rect: [333, 358, 120, 15], when: btn.building_upgrade, parse: last_int}  # "Tốn bạc: 29766"
 chest.qty:         {rect: [390, 278, 88, 16], when: qty.max, parse: int}                 # quantity box of the Tinh Tú buy / auto-open boxes
 hud.level:         {rect: [9, 104, 24, 12], when: hud.silver_label, parse: int, level: 170}  # Chúa công level, badge under the avatar ("140"; at 150 the badge ring joins "40")
+vkt.cost:          {rect: [400, 437, 200, 14], when: vkt.attack, parse: tail_int}       # lobby "Lần này tiêu hao Quân Lệnh23" (centred, glued to the word: tail_int)

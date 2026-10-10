@@ -46,6 +46,9 @@ sources:
   icons_hidden: {path: "corpus/live/424-fail-run-215050-city.png", origin: [0, 0]}
   city_r3: {path: "corpus/live/453-r3-city.png", origin: [0, 0]}
   city_r3_bare: {path: "corpus/live/465-r3-city-icons-hidden.png", origin: [0, 0]}
+  world_r3: {path: "corpus/live/511-alive-check-a.png", origin: [0, 0]}
+  story: {path: "corpus/live/522-lobby-exit-test.png", origin: [0, 0]}
+  silver_alert: {path: "corpus/live/538-silver-alert-user.png", origin: [0, 0]}
 
 crops:
   # --- generic -----------------------------------------------------------------------------------
@@ -120,3 +123,11 @@ crops:
   - {name: part.vkt.victory, source: vkt_victory, rect: [436, 116, 116, 52]}       # 胜利
   - {name: part.vkt.defeat, source: vkt_defeat, rect: [436, 116, 116, 52]}         # 失败 (round lost / timed out)
   - {name: part.vkt.victory_ok, source: vkt_victory, rect: [474, 418, 40, 20]}     # 确定
+  - {name: part.vkt.exit, source: vkt_arena, rect: [927, 577, 34, 14]}             # "Thoát" (arena bottom right; the lobby's Thoát is the same button)
+
+  # --- R3: campaign and the Võ Khôi Tháp loop ----------------------------------------------------
+  - {name: part.hud.world, source: world_r3, rect: [933, 482, 24, 24]}             # "Thế Giới" (bottom-right cluster of every map)
+  - {name: part.hud.pho_ban, source: world_r3, rect: [889, 538, 24, 24]}           # "Phó Bản" (same cluster): opens the campaign field
+  - {name: part.vkt.silver_alert, source: silver_alert, rect: [347, 283, 92, 15]}    # red "Bạc đã đạt tối đa" (…, số vượt quá 2 tỷ đã bị ác tặc cướp mất) inside the 胜利 box
+  - {name: part.vkt.alert_cancel, source: silver_alert, rect: [524, 322, 46, 18]}     # "Hủy bỏ" of that alert (never "Cường hóa": it spends silver)
+  - {name: part.popup.story, source: story, rect: [548, 322, 86, 15]}               # "(任意点击继续)" of a story box (season change): any click goes on (popups.yaml)

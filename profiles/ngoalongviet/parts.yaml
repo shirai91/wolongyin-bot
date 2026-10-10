@@ -78,6 +78,8 @@ vkt.circle:           {template: part.vkt.circle, search: [100, 250, 600, 300], 
 vkt.victory:          {template: part.vkt.victory, search: [400, 100, 200, 90]}
 vkt.defeat:           {template: part.vkt.defeat, search: [400, 100, 200, 90]}
 vkt.victory_ok:       {template: part.vkt.victory_ok, search: [440, 400, 110, 50]}
+vkt.exit:             {template: part.vkt.exit, search: [900, 565, 90, 32], threshold: 0.80}       # arena "Thoát" (asks "Bạn muốn thoát khỏi Võ Khôi Tháp?")
+vkt.lobby_exit:       {template: part.vkt.exit, search: [440, 555, 110, 40], threshold: 0.80}      # lobby "Thoát" (same button), back to the world map
 
 # --- navigation (R2) -----------------------------------------------------------------------------
 icon.tinh_tu:         {template: part.icon.tinh_tu, search: [340, 80, 480, 60]}   # top icon rows: right-aligned, moves as icons are added
@@ -91,3 +93,9 @@ box.no_remind:        {template: popup.gold_skip.no_remind, search: [340, 260, 3
 # and animations under it do not matter; the level is read with the digit glyphs right after it.
 map.lv:               {template: part.map.lv, search: [0, 20, 1000, 505], ink: 170, threshold: 0.91, multi: true, max_hits: 40}  # real labels 0.93-1.00, anything else <= 0.89
 hud.notice_open:      {template: part.hud.notice_open, search: [0, 118, 28, 32]}   # "<<" of the left notice list: click it to collapse the list
+
+# --- campaign and Võ Khôi Tháp (R3) ---------------------------------------------------------------
+hud.world:            {template: part.hud.world, search: [915, 465, 60, 55], threshold: 0.80}    # "Thế Giới" in the bottom-right cluster (any map)
+hud.pho_ban:          {template: part.hud.pho_ban, search: [870, 520, 60, 60], threshold: 0.80}  # "Phó Bản" in the same cluster: the campaign field
+vkt.silver_alert:     {template: part.vkt.silver_alert, search: [320, 265, 220, 50]}              # the 2-billion silver alert (frame 538), nested in the VKT result box
+vkt.alert_cancel:     {template: part.vkt.alert_cancel, search: [490, 305, 120, 45], threshold: 0.80}  # its "Hủy bỏ" (Cường hóa sits left of it)
