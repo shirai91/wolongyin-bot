@@ -98,13 +98,18 @@ class Key(Action):
 
 @dataclass
 class Text(Action):
-    """Type into a text box: double-click ``at``, Backspace and Delete ``clear`` times each, type
-    ``text``, Enter (when ``enter``)."""
+    """Replace the number in a text box: double-click ``at``, End, Backspace ``clear`` times, type
+    ``text``, Delete ``clear`` times, Enter (when ``enter``); see ``Actor.type_into``. Give it an
+    expectation that reads the box back (``expect=lambda n: n.value(BOX, "qty") == 200``): when the
+    box still shows another value at the end of ``within``, the loop types it again (``retype``
+    times, while the same screen is on top) before the recovery ladder, so a wrong value is never
+    confirmed by the next rule."""
 
     text: str
     at: Point | None = None
-    clear: int = 3
+    clear: int = 6
     enter: bool = True
+    retype: int = 2
 
     def what(self) -> str:
         return f"type {self.text!r} {self.label}".rstrip()

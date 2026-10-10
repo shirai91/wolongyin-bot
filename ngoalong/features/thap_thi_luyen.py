@@ -6,7 +6,7 @@ box; the loop opens the dialog from any map (city → the tower building's panel
 Luyện", ``nav.yaml``) and closes whatever dialog is in the way.
 
 * **Page**: page N lists floors 10(N-1)+1 .. 10N (only floors reached). The page box takes typing:
-  double-click, Backspace ×3, the number, Enter. The dialog reopens on its last tab and page, so
+  double-click, End, Backspaces, the number, Deletes, Enter (``Text``), read back. The dialog reopens on its last tab and page, so
   both are read, never assumed.
 * **Climb** ("Vượt tháp"): select the floor, Vượt Tháp → 确定 (3 Thí luyện lệnh) → floor map: tick
   "Tự Vượt Tháp" if needed, click the guard under the light-blue crystal ONCE (the crystal must be
@@ -176,7 +176,7 @@ class ThapThiLuyen(Feature):
                                     label="rời tầng" if self.m.leaving else "ở lại tầng",
                                     expect=DIALOG if self.m.leaving else FLOOR, within=10)),
             Rule("số lần", on=SWEEP, when=lambda s: self.sweeping and s.runs != self._want_runs(),
-                 do=lambda s: Text(str(self._want_runs()), at=SWEEP_BOX, clear=0, label="số lần",
+                 do=lambda s: Text(str(self._want_runs()), at=SWEEP_BOX, label="số lần",
                                    expect=lambda n: n.value(SWEEP, "runs") == self._want_runs())),
             Rule("确定 tự vượt", on=SWEEP, when=lambda s: self.sweeping and s.runs == self._want_runs() > 0,
                  do=lambda s: Click(SWEEP_OK, label=f"tự vượt {self._want_runs()} lần", expect=CONFIRM)),

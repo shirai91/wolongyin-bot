@@ -66,7 +66,8 @@ class Pending:
     decision: Decision
     deadline: float
     before: Any = None
-
+    top: str = ""  # the top screen when the action was taken
+    tries: int = 0  # times a Text was typed again on the same box
 
 @functools.lru_cache(maxsize=4)
 def load_profile(profile_dir: str) -> tuple[Perceiver, Navigator]:
@@ -157,7 +158,14 @@ class Loop:
                 waiting = Decision(Wait(0.15, label=p.decision.action.label), f"chờ: {p.decision.rule}", "expect")
             else:
                 self.pending = None
-                reason = f"'{p.decision.rule}' không đạt ({p.decision.action.describe()})"
+                a = p.decision.action
+                if isinstance(a, Text) and p.tries < a.retype and snap.top == p.top:
+                    # the box shows a wrong value (a digit left over, a key lost): type it again,
+                    # never go on with it
+                    self.actor.log(f"Gõ lại {a.text!r} ({p.decision.rule}): giá trị trong ô chưa đúng "
+                                   f"(lần {p.tries + 1}/{a.retype})", "warning")
+                    return Decision(a, p.decision.rule, p.decision.kind, {"tries": p.tries + 1})
+                reason = f"'{p.decision.rule}' không đạt ({a.describe()})"
                 return self._recover(snap, reason)
         if self.interrupts is not None:
             hit = self.interrupts.check(frame, fix, snap, self.f.answers)
@@ -282,7 +290,8 @@ class Loop:
         if a.stop:
             raise TaskStopped(a.stop)
         if a.expects:
-            self.pending = Pending(d, time.monotonic() + a.within + a.settle, before)
+            self.pending = Pending(d, time.monotonic() + a.within + a.settle, before, snap.top,
+                                   int(d.extra.get("tries", 0)))
         elif a.then is not None:
             a.then()
         self.actor.sleep(a.settle)

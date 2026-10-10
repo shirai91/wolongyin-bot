@@ -5,8 +5,9 @@ The rules work on the Tinh Tú dialog (``chest.wheel``); the loop opens it from 
 the top icon rows (``nav.yaml``) and closes whatever dialog is in the way. They live in
 ``ChestJob`` so that the Võ Khôi Tháp loop opens chests the same way when Quân lệnh runs out.
 
-* **Buy** (setting ``buy``): Mua → quantity box (double-click selects the number, type over it;
-  an emptied box resets to 1) → 确定 → the spend-Vàng box 确定 (shown after a browser reload, its
+* **Buy** (setting ``buy``): Mua → quantity box (``Text``: End, Backspaces, the number, Deletes; an
+  emptied box puts "1" back in front of the caret, the Deletes remove it; read back, typed again
+  while wrong, never confirmed wrong) → 确定 → the spend-Vàng box 确定 (shown after a browser reload, its
   "don't remind" box is never ticked); the chest count must rise. Three failed tries (not enough Vàng, ...) give up buying and go on opening.
 * **Open, fast**: the user's trick (Tự mở → 确定 → Ngưng mở opens one chest per cycle), done in
   **bursts**: one ``Burst`` action clicks the three points ``batch`` cycles over (at most the
@@ -140,7 +141,7 @@ class ChestJob:
             Rule("mua rương", on=WHEEL, when=lambda s: on() and (not s.auto_open or s.chests == 0) and self.buying(),
                  do=self._open_buy),
             Rule("số lượng mua", on=BUY, when=lambda s: on() and self.buying() and s.qty != self._want_buy(),
-                 do=lambda s: Text(str(self._want_buy()), at=QTY_BOX, clear=0, label="số rương mua",
+                 do=lambda s: Text(str(self._want_buy()), at=QTY_BOX, label="số rương mua",
                                    within=2, expect=lambda n: n.value(BUY, "qty") == self._want_buy())),
             Rule("xác nhận mua", on=BUY, when=lambda s: on() and self.buying() and s.qty == self._want_buy(),
                  do=lambda s: Click(s.ok, label=f"mua {self._want_buy()} rương", within=5,

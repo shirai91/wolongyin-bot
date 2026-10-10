@@ -19,7 +19,7 @@ chest.buy:                  # "Mua": quantity box "Dùng 240 vàng, mua N Rươn
   close: [638, 227]
   claims: [box.ok, box.cancel]
   read:
-    qty: {digits: chest.qty}                    # the quantity box (437,286): double-click, Backspace, type
+    qty: {digits: chest.qty}                    # the quantity box (437,286): double-click, End, Backspace, type, Delete
     ok: {point: box.ok}
     max: {point: qty.max}
 
