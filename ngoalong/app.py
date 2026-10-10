@@ -49,7 +49,6 @@ from ngoalong.engine.scheduler import (
 )
 from ngoalong.engine.runner import RunHooks, RunResult, TaskRunner
 from ngoalong.engine.task import Task
-from ngoalong.features.thanh_tuu import AchievementStore
 from ngoalong.hotkeys import HotkeyManager
 from ngoalong.perception import Perceiver
 from ngoalong.notify import Notifier, QtTray
@@ -482,7 +481,6 @@ class AppServices:
         self.history_recorder.watch(self.runner, lambda: self.window)
         self.history_recorder.watch_manager(self.manager)
         self.routine_store = RoutineStore(d / "routines.json" if d is not None else None)
-        self.thanh_tuu_store = AchievementStore(d / "thanh_tuu.json" if d is not None else None)
         self.routine_executor = RoutineExecutor(self.runner, self.build_routine_task, self.make_context,
                                                 self.history_recorder)
         self.scheduler = SchedulerService(Scheduler(self.routine_store), self.routine_executor, self.runner)
