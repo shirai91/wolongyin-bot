@@ -13,15 +13,18 @@ from __future__ import annotations
 import logging
 import time
 from collections.abc import Callable
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
+from ngoalong.core.capture import save_png
 from ngoalong.core.detection import Detection
 from ngoalong.core.geometry import Point
 from ngoalong.core.input import VK_BACK, VK_DELETE, VK_RETURN
 from ngoalong.core.locator import CanvasFix
 from ngoalong.debug.model import DebugFrame
+from ngoalong.debug.sink import slug
 from ngoalong.engine.control import RunControl
 from ngoalong.perception import Perceiver, Snapshot
 from ngoalong.perception.screens import CLOSE, UNKNOWN
@@ -94,6 +97,7 @@ class Actor:
         # spend_gold_skip_wait), for features that answer such a box themselves
         self.policy: Callable[[str], bool] = lambda name: False
         self._ctx: RunContext | None = None
+        self._kept = 0
 
     @classmethod
     def from_context(cls, ctx: RunContext) -> Actor:
@@ -221,6 +225,23 @@ class Actor:
         if self._publish is None or self.frame is None or self.fix is None or not self.debug_enabled():
             return
         self._publish(snapshot_frame(self.frame, self.fix, snap, step, clicks, self.window, self.task))
+
+    def keep(self, snap: Snapshot, name: str) -> Path | None:
+        """Save the plain canvas of ``snap`` in the run folder (``event-NN-<name>.png``): a screen
+        worth labelling later (a box seen for the first time). Never fails the run."""
+        ctx = self._ctx
+        sink = ctx.png_sink if ctx is not None else None
+        if sink is None:
+            return None
+        self._kept += 1
+        path = Path(sink.directory) / f"event-{self._kept:02d}-{slug(name)}.png"
+        try:
+            save_png(path, snap.senses.canvas)
+        except Exception:
+            log.exception("could not keep a frame")
+            return None
+        self.log(f"Đã lưu khung hình {path.name}: {snap.describe(read=False)}")
+        return path
 
     def hand_over_failure(self, snap: Snapshot | None, note: str) -> None:
         """Leave the last frame, drawn with its Snapshot, where the runner's failure screenshot

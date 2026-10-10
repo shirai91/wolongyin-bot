@@ -116,13 +116,19 @@ class Win32InputDriver:
         self._post(hwnd, w.WM_KEYUP, vk, up_lp)
 
     def text(self, s: str) -> None:
+        """Type ``s``. Digits go as key presses (WM_KEYDOWN/UP, which the browser turns into the
+        character): a posted WM_CHAR alone was ignored by the game's text boxes on 2026-10-10 (the
+        Tinh Tú quantity box kept "1") while key presses worked. Other characters go as WM_CHAR."""
         hwnd = self.hwnd
         data = s.encode("utf-16-le")
         units = [int.from_bytes(data[i : i + 2], "little") for i in range(0, len(data), 2)]
         for i, unit in enumerate(units):
             if i:
                 self._sleep(self.char_delay_s)
-            self._post(hwnd, w.WM_CHAR, unit, 1)
+            if 0x30 <= unit <= 0x39:  # "0".."9": VK_0..VK_9 are the same codes
+                self.key(unit)
+            else:
+                self._post(hwnd, w.WM_CHAR, unit, 1)
 
 
 class Win32Capturer:
