@@ -384,3 +384,4 @@
 567-tt-dclick2.png:                {base: world_map, dialogs: [chest.wheel, chest.buy]}
 568-tt-typed2.png:                 {base: world_map, dialogs: [chest.wheel, chest.buy], state: {qty: 200}, note: "the same digits as WM_KEYDOWN/UP: typed"}
 569-tt-close-buy.png:              {base: world_map, dialogs: [chest.wheel], state: {chests: 0}}
+573-user-field-beam-top.png:     {base: field, state: {beam: true}, note: "user report 2026-10-10 (Tư Mã): beam cut by the top edge, 10x34 at 445,0 over the army at ~450,89; webp, cropped to the canvas"}

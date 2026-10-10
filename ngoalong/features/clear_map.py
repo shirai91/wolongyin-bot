@@ -6,14 +6,16 @@ map with "Phó Bản" (bottom-right cluster, ``nav.yaml``) and closes whatever d
 
 * **Next army**: the game marks it with a light-blue beam (``field.beam``). The beam flickers, so it
   must be seen on 2 ticks in a row; it is picked by size (blue map decorations are wider or
-  taller), and the army stands ~55 px below its lower tip. The top icon rows and the left notice
-  list are folded away first (armies near the top or left sit under them; the icon rows are shown
-  again at the end).
+  taller), and the army stands ~55 px below its lower tip. Over an army at the top of the map the
+  beam is cut by the canvas edge (only its lower part shows): it is taken when it is still tall
+  enough. The top icon rows and the left notice list are folded away first (armies near the top or
+  left sit under them; the icon rows are shown again at the end).
 * **Attack**: click the army → army dialog. "Phát chiến đấu" is kept **off** (unticked if needed),
   so Tấn công resolves the fight at once: the dialog closes and a green "Thắng Trận" line shows
   (1 Quân lệnh per attack). An army **without** the "Phát chiến đấu" box either opens Đoàn chiến (a
   group army "(Đoàn-Tinh)": Lập đội → team room → Khai chiến → battle → 攻方胜利 → Thoát) or plays
-  its battle (a boss army such as 魔王董卓 "(Đội-Tướng)": battle → 战胜 / 战败 box → Thoát).
+  its battle (a boss army such as 魔王董卓 "(Đội-Tướng)": battle → 战胜 / 战败 box → Thoát). On the
+  battle screen "Kết quả" (bottom right, once the battle has loaded) skips straight to the result.
 * **Progress** is read from the beam: when it moves to another army the last one fell; an attack
   with no green line and the beam still over the same army (and its troop count "N/M" not lower)
   is a loss. ``max_losses`` such attacks in a row end the run.
@@ -51,19 +53,23 @@ ARMY_SCREENS = (ARMY, GROUP_LIST, GROUP_ROOM)
 PLAY_TICK = Point(550, 411)
 ARMY_CLOSE = Point(638, 184)
 RESULT_EXIT = Point(540, 408)  # Thoát of the 战胜 / 战败 box (when its template is not found)
-GROUP_EXIT = Point(960, 577)  # Thoát bottom right after a group battle  # "Phát chiến đấu" checkbox of the army dialog
-# The beam: 9-16 x 30-50 px live (frames 359, 367, 425, 480, 485); its tip bobs a few px.
+GROUP_EXIT = Point(960, 577)  # Thoát bottom right after a group battle
+# The beam: 9-16 x 30-50 px live (frames 359, 367, 425, 480, 485); its tip bobs a few px. Cut by the
+# top edge over an army at the top of the map (10 x 34 px at y=0, user report 2026-10-10).
 BEAM_W = (6, 18)
 BEAM_H = (25, 60)
+BEAM_CUT_H = 20  # a beam that starts at y=0 is taken from this height (the probe's min_h)
 ARMY_BELOW = (55, 35, 75)  # px below the beam's lower tip, per try (the army sprite is ~50 px tall)
 SAME_DX, SAME_DY = 25, 40  # the beam is over the same army (it bobs up and down)
 OPEN_TRIES = 3  # clicks under one beam that open no dialog before the run fails
 ATTACK_TRIES = 3  # Tấn công presses that leave the dialog open
 NO_BEAM_S = 4.0  # no beam for this long on the bare field: the dungeon is cleared
 WON_WAIT_S = 2.0  # after Tấn công: the green "Thắng Trận" line shows within this
-# Where an army can be clicked: not under the bottom bar, the chat or the bottom-right cluster.
-CLICK_AREA = Rect(0, 120, 1000, 405)
-CLUSTER = Rect(860, 455, 140, 145)
+# Where an army can be clicked: not under the bottom bar, the chat, the bottom-right cluster or the
+# HUD corners on top (player panel top left; year bar, Thư / Hạng / ... and Quốc chiến top right;
+# both stay when the icon rows are folded). The top centre is open map (an army at ~450,89 there).
+CLICK_AREA = Rect(0, 20, 1000, 505)
+COVERED = (Rect(860, 455, 140, 145), Rect(0, 0, 355, 128), Rect(745, 0, 255, 128))
 
 
 class ClearMapParams(TaskParams):
@@ -182,8 +188,12 @@ class ClearMap(Feature):
             Rule("khai chiến", on=GROUP_ROOM,
                  do=lambda s: Click(s.start, label="Khai chiến", within=20, then=self._battle_started,
                                     expect=lambda n: n.base == BATTLE or n.top == FIELD)),
+            Rule("bỏ qua trận", on=BATTLE, when=lambda s: s.skip is not None,
+                 do=lambda s: Click(s.skip, label="Kết quả (bỏ qua trận)", within=4,
+                                    expect=or_after(lambda n: n.has(RESULT) or n.has(GROUP_RESULT)
+                                                    or n.base != BATTLE, 2.0))),
             Rule("đang đánh", on=BATTLE,
-                 do=lambda s: Wait(1.0, label="đang đánh", patience=self.params.battle_timeout_s)),
+                 do=lambda s: Wait(0.25, label="đang đánh", patience=self.params.battle_timeout_s)),
             Rule("kết quả", on=RESULT, do=self._result),
             Rule("kết quả đoàn chiến", on=GROUP_RESULT, do=self._result),
         ]
@@ -205,7 +215,8 @@ class ClearMap(Feature):
     # --- the field ---------------------------------------------------------------------------------
     def _beam(self, s: ScreenState) -> Beam | None:
         found = [Beam(x=r.center.x, tip=r.bottom) for r in s.beams
-                 if BEAM_W[0] <= r.w <= BEAM_W[1] and BEAM_H[0] <= r.h <= BEAM_H[1]]
+                 if BEAM_W[0] <= r.w <= BEAM_W[1]
+                 and (BEAM_H[0] <= r.h <= BEAM_H[1] or (r.y <= 0 and BEAM_CUT_H <= r.h <= BEAM_H[1]))]
         if not found:
             return None
         last = self.m.target
@@ -234,7 +245,7 @@ class ClearMap(Feature):
             self._finish(f"thua {self.m.loss_streak} trận liên tiếp (đạo quân vẫn còn): hãy tăng lực chiến")
             return Wait(0.05, label="dừng")
         army = Point(beam.x, beam.tip + ARMY_BELOW[self.m.open_tries % len(ARMY_BELOW)])
-        if not CLICK_AREA.contains(army) or CLUSTER.contains(army):
+        if not CLICK_AREA.contains(army) or any(r.contains(army) for r in COVERED):
             return Fail(f"đạo quân dưới tia sáng xanh ({army.x},{army.y}) bị giao diện che, không bấm được")
         self.m.target = beam
         return Click(army, label=f"đạo quân ({army.x},{army.y})", within=3,

@@ -9,6 +9,7 @@ battle:                     # campaign battle ("Phát chiến đấu" on, group 
   require: [[battle.vs, battle.nhanh]]
   read:
     fast: {point: battle.nhanh}
+    skip: {point: battle.ket_qua}                # Kết quả: shows the result at once (missing while the battle loads and once it ends)
 
 tower.floor:                # Tháp Thí Luyện floor map: "Tầng N", ☑ Tự Vượt Tháp, Phát chiến báo, Thoát
   layer: base

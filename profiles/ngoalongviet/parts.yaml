@@ -53,6 +53,7 @@ result.lose:          {template: part.result.lose, search: [420, 170, 160, 55]}
 result.continue:      {template: part.result.continue, search: [410, 385, 100, 40]}
 result.exit:          {template: part.result.exit, search: [490, 385, 100, 40], threshold: 0.80}  # Thoát of the 战胜 / 战败 box
 battle.nhanh:         {template: part.battle.nhanh, search: [880, 555, 120, 45], threshold: 0.80}  # clicked to speed up
+battle.ket_qua:       {template: part.battle.ket_qua, search: [760, 555, 120, 45], threshold: 0.80}  # skips the battle to its result
 battle.vs:            {template: part.battle.vs, search: [440, 0, 120, 60]}
 battle.exit:          {template: part.battle.exit, search: [900, 560, 100, 35], threshold: 0.80}
 result.group_win:     {template: part.result.group_win, search: [320, 230, 220, 120], threshold: 0.80}

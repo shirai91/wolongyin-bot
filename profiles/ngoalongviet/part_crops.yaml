@@ -100,6 +100,7 @@ crops:
   - {name: part.result.continue, source: tower_lose, rect: [432, 399, 56, 18]}     # Tiếp tục (loss only)
   - {name: part.result.exit, source: tower_win, rect: [524, 401, 34, 15]}          # Thoát (win and loss boxes)
   - {name: part.battle.nhanh, source: battle, rect: [941, 570, 40, 15]}            # "Nhanh" (battle screen, bottom right)
+  - {name: part.battle.ket_qua, source: battle, rect: [797, 570, 42, 15]}          # "Kết quả" (battle screen, bottom right): skips to the result
   - {name: part.battle.vs, source: battle, rect: [484, 16, 32, 22]}                # "VS" badge (every battle, also group battles)
   - {name: part.battle.exit, source: group_end, rect: [940, 571, 40, 13]}          # "Thoát" bottom right when a group battle ends
   - {name: part.result.group_win, source: group_end, rect: [365, 258, 130, 70]}    # 攻方 (of 攻方胜利, the attacker won)
