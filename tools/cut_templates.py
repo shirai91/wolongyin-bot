@@ -11,7 +11,7 @@ The crop list lives in ``profiles/ngoalongviet/template_crops.yaml``::
         mask: ellipse              # optional: also write <stem>.mask.png
 
 Template names use dots for folders, the same names ``TemplateStore`` resolves
-(``"tower.dialog.title"`` -> ``tower/dialog/title.png``). Paths are relative to the project root.
+(``"popup.reward.ok"`` -> ``popup/reward/ok.png``). Paths are relative to the project root.
 
 Usage::
 
