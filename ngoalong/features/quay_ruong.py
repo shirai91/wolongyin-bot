@@ -2,7 +2,8 @@
 flows" 5; rule-based since R2).
 
 The rules work on the Tinh Tú dialog (``chest.wheel``); the loop opens it from any map through
-the top icon rows (``nav.yaml``) and closes whatever dialog is in the way.
+the top icon rows (``nav.yaml``) and closes whatever dialog is in the way. They live in
+``ChestJob`` so that the Võ Khôi Tháp loop opens chests the same way when Quân lệnh runs out.
 
 * **Buy** (setting ``buy``): Mua → quantity box (double-click selects the number, type over it;
   an emptied box resets to 1) → 确定 → the spend-Vàng box 确定 (shown after a browser reload, its
@@ -16,7 +17,7 @@ the top icon rows (``nav.yaml``) and closes whatever dialog is in the way.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -48,8 +49,120 @@ class QuayRuongParams(TaskParams):
                              description="0 = không giới hạn")
 
 
-def _chests(snap: Snapshot) -> int | None:
+def chests_of(snap: Snapshot) -> int | None:
     return snap.value(WHEEL, "chests")
+
+
+class ChestState(BaseModel):
+    """What one chest job did (part of a feature's Memory)."""
+
+    opened: int = 0
+    bought: int = 0
+    buy_tries: int = 0
+    buy_given_up: bool = False
+    chests: int | None = None  # last count read
+
+
+class ChestJob:
+    """The Tinh Tú wheel rules: buy ``buy()`` chests, then open ``opens()`` (0 = every chest).
+
+    ``state`` returns the ChestState to work on (a feature may start a new one per job); ``active``
+    switches the rules off while the feature does something else. The feature calls ``track`` from
+    its goal (every tick) and asks ``finished``.
+    """
+
+    def __init__(self, feature: Feature, state: Callable[[], ChestState], opens: Callable[[], int],
+                 buy: Callable[[], int], active: Callable[[], bool] = lambda: True) -> None:
+        self.f = feature
+        self.state = state
+        self.opens = opens
+        self.buy = buy
+        self.active = active
+
+    # --- memory ---------------------------------------------------------------------------------
+    def track(self, snap: Snapshot) -> int | None:
+        """Read the chest count; every drop since the last read is a chest opened."""
+        st = self.state()
+        n = chests_of(snap)
+        if n is None:
+            return st.chests
+        last = st.chests
+        if last is not None and n < last:
+            st.opened += last - n
+            self.f.actor.count("chests", last - n)
+            self.f.actor.progress(st.opened, self.opens() or None)
+        st.chests = n
+        return n
+
+    def buying(self) -> bool:
+        st = self.state()
+        return st.bought < self.buy() and not st.buy_given_up
+
+    def remaining(self) -> int:
+        """Chests still to open (the whole count when no number is set)."""
+        st = self.state()
+        if self.opens():
+            return self.opens() - st.opened
+        return st.chests or 0
+
+    def finished(self, snap: Snapshot) -> bool:
+        """The job is done: on the wheel, auto-open off, nothing to buy, the number opened or 0 left."""
+        n = chests_of(snap)
+        if snap.top != WHEEL or n is None or snap.value(WHEEL, "auto_open") or self.buying():
+            return False
+        return bool(self.opens() and self.state().opened >= self.opens()) or n == 0
+
+    # --- rules ----------------------------------------------------------------------------------
+    def rules(self) -> list[Rule]:
+        on = self.active
+        return [
+            Rule("mua rương", on=WHEEL, when=lambda s: on() and not s.auto_open and self.buying(), do=self._open_buy),
+            Rule("số lượng mua", on=BUY, when=lambda s: on() and self.buying() and s.qty != self._want_buy(),
+                 do=lambda s: Text(str(self._want_buy()), at=QTY_BOX, clear=0, label="số rương mua",
+                                   within=2, expect=lambda n: n.value(BUY, "qty") == self._want_buy())),
+            Rule("xác nhận mua", on=BUY, when=lambda s: on() and self.buying() and s.qty == self._want_buy(),
+                 do=lambda s: Click(s.ok, label=f"mua {self._want_buy()} rương", within=5,
+                                    expect=lambda n: n.has(GOLD) or self._more_chests(n), then=self._bought)),
+            Rule("xác nhận Vàng", on=GOLD, when=lambda s: on() and self.buying() and WHEEL in self.f.snap.stack,
+                 do=lambda s: Click(s.ok, label=f"dùng {self._want_buy() * VANG_PER_CHEST} Vàng", within=5,
+                                    expect=self._more_chests, then=self._bought)),
+            Rule("ngưng mở", on=WHEEL, when=lambda s: on() and s.auto_open,
+                 do=lambda s: Click(s.auto_button, label="Ngưng mở", within=3, settle=0.2,
+                                    expect=lambda n: n.value(WHEEL, "auto_open") is False)),
+            Rule("tự mở", on=WHEEL, when=lambda s: on() and (s.chests or 0) > 0 and self.remaining() >= 2,
+                 do=lambda s: Click(s.auto_button, label="Tự mở", expect=AUTO, within=2, settle=0.15)),
+            Rule("xác nhận tự mở", on=AUTO, when=lambda s: on() and self.remaining() >= 2 and not self.buying(),
+                 do=lambda s: Click(s.ok, label="确定 tự mở", within=2, settle=0.2,
+                                    expect=lambda n: n.top == WHEEL)),
+            Rule("mở một rương", on=WHEEL, when=lambda s: on() and (s.chests or 0) > 0 and self.remaining() == 1,
+                 do=lambda s: Click(s.spin, label="开始抽奖", change=chests_of, within=8)),
+        ]
+
+    def _more_chests(self, snap: Snapshot) -> bool:
+        n = chests_of(snap)
+        return snap.top == WHEEL and n is not None and n > (self.state().chests or 0)
+
+    def _want_buy(self) -> int:
+        return self.buy() - self.state().bought
+
+    def _open_buy(self, s: ScreenState) -> Action | None:
+        st = self.state()
+        if st.buy_tries >= BUY_TRIES:
+            st.buy_given_up = True
+            self.f.actor.log(f"Mua rương không được sau {BUY_TRIES} lần (thiếu Vàng?); chỉ mở rương đang có",
+                             "warning")
+            return None
+        st.buy_tries += 1
+        return Click(MUA, label="Mua", expect=BUY)
+
+    def _bought(self) -> None:
+        st = self.state()
+        before, now = st.chests, chests_of(self.f.snap) if self.f.snap is not None else None
+        if before is not None and now is not None and now > before:
+            st.bought += now - before
+            st.chests = now
+            self.f.actor.count("chests_bought", now - before)
+            self.f.actor.log(f"Đã mua {now - before} rương (còn {now})")
 
 
 @register
@@ -66,104 +179,33 @@ class QuayRuong(Feature):
     params: QuayRuongParams
 
     class Memory(BaseModel):
-        opened: int = 0
-        bought: int = 0
-        buy_tries: int = 0
-        buy_given_up: bool = False
-        chests: int | None = None  # last count read
+        chest: ChestState = ChestState()
 
     m: Memory
 
-    # --- memory ---------------------------------------------------------------------------------
-    def _track(self, snap: Snapshot) -> int | None:
-        """Read the chest count; every drop since the last read is a chest opened."""
-        n = _chests(snap)
-        if n is None:
-            return self.m.chests
-        last = self.m.chests
-        if last is not None and n < last:
-            self.m.opened += last - n
-            self.actor.count("chests", last - n)
-            self.actor.progress(self.m.opened, self.params.opens or None)
-        self.m.chests = n
-        return n
-
-    def _buying(self) -> bool:
-        return self.m.bought < self.params.buy and not self.m.buy_given_up
-
-    def _remaining(self) -> int:
-        """Chests still to open (the whole count when no number is set)."""
-        if self.params.opens:
-            return self.params.opens - self.m.opened
-        return self.m.chests or 0
+    def __init__(self, params: Any = None) -> None:
+        super().__init__(params)
+        self.job = ChestJob(self, lambda: self.m.chest, lambda: self.params.opens, lambda: self.params.buy)
 
     def goal(self, snap: Snapshot) -> str | None:
-        n = self._track(snap)
-        if snap.top != WHEEL or n is None or snap.value(WHEEL, "auto_open") or self._buying():
+        self.job.track(snap)
+        if not self.job.finished(snap):
             return None
-        if self.params.opens and self.m.opened >= self.params.opens:
-            return self.summary()
-        if n == 0:
-            return self.summary() + " (hết rương)"
-        return None
+        return self.summary() + ("" if self.params.opens and self.m.chest.opened >= self.params.opens
+                                 else " (hết rương)")
 
     def summary(self) -> str:
-        s = f"Đã mở {self.m.opened} rương"
-        if self.m.bought:
-            s += f", mua {self.m.bought} rương ({self.m.bought * VANG_PER_CHEST} Vàng)"
+        st = self.m.chest
+        s = f"Đã mở {st.opened} rương"
+        if st.bought:
+            s += f", mua {st.bought} rương ({st.bought * VANG_PER_CHEST} Vàng)"
         return s
 
     def max_run_s(self) -> float:
         return self.params.max_minutes * 60.0
 
-    # --- rules ----------------------------------------------------------------------------------
     def rules(self) -> list[Rule]:
-        return [
-            Rule("mua rương", on=WHEEL, when=lambda s: not s.auto_open and self._buying(), do=self._open_buy),
-            Rule("số lượng mua", on=BUY, when=lambda s: self._buying() and s.qty != self._want_buy(),
-                 do=lambda s: Text(str(self._want_buy()), at=QTY_BOX, clear=0, label="số rương mua",
-                                   within=2, expect=lambda n: n.value(BUY, "qty") == self._want_buy())),
-            Rule("xác nhận mua", on=BUY, when=lambda s: self._buying() and s.qty == self._want_buy(),
-                 do=lambda s: Click(s.ok, label=f"mua {self._want_buy()} rương", within=5,
-                                    expect=lambda n: n.has(GOLD) or self._more_chests(n), then=self._bought)),
-            Rule("xác nhận Vàng", on=GOLD, when=lambda s: self._buying() and WHEEL in self.snap.stack,
-                 do=lambda s: Click(s.ok, label=f"dùng {self._want_buy() * VANG_PER_CHEST} Vàng", within=5,
-                                    expect=self._more_chests, then=self._bought)),
-            Rule("ngưng mở", on=WHEEL, when=lambda s: s.auto_open,
-                 do=lambda s: Click(s.auto_button, label="Ngưng mở", within=3, settle=0.2,
-                                    expect=lambda n: n.value(WHEEL, "auto_open") is False)),
-            Rule("tự mở", on=WHEEL, when=lambda s: (s.chests or 0) > 0 and self._remaining() >= 2,
-                 do=lambda s: Click(s.auto_button, label="Tự mở", expect=AUTO, within=2, settle=0.15)),
-            Rule("xác nhận tự mở", on=AUTO, when=lambda s: self._remaining() >= 2 and not self._buying(),
-                 do=lambda s: Click(s.ok, label="确定 tự mở", within=2, settle=0.2,
-                                    expect=lambda n: n.top == WHEEL)),
-            Rule("mở một rương", on=WHEEL, when=lambda s: (s.chests or 0) > 0 and self._remaining() == 1,
-                 do=lambda s: Click(s.spin, label="开始抽奖", change=_chests, within=8)),
-        ]
-
-    def _more_chests(self, snap: Snapshot) -> bool:
-        n = _chests(snap)
-        return snap.top == WHEEL and n is not None and n > (self.m.chests or 0)
-
-    def _want_buy(self) -> int:
-        return self.params.buy - self.m.bought
-
-    def _open_buy(self, s: ScreenState) -> Action | None:
-        if self.m.buy_tries >= BUY_TRIES:
-            self.m.buy_given_up = True
-            self.actor.log(f"Mua rương không được sau {BUY_TRIES} lần (thiếu Vàng?); chỉ mở rương đang có",
-                           "warning")
-            return None
-        self.m.buy_tries += 1
-        return Click(MUA, label="Mua", expect=BUY)
-
-    def _bought(self) -> None:
-        before, now = self.m.chests, _chests(self.snap) if self.snap is not None else None
-        if before is not None and now is not None and now > before:
-            self.m.bought += now - before
-            self.m.chests = now
-            self.actor.count("chests_bought", now - before)
-            self.actor.log(f"Đã mua {now - before} rương (còn {now})")
+        return self.job.rules()
 
     @classmethod
     def import_legacy(cls, ini: Mapping[str, str]) -> dict[str, Any]:

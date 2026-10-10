@@ -2,7 +2,7 @@
 
 Coordinates a feature deals with:
 
-* ``str`` click targets are ``CoordMap`` keys (``"quay_ruong.per_spin.0"``), canvas-relative at
+* ``str`` click targets are ``CoordMap`` keys (``"thap.open_tower"``), canvas-relative at
   1000x600, converted with the current canvas origin and scale.
 * ``Point`` targets are canvas-relative offsets at 1000x600 too (AutoClick's recorded points).
 * ``Match`` / ``ObjectResult`` targets are already in frame (client) pixels: they come from a search.
