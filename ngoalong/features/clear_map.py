@@ -9,7 +9,10 @@ map with "Phó Bản" (bottom-right cluster, ``nav.yaml``) and closes whatever d
   taller), and the army stands ~55 px below its lower tip. Over an army at the top of the map the
   beam is cut by the canvas edge (only its lower part shows): it is taken when it is still tall
   enough. On a bright map (sand) the beam washes out to near-white: the probe takes the pale glow
-  around a saturated blue centre. A blob on the "◀" panel tab (it glows pale blue) is ignored. The top icon rows and the left notice list are folded away first (armies near the top or
+  around a saturated blue centre. A blob on the "◀" panel tab (it glows pale blue) is ignored.
+  When the HUD hides the beam (an army just under the player panel), the pale-blue ring pulsing
+  around the army's feet finds it: the frames of the ticks spent looking for the beam are compared
+  (``perception.motion``, ~1.2-2 s of them) and the ring's centre is the army. The top icon rows and the left notice list are folded away first (armies near the top or
   left sit under them; the icon rows are shown again at the end).
 * **Attack**: click the army → army dialog. "Phát chiến đấu" is kept **off** (unticked if needed),
   so Tấn công resolves the fight at once: the dialog closes and a green "Thắng Trận" line shows
@@ -32,6 +35,7 @@ import time
 from collections.abc import Mapping
 from typing import Any
 
+import numpy as np
 from pydantic import BaseModel, Field
 
 from ngoalong.core.geometry import Point, Rect
@@ -40,6 +44,7 @@ from ngoalong.engine.feature import Feature, Rule
 from ngoalong.engine.registry import register
 from ngoalong.engine.task import TaskParams
 from ngoalong.perception import Snapshot
+from ngoalong.perception.motion import find_rings
 from ngoalong.perception.readers import ScreenState
 
 FIELD = "field"
@@ -65,6 +70,13 @@ SAME_DX, SAME_DY = 25, 40  # the beam is over the same army (it bobs up and down
 OPEN_TRIES = 3  # clicks under one beam that open no dialog before the run fails
 ATTACK_TRIES = 3  # Tấn công presses that leave the dialog open
 NO_BEAM_S = 4.0  # no beam for this long on the bare field: the dungeon is cleared
+# The ring around the next army's feet (one pulse per 2.0 s, invisible for part of it): looked for
+# when no beam shows, over the frames of the last ticks (a gap longer than RING_GAP_S starts over).
+RING_FRAMES = 8
+RING_MIN_FRAMES, RING_MIN_S = 5, 1.2  # 5 frames 0.3 s apart found it in every window live
+RING_GAP_S = 0.8
+RING_AREA = Rect(0, 0, 1000, 525)  # above the bottom bar and the chat
+RING_TIP_DY = 58  # a ring centred at y stands for a beam ending at y - 58: the army is clicked ~3 px above
 WON_WAIT_S = 2.0  # after Tấn công: the green "Thắng Trận" line shows within this
 # Where an army can be clicked: not under the bottom bar, the chat, the bottom-right cluster or the
 # HUD corners on top (player panel top left; year bar, Thư / Hạng / ... and Quốc chiến top right;
@@ -92,6 +104,7 @@ class ClearMapParams(TaskParams):
 class Beam(BaseModel):
     x: int  # centre
     tip: int  # lower end
+    ring: bool = False  # found by the ring around the army (the beam itself was hidden)
 
     def same(self, other: Beam | None) -> bool:
         return other is not None and abs(self.x - other.x) <= SAME_DX and abs(self.tip - other.tip) <= SAME_DY
@@ -134,6 +147,14 @@ class ClearMap(Feature):
         finished: str = ""  # why the run ends (set once the work is over)
 
     m: Memory
+
+    def __init__(self, params: Any = None) -> None:
+        super().__init__(params)
+        self._frames: list[tuple[float, np.ndarray]] = []  # field frames while no beam shows (ring search)
+
+    def begin(self) -> None:
+        super().begin()
+        self._frames.clear()
 
     def max_run_s(self) -> float:
         return self.params.max_minutes * 60.0
@@ -225,9 +246,29 @@ class ClearMap(Feature):
         last = self.m.target
         return next((b for b in found if b.same(last)), found[0])
 
+    def _ring(self, now: float) -> Beam | None:
+        """The army under a hidden beam, by the ring pulsing around its feet (None until enough frames)."""
+        frames = self._frames
+        if frames and now - frames[-1][0] > RING_GAP_S:
+            frames.clear()
+        frames.append((now, self.snap.senses.canvas.copy()))
+        del frames[:-RING_FRAMES]
+        if len(frames) < RING_MIN_FRAMES or now - frames[0][0] < RING_MIN_S:
+            return None
+        rings = [Beam(x=r.center.x, tip=r.center.y - RING_TIP_DY, ring=True)
+                 for r in find_rings([f for _t, f in frames], RING_AREA)]
+        if not rings:
+            return None
+        last = self.m.target
+        return next((b for b in rings if b.same(last)), rings[0])
+
     def _field(self, s: ScreenState) -> Action:
         beam = self._beam(s)
         now = time.monotonic()
+        if beam is None:
+            beam = self._ring(now)
+        else:
+            self._frames.clear()
         if beam is None:
             self.m.beam_ticks = 0
             if self.m.no_beam_since is None:
@@ -251,7 +292,9 @@ class ClearMap(Feature):
         if not CLICK_AREA.contains(army) or any(r.contains(army) for r in COVERED):
             return Fail(f"đạo quân dưới tia sáng xanh ({army.x},{army.y}) bị giao diện che, không bấm được")
         self.m.target = beam
-        return Click(army, label=f"đạo quân ({army.x},{army.y})", within=3,
+        self._frames.clear()  # the screen changes now: the ring search starts over
+        how = " (vòng sáng, tia sáng bị che)" if beam.ring else ""
+        return Click(army, label=f"đạo quân ({army.x},{army.y}){how}", within=3,
                      expect=or_after(lambda n: any(n.has(x) for x in ARMY_SCREENS), 2.5), then=self._army_opened)
 
     def _army_opened(self) -> None:

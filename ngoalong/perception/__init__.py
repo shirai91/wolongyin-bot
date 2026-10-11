@@ -5,6 +5,7 @@
 * ``screens``   screen rules over parts and probes, layered base / dialogs / overlays (``screens/*.yaml``)
 * ``readers``   typed state values per screen (tab, present, digits, find_all, rows, ...)
 * ``snapshot``  one ``Snapshot`` per frame, the single answer to "where am I and what do I see"
+* ``motion``    what changes across a few frames (the ring pulsing around the next army's feet)
 
 Every module works on the **canvas** at 1000x600 (``Perceiver.canvas`` crops and rescales a frame).
 """

@@ -135,9 +135,10 @@ Bot tự mở bảng Tháp Thí Luyện (Thành chính → công trình Tháp �
 Bot mở **Phó Bản** (nút ở góc dưới bên phải), rồi đánh đạo quân có **tia sáng xanh** (đạo quân kế tiếp của phó bản):
 
 1. Thu gọn danh sách thông báo và hàng biểu tượng trên cùng (không che đạo quân; mở lại khi xong).
-2. Click đạo quân dưới tia sáng, bỏ tích "Phát chiến đấu" (đánh nhanh, không xem trận), bấm **Tấn công**. Dòng xanh "Thắng Trận" = thắng; tia sáng chuyển sang đạo quân khác cũng là thắng.
-3. Đoàn chiến ("(Đoàn-Tinh)"): Tấn công → Lập đội → Khai chiến → vào trận → Thoát. Đạo quân boss: Tấn công, vào trận, Thoát. Trong màn trận, nút **Kết quả** (góc dưới bên phải) hiện ra thì bot bấm ngay để bỏ qua trận.
-4. Không còn tia sáng 4 giây: phó bản đã xong → sang phó bản kế tiếp (nút »). Phó bản mới không có tia sáng thì dừng (chưa mở khoá hoặc đã xong), như v1.8.0.
+2. Tia sáng bị giao diện che (đạo quân ngay dưới bảng nhân vật): bot nhận ra đạo quân nhờ vòng sáng xanh nhấp nháy quanh chân đạo quân (so sánh khung hình trong ~1-2 giây).
+3. Click đạo quân dưới tia sáng, bỏ tích "Phát chiến đấu" (đánh nhanh, không xem trận), bấm **Tấn công**. Dòng xanh "Thắng Trận" = thắng; tia sáng chuyển sang đạo quân khác cũng là thắng.
+4. Đoàn chiến ("(Đoàn-Tinh)"): Tấn công → Lập đội → Khai chiến → vào trận → Thoát. Đạo quân boss: Tấn công, vào trận, Thoát. Trong màn trận, nút **Kết quả** (góc dưới bên phải) hiện ra thì bot bấm ngay để bỏ qua trận.
+5. Không còn tia sáng (và vòng sáng) 4 giây: phó bản đã xong → sang phó bản kế tiếp (nút »). Phó bản mới không có tia sáng thì dừng (chưa mở khoá hoặc đã xong), như v1.8.0.
 
 - **Hết đạo quân thì sang phó bản kế tiếp**, **Số phó bản được chuyển sang tối đa**, **Số trận tối đa** (0 = không giới hạn).
 - **Dừng khi thua liên tiếp bấy nhiêu trận** (mặc định 3), **Thời gian tối đa mỗi trận (giây)**. Hết Quân lệnh cũng dừng.
