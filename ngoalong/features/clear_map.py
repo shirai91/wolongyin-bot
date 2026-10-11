@@ -23,9 +23,12 @@ map with "Phó Bản" (bottom-right cluster, ``nav.yaml``) and closes whatever d
 * **Progress** is read from the beam: when it moves to another army the last one fell; an attack
   with no green line and the beam still over the same army (and its troop count "N/M" not lower)
   is a loss. ``max_losses`` such attacks in a row end the run.
-* **Next dungeon**: no beam for ``NO_BEAM_S`` seconds = this dungeon is cleared. With "sang phó bản
-  kế tiếp" on, "»" is pressed (it is missing on the last dungeon); a dungeon that shows no beam
-  right after the switch ends the run (not unlocked yet, or cleared), as in v1.8.0.
+* **Next dungeon**: a dungeon is done only when "»" shows (the next one is open) and no beam does
+  for ``DONE_S`` seconds (the beam flickers; a beam next to "»" is still attacked). With "sang phó
+  bản kế tiếp" on, "»" is pressed; a dungeon reached that way which shows "»" and no beam is done
+  too, so the bot goes on. Without "»" the dungeon is not done whatever the beam does: the bot
+  keeps looking for the beam or the ring, and finding neither for ``NO_TARGET_S`` seconds fails
+  the run (with a screenshot) instead of leaving the dungeon half done.
 * Stops: ``max_battles``, ``max_maps``, ``max_minutes``, Quân lệnh 0.
 """
 
@@ -69,7 +72,8 @@ ARMY_BELOW = (55, 35, 75)  # px below the beam's lower tip, per try (the army sp
 SAME_DX, SAME_DY = 25, 40  # the beam is over the same army (it bobs up and down)
 OPEN_TRIES = 3  # clicks under one beam that open no dialog before the run fails
 ATTACK_TRIES = 3  # Tấn công presses that leave the dialog open
-NO_BEAM_S = 4.0  # no beam for this long on the bare field: the dungeon is cleared
+DONE_S = 1.0  # "»" shown and no beam for this long: the dungeon is done
+NO_TARGET_S = 10.0  # no "»", no beam and no ring for this long: the army cannot be found
 # The ring around the next army's feet (one pulse per 2.0 s, invisible for part of it): looked for
 # when no beam shows, over the frames of the last ticks (a gap longer than RING_GAP_S starts over).
 RING_FRAMES = 8
@@ -81,10 +85,13 @@ WON_WAIT_S = 2.0  # after Tấn công: the green "Thắng Trận" line shows wit
 # Where an army can be clicked: not under the bottom bar, the chat, the bottom-right cluster or the
 # HUD corners on top (player panel top left; year bar, Thư / Hạng / ... and Quốc chiến top right;
 # both stay when the icon rows are folded) and the "◀" panel tab on the right edge (pale blue: its
-# glow can pass for a beam). The top centre is open map (an army at ~450,89 there).
+# glow can pass for a beam), and the notice list under the player panel when it has no "<<" to fold
+# it (4 lines to y~210, x~178 live; clicking a line opens its dialog). The top centre is open map
+# (an army at ~450,89 there). Of the points tried below a beam the first one not covered is clicked.
 CLICK_AREA = Rect(0, 20, 1000, 505)
 PANEL_TAB = Rect(965, 150, 35, 60)
-COVERED = (Rect(860, 455, 140, 145), Rect(0, 0, 355, 128), Rect(745, 0, 255, 128), PANEL_TAB)
+COVERED = (Rect(860, 455, 140, 145), Rect(0, 0, 355, 128), Rect(745, 0, 255, 128), PANEL_TAB,
+           Rect(0, 128, 182, 84))
 
 
 class ClearMapParams(TaskParams):
@@ -265,17 +272,26 @@ class ClearMap(Feature):
     def _field(self, s: ScreenState) -> Action:
         beam = self._beam(s)
         now = time.monotonic()
-        if beam is None:
+        done = s.next_map is not None  # "»": the next dungeon is open, this one is done
+        if beam is None and not done:
             beam = self._ring(now)
-        else:
+        elif beam is not None:
             self._frames.clear()
         if beam is None:
             self.m.beam_ticks = 0
             if self.m.no_beam_since is None:
                 self.m.no_beam_since = now
-            if now - self.m.no_beam_since < NO_BEAM_S:
-                return Wait(0.25, label="tìm tia sáng xanh", patience=NO_BEAM_S + 30)
-            return self._cleared(s)
+            waited = now - self.m.no_beam_since
+            if done:
+                if waited < DONE_S:
+                    return Wait(0.25, label="đã có », xác nhận không còn tia sáng xanh")
+                return self._cleared(s)
+            if waited < NO_TARGET_S:
+                return Wait(0.25, label="tìm tia sáng xanh / vòng sáng (chưa có », phó bản chưa xong)",
+                            patience=NO_TARGET_S + 30)
+            where = "phó bản vừa chuyển sang" if self.m.switched else "phó bản"
+            return Fail(f"{where} chưa xong (chưa có ») mà không thấy tia sáng xanh hay vòng sáng của đạo quân "
+                        f"nào sau {NO_TARGET_S:g} giây (đạo quân bị giao diện che, hoặc đây là phó bản cuối cùng)")
         self.m.no_beam_since = None
         if self.m.no_dialog:
             return Fail(f"bấm {OPEN_TRIES} lần dưới tia sáng xanh mà không mở được bảng đạo quân")
@@ -288,9 +304,12 @@ class ClearMap(Feature):
         if self.m.loss_streak >= self.params.max_losses:
             self._finish(f"thua {self.m.loss_streak} trận liên tiếp (đạo quân vẫn còn): hãy tăng lực chiến")
             return Wait(0.05, label="dừng")
-        army = Point(beam.x, beam.tip + ARMY_BELOW[self.m.open_tries % len(ARMY_BELOW)])
-        if not CLICK_AREA.contains(army) or any(r.contains(army) for r in COVERED):
-            return Fail(f"đạo quân dưới tia sáng xanh ({army.x},{army.y}) bị giao diện che, không bấm được")
+        n = len(ARMY_BELOW)
+        tries = [Point(beam.x, beam.tip + ARMY_BELOW[(self.m.open_tries + i) % n]) for i in range(n)]
+        army = next((p for p in tries if CLICK_AREA.contains(p) and not any(r.contains(p) for r in COVERED)), None)
+        if army is None:
+            p = tries[0]
+            return Fail(f"đạo quân dưới tia sáng xanh ({p.x},{p.y}) bị giao diện che, không bấm được")
         self.m.target = beam
         self._frames.clear()  # the screen changes now: the ring search starts over
         how = " (vòng sáng, tia sáng bị che)" if beam.ring else ""
@@ -319,22 +338,16 @@ class ClearMap(Feature):
             self._lost("đạo quân vẫn còn")
 
     def _cleared(self, s: ScreenState) -> Action:
-        """No beam on this dungeon any more."""
+        """This dungeon is done: "»" shows and no beam does."""
         if not self.m.judged and self.m.target is not None:
             self.m.judged = True
-            self._won("không còn tia sáng xanh")
+            self._won("không còn tia sáng xanh, đã có »")
         p = self.params
-        if self.m.switched:
-            self._finish("phó bản mới không có đạo quân (chưa mở hoặc đã đánh hết)")
-            return Wait(0.05, label="dừng")
         if not p.next_map:
-            self._finish("đã hết đạo quân")
+            self._finish("phó bản đã xong (đã có »)")
             return Wait(0.05, label="dừng")
         if p.max_maps and self.m.maps >= p.max_maps:
             self._finish(f"đã sang {self.m.maps} phó bản")
-            return Wait(0.05, label="dừng")
-        if s.next_map is None:
-            self._finish("đã hết đạo quân, đây là phó bản cuối (không có »)")
             return Wait(0.05, label="dừng")
         return Click(s.next_map, label=f"phó bản kế tiếp » ({self.m.maps + 1})", within=4,
                      expect=or_after(lambda n: False, 3.0), then=self._switched)

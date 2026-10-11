@@ -12,6 +12,11 @@ Live: the moving pixels of one cycle cover an 88 x 51 px ellipse (fill 0.48; 0.1
 thin outline at full size moved) centred on the army's feet; the fountain's blobs are <= 16 px, the
 visible end of a beam is tall and thin. The ring is invisible for part of the cycle: 5 frames
 0.3 s apart found it in every window of a 4 s burst, 3 frames missed 6 of 34.
+
+Water shimmers bluish too (a river on Vương Hồn passed for a ring, 2026-10-11), but water is blue
+all the time while the ring sweeps over ground: a pixel counts only when its median B - R over the
+frames (its usual colour) is at most ``GROUND_BR_MAX``. Under the ring <= 58 (99th percentile, the
+slightly bluish stone of a night map), river >= 85 (1st percentile).
 """
 
 from __future__ import annotations
@@ -29,6 +34,7 @@ RING_H = (22, 70)
 RING_ASPECT = (1.3, 2.4)  # width / height (seen at a slant)
 RING_FILL = (0.05, 0.9)  # moving pixels / bounding box: 0.10 for the thin outline at full size, 0.48 swept
 RING_MIN_AREA = 300
+GROUND_BR_MAX = 70  # usual B - R of a pixel the ring may light: ground, not water
 
 
 def bluish_change(a: np.ndarray, b: np.ndarray) -> np.ndarray:
@@ -47,6 +53,8 @@ def find_rings(frames: Sequence[np.ndarray], area: Rect) -> list[Rect]:
     moved = np.zeros(crop[0].shape[:2], dtype=bool)
     for a, b in zip(crop, crop[1:], strict=False):
         moved |= bluish_change(a, b)
+    usual = np.median(np.stack([c[..., 0].astype(np.int16) - c[..., 2] for c in crop]), axis=0)
+    moved &= usual <= GROUND_BR_MAX
     mask = cv2.morphologyEx(moved.astype(np.uint8), cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8))
     n, _lab, st, _c = cv2.connectedComponentsWithStats(mask)
     rings = []
