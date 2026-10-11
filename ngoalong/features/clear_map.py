@@ -8,7 +8,8 @@ map with "Phó Bản" (bottom-right cluster, ``nav.yaml``) and closes whatever d
   must be seen on 2 ticks in a row; it is picked by size (blue map decorations are wider or
   taller), and the army stands ~55 px below its lower tip. Over an army at the top of the map the
   beam is cut by the canvas edge (only its lower part shows): it is taken when it is still tall
-  enough. The top icon rows and the left notice list are folded away first (armies near the top or
+  enough. On a bright map (sand) the beam washes out to near-white: the probe takes the pale glow
+  around a saturated blue centre. A blob on the "◀" panel tab (it glows pale blue) is ignored. The top icon rows and the left notice list are folded away first (armies near the top or
   left sit under them; the icon rows are shown again at the end).
 * **Attack**: click the army → army dialog. "Phát chiến đấu" is kept **off** (unticked if needed),
   so Tấn công resolves the fight at once: the dialog closes and a green "Thắng Trận" line shows
@@ -67,9 +68,11 @@ NO_BEAM_S = 4.0  # no beam for this long on the bare field: the dungeon is clear
 WON_WAIT_S = 2.0  # after Tấn công: the green "Thắng Trận" line shows within this
 # Where an army can be clicked: not under the bottom bar, the chat, the bottom-right cluster or the
 # HUD corners on top (player panel top left; year bar, Thư / Hạng / ... and Quốc chiến top right;
-# both stay when the icon rows are folded). The top centre is open map (an army at ~450,89 there).
+# both stay when the icon rows are folded) and the "◀" panel tab on the right edge (pale blue: its
+# glow can pass for a beam). The top centre is open map (an army at ~450,89 there).
 CLICK_AREA = Rect(0, 20, 1000, 505)
-COVERED = (Rect(860, 455, 140, 145), Rect(0, 0, 355, 128), Rect(745, 0, 255, 128))
+PANEL_TAB = Rect(965, 150, 35, 60)
+COVERED = (Rect(860, 455, 140, 145), Rect(0, 0, 355, 128), Rect(745, 0, 255, 128), PANEL_TAB)
 
 
 class ClearMapParams(TaskParams):
@@ -215,7 +218,7 @@ class ClearMap(Feature):
     # --- the field ---------------------------------------------------------------------------------
     def _beam(self, s: ScreenState) -> Beam | None:
         found = [Beam(x=r.center.x, tip=r.bottom) for r in s.beams
-                 if BEAM_W[0] <= r.w <= BEAM_W[1]
+                 if not PANEL_TAB.contains(r.center) and BEAM_W[0] <= r.w <= BEAM_W[1]
                  and (BEAM_H[0] <= r.h <= BEAM_H[1] or (r.y <= 0 and BEAM_CUT_H <= r.h <= BEAM_H[1]))]
         if not found:
             return None

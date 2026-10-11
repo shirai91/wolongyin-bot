@@ -15,6 +15,8 @@ Kinds:
              (default 1) up to ``max``, so ``max`` alone checks that something is NOT drawn.
 * ``blobs``  connected regions of ``colour`` with a minimum size and height/width ``aspect``; the
              value is their rectangles (canvas pixels), largest first. On when there is one.
+             ``core: {colour: ..., min: N}`` keeps only regions holding at least N pixels of a
+             stricter colour (a pale glow counts only around a saturated centre).
 * ``fill``   fraction of the rect's columns where at least ``col_frac`` of the pixels match
              ``colour`` (a progress or HP bar). On at ``min``.
 """
@@ -75,7 +77,7 @@ def load_probes(path: str | Path) -> dict[str, ProbeSpec]:
         if kind not in KINDS:
             raise ValueError(f"probe {name}: kind must be one of {KINDS}, not {kind!r}")
         rect = v.pop("rect", None)
-        for ch in v.get("colour", {}):
+        for ch in (*v.get("colour", {}), *v.get("core", {}).get("colour", {})):
             if ch not in CHANNELS:
                 raise ValueError(f"probe {name}: colour channel {ch!r} not in {CHANNELS}")
         out[name] = ProbeSpec(name, kind, Rect(*rect) if rect else None, v)
@@ -134,12 +136,15 @@ def evaluate(spec: ProbeSpec, canvas: np.ndarray, rect: Rect | None = None) -> P
         v = float(cols.mean())
         return ProbeResult(spec.name, v, v >= float(p.get("min", 0.5)))
     # blobs
-    n, _lab, st, _c = cv2.connectedComponentsWithStats(mask.astype(np.uint8))
+    n, lab, st, _c = cv2.connectedComponentsWithStats(mask.astype(np.uint8))
+    core = p.get("core")
+    if core:  # core pixels per region
+        in_core = np.bincount(lab[colour_mask(img, core["colour"]) & mask], minlength=n)
     blobs = []
     for i in range(1, n):
         x, y, w, h, area = (int(v) for v in st[i])
         if (w >= p.get("min_w", 1) and h >= p.get("min_h", 1) and area >= p.get("min_area", 1)
-                and h >= p.get("aspect", 0) * w):
+                and h >= p.get("aspect", 0) * w and (not core or in_core[i] >= int(core.get("min", 1)))):
             blobs.append((area, Rect(r.x + x, r.y + y, w, h)))
     rects = tuple(b for _a, b in sorted(blobs, key=lambda t: -t[0]))
     return ProbeResult(spec.name, rects, bool(rects))

@@ -34,13 +34,19 @@ vkt.boss_hp:    {kind: fill, colour: {g: [120, 255], g-r: [60, 255]}, rect: [365
 # The light-blue beam over the next army (old clear_map rule, widened live on 2026-10-09: frame 359,
 # beam 15 x 47 px at 826,94 over the army at 835,185). An army near the top of the map has its beam
 # cut by the canvas edge (user report 2026-10-10: 10 x 34 px at 446,0 over the army at ~450,85), so
-# the rect starts at y=0; nothing else on the corpus has a beam-sized blob up there. Not on the
+# the rect starts at y=0; nothing else on the corpus has a beam-sized blob up there. On a bright map
+# (sand, user report 2026-10-10 Đinh Nguyên) the beam washes out to near-white cyan (~240,255,255)
+# and only a 5 x 8 px centre stays saturated blue, so the blob is the pale colour (a superset of the
+# old saturated one) around at least 8 saturated pixels: snow and white flags have no such centre.
+# Same beams as before on every corpus field frame; 12 x 30 at 454,237 on the sand map. Not on the
 # corpus's Khăn Vàng frames (that map showed no beam).
-field.beam:     {kind: blobs, colour: {b: [201, 255], g: [171, 255], r: [0, 199], b-r: [51, 255]}, rect: [0, 0, 1000, 525],
+field.beam:     {kind: blobs, colour: {b: [200, 255], g: [171, 255], b-r: [4, 255]}, rect: [0, 0, 1000, 525],
+                 core: {colour: {b: [201, 255], g: [171, 255], r: [0, 199], b-r: [51, 255]}, min: 8},
                  min_w: 4, min_h: 20, min_area: 60, aspect: 1.8}
 # Green floating line "Thắng Trận / Nhận C.C*43" in the middle of the field after an attack with
 # "Phát chiến đấu" off (075: 334 px, 076: 165, 385: 143; battle screens and other field frames <= 20).
 field.win_line: {kind: count, colour: {g: [181, 255], r: [0, 119], b: [0, 99]}, rect: [360, 230, 280, 90], min: 60}
 # The same light-blue crystal floats over the next guard on the tower floor map (8-12 x 29-36 px;
 # the guard is ~50 px below its bottom). It flickers: missing on some frames (315).
-tower.marker:   {use: field.beam, rect: [0, 80, 1000, 470]}
+tower.marker:   {kind: blobs, colour: {b: [201, 255], g: [171, 255], r: [0, 199], b-r: [51, 255]}, rect: [0, 80, 1000, 470],
+                 min_w: 4, min_h: 20, min_area: 60, aspect: 1.8}
