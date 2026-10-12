@@ -1,106 +1,80 @@
-# AutoNgoaLong v2 (Python rewrite)
+# AutoNgoaLong v2
 
-A Python rewrite of AutoNgoaLong v1.8.0, a bot for the Flash webgame **Ngọa Long** on the private server ngoalongviet.com, played in the **Coowon** browser on Windows. It clicks in the background with `PostMessage`, captures with `PrintWindow`, finds the 1000×600 game canvas by itself, and runs each feature as a decision loop: every tick it perceives the screen stack and its numbers from UI parts (OpenCV templates, colour probes, the game's digit font; no OCR), picks one action from the feature's rules, and checks that the game answered. Every wait is time-limited and can be stopped.
+A bot for the Flash webgame **Ngọa Long** on the private server ngoalongviet.com, played in the **Coowon** browser on Windows. It clicks and captures the game **in the background**, so you can keep using the computer while it runs. It finds the game window and the 1000×600 game area by itself, looks at the screen before every click, and checks that each click worked.
 
-Supported: Nâng cấp khoa kỹ, Nâng cấp công trình (city and harbour), Clear Phó Bản, Tháp Thí Luyện, Quay Tinh Tú, Võ Khôi Tháp, plus AutoClick.
+Features: Nâng cấp khoa kỹ, Nâng cấp công trình (city and harbour), Clear Phó Bản, Tháp Thí Luyện, Quay Tinh Tú, Võ Khôi Tháp, plus AutoClick.
 
-- Users: read the Vietnamese guide, [docs/user-guide-vi.md](docs/user-guide-vi.md). It ships with the build as `HUONG-DAN.md`.
-- Design: [docs/08-engine-revamp-plan.md](docs/08-engine-revamp-plan.md) (the engine and the features, final state at the top) and [docs/06-rewrite-design.md](docs/06-rewrite-design.md) (everything around it). A visual tour of the code: [docs/bot-structure.html](docs/bot-structure.html). All design docs are listed in [docs/README.md](docs/README.md).
+The full user guide is in Vietnamese: [docs/user-guide-vi.md](docs/user-guide-vi.md). It also ships inside the package as `HUONG-DAN.md`. To work on the code, read the [development guide](development-guide.md).
 
-## Developer quick start
+## What you need
 
-Requirements: Windows 10/11 64-bit, Python 3.12 or newer (the project is developed on 3.14 through the `py` launcher). The UI language is Vietnamese.
-
-```powershell
-py -3 -m venv .venv
-.venv\Scripts\python.exe -m pip install -e ".[dev]"
-.venv\Scripts\python.exe -m ngoalong            # start the app
-.venv\Scripts\python.exe -m ngoalong --debug    # start with debug mode (overlay, step PNGs) on
-.venv\Scripts\python.exe -m ngoalong --selftest # offline checks, exit code 0/1
-```
-
-Command line of `python -m ngoalong` (and of `AutoNgoaLong.exe`):
-
-| Option | Effect |
+| Requirement | Notes |
 | --- | --- |
-| `--settings PATH` | `settings.toml` to use (default: next to the app) |
-| `--ini PATH` | v1.8.0 `NgoaLong_data.ini` imported once, when no `settings.toml` exists yet |
-| `--debug` | Start with debug mode on |
-| `--selftest` | Run the offline checks (profile, features, Win32 driver, the perception benchmark on the bundled corpus, offscreen main window) and exit 0 (passed) or 1 (failed) |
-| `--corpus PATH` | `--selftest`: `labels.yaml` of a corpus (default: the one bundled in the build; from source `corpus/live/labels.yaml`) |
-| `--report PATH` | `--selftest`: also write the report to a file (the windowed build always writes `selftest-report.txt` next to the exe) |
-| `--no-ui` | `--selftest`: skip the main window check |
+| Windows 10 or 11, 64-bit | The bot uses Windows APIs; it does not run on macOS or Linux. |
+| Coowon browser | The game is Flash, which normal browsers no longer run. Coowon still does. The bot only works with Coowon (not Chrome or Edge). |
+| A Ngọa Long account on ngoalongviet.com | Log in and enter your server in Coowon before starting the bot. |
 
-To try it against the game: open Coowon on the game page (click **Run this time** on the "Adobe Flash Player was blocked" bar), start the app, press **Kiểm tra**. The status lines should read `Khung game: … 1000×600 ×1.00 - tin cậy` and `Màn hình: city{…} | hud{…}` (the Snapshot).
+Nothing else to install: Python, Qt, OpenCV and the Visual C++ runtime are all inside the package. The bot does not need administrator rights.
 
-## Tools
+## Install
 
-```powershell
-.venv\Scripts\python.exe tools\perceive.py --live                    # perceive the game window now
-.venv\Scripts\python.exe tools\perceive.py corpus\live --draw build\p # annotated Snapshots of stored frames
-.venv\Scripts\python.exe tools\perceive.py --bench                   # the perception benchmark (must pass)
-.venv\Scripts\python.exe -m ngoalong.tools.explore shot city         # capture the canvas into corpus\live\NNN-city.png
-.venv\Scripts\python.exe -m ngoalong.tools.explore click 944 493 --name world-map
-.venv\Scripts\python.exe -m ngoalong.tools.run_feature quay_ruong --set buy=10 --stop-after 60
-.venv\Scripts\python.exe tools\cut_templates.py --check              # templates match template_crops.yaml
-.venv\Scripts\python.exe tools\cut_templates.py --crops profiles\ngoalongviet\part_crops.yaml --check
-.venv\Scripts\python.exe tools\part_report.py                        # every part's score over the corpus
-.venv\Scripts\python.exe tools\number_report.py                      # every number field over the corpus
-```
+1. Open the [Releases page](../../releases/latest) and download `AutoNgoaLong-v<version>-win64.zip`.
+2. Before extracting, right-click the zip → **Properties** → tick **Unblock** (if shown) → **OK**. This stops Windows from warning on every file inside (see below).
+3. Extract the `AutoNgoaLong` folder somewhere you can write to, for example `D:\AutoNgoaLong`. Do not use `C:\Program Files`: the bot saves its settings, logs and history in its own folder.
+4. Run `AutoNgoaLong.exe`.
 
-`run_feature` runs one feature through the app's runner (the same path as **Bắt đầu**) with the run log on the console; it starts two Python processes, so stop it with `--stop-after` or Ctrl+C. The corpus PNGs under `corpus/live/` are git-ignored (large); their labels (`labels.yaml`) are tracked. There is no unit-test suite: perception is checked by the benchmark over the labelled corpus, features on the live game.
+The package contains:
 
-## Layout
-
-```text
-ngoalong/                  the package
-  app.py                   entry point, AppServices (dependency wiring, one Actor per run), command line
-  paths.py                 APP_ROOT (project root / exe folder) and BUNDLE_ROOT (_internal)
-  selftest.py              --selftest checks and the build's corpus bundle
-  config/settings.py       pydantic settings saved as settings.toml, one-time INI import
-  core/                    GameWindow, CanvasLocator, capture/input, Matcher, TemplateStore, digit reader
-    drivers/               win32.py (Coowon), fake.py (recording input), cdp.py (stub)
-  perception/              canvas -> Snapshot: parts, probes, screens, readers; bench.py (the benchmark)
-  engine/                  Task/Feature, the decision loop, actions, Actor, navigation, interrupts, recovery,
-                           TaskRunner, RunnerManager, scheduler, history, registry
-  features/                one module per feature, registered with @register
-  debug/                   DebugFrame model, renderer, overlay window, sinks
-  ui/                      main window, generated feature forms, tabs/ (one module per tab), widgets/
-  tools/                   explore.py (live capture for the corpus), run_feature.py
-  hotkeys.py  notify.py
-profiles/ngoalongviet/     data, editable without rebuilding
-  parts.yaml probes.yaml numbers.yaml screens/*.yaml   perception
-  nav.yaml popups.yaml panels.yaml locator.yaml        navigation, interrupts, canvas anchors
-  part_crops.yaml template_crops.yaml digit_samples.yaml   reproducible template cuts
-  templates/**             template PNGs (+ optional .mask.png)
-corpus/live/               labelled live captures (labels.yaml tracked, PNGs local)
-docs/                      design documents, user guide, bot structure page, reference screenshots
-tools/                     perceive.py, part_report.py, number_report.py, cut_templates.py, cut_digits.py,
-                           live/livectl.cs (reference Win32 find/capture/click)
-AutoNgoaLong.spec          PyInstaller spec (one-folder build)
-build.ps1                  build script
-```
-
-Extension points: a feature is one file in `ngoalong/features/` with `@register` (a `Feature` with `entry`, `Memory`, `rules()` and `goal()`; the UI form is generated from its `Params` model); its screens go in `profiles/ngoalongviet/screens/<area>.yaml` over parts in `parts.yaml`, and the ways to reach them in `nav.yaml`. A UI tab is one module in `ngoalong/ui/tabs/` with `@register_tab`. Features, tabs and widgets are discovered with `pkgutil` at run time. See "Adding a feature" in [docs/bot-structure.html](docs/bot-structure.html).
-
-## Build
-
-```powershell
-.\build.ps1                 # venv + deps if missing, PyInstaller, then AutoNgoaLong.exe --selftest
-.\build.ps1 -SkipSelftest   # skip the self-test of the built exe
-```
-
-Output is a one-folder build in `dist\AutoNgoaLong\`:
-
-| Path | Contents |
+| File / folder | What it is |
 | --- | --- |
-| `AutoNgoaLong.exe` | Windowed app; `--selftest` runs the offline checks, including the perception benchmark on the bundled corpus |
-| `_internal\` | Python runtime, Qt, OpenCV, the `ngoalong` package, `selftest\` (57 corpus frames as lossless WebP + their `labels.yaml`) |
-| `profiles\` | Copied from the source tree, next to the exe, so parts, screens, navigation and templates stay editable |
-| `HUONG-DAN.md`, `VERSION.txt` | The Vietnamese user guide and the version |
+| `AutoNgoaLong.exe` | The bot |
+| `_internal\` | Libraries the bot needs. Do not change or delete. |
+| `profiles\ngoalongviet\` | How the bot recognises the game (screens, buttons, image templates). Editable with a text editor; no rebuild needed. |
+| `HUONG-DAN.md` | The Vietnamese user guide |
+| `VERSION.txt` | The version |
 
-The spec bundles the self-test frames (`ngoalong.selftest.BUNDLE_FRAMES`) from `corpus\live\` on the build machine; when they are missing it prints a warning and the build's self-test reports `SKIP [perception]` instead of running the benchmark. At run time the build reads and writes `settings.toml`, `NgoaLong_data.ini` (one-time import), `logs\` (run folders and `app.log`) and `data\` (history, routines) next to the exe; see `ngoalong/paths.py`. The build script keeps those user files across rebuilds and exits non-zero when PyInstaller or the self-test fails; the self-test report is saved to `build\selftest-report.txt`. Zip `dist\AutoNgoaLong\` to distribute it.
+These are created on first run, next to the exe: `settings.toml` (your settings), `logs\` (a log and screenshots for each run) and `data\` (run history and task chains).
+
+## Why Windows warns about it
+
+When you first run `AutoNgoaLong.exe`, Windows may show **"Windows protected your PC"** (SmartScreen), or Microsoft Defender may block or quarantine the file. This is expected for this kind of program:
+
+- **The exe is not code-signed.** Signing needs a paid certificate. SmartScreen warns about any unsigned program that few people have downloaded yet ("unknown publisher").
+- **It is packed with PyInstaller.** The exe unpacks a bundled Python runtime. Some malware is packed the same way, so antivirus heuristics sometimes flag PyInstaller apps in general.
+- **It controls another program's window.** The bot sends mouse clicks and keys to the Coowon window (`PostMessage`), takes pictures of it (`PrintWindow`) and registers global hotkeys (Stop = `Ctrl+Alt+F10`). This is what a game bot has to do, but it also matches what heuristic scanners look for.
+
+What the bot does **not** do: it does not need admin rights, does not install anything, does not change system settings, and does not connect to the internet unless you turn on Telegram or Discord notifications in the **Thông báo** tab.
+
+If you trust where you downloaded it from:
+
+- **SmartScreen:** click **More info** → **Run anyway**. Windows remembers this for that file.
+- **Defender blocks or deletes the exe:** open **Windows Security** → **Virus & threat protection** → **Protection history**, choose the item and **Allow on device**. To stop it coming back after updates, add the bot's folder under **Virus & threat protection settings** → **Exclusions** → **Add an exclusion** → **Folder**.
+
+## First run
+
+1. Open **Coowon** and enter the game. If Coowon shows "Adobe Flash Player was blocked", click **Run this time**.
+2. Keep the page zoom at 100% (`Ctrl+0`). Other zoom levels work, but 100% is the best tested.
+3. Start `AutoNgoaLong.exe` and press **Kiểm tra**. When the status shows `Khung game: … 1000×600 ×1.00 - tin cậy` and a `Màn hình: …` line, the bot can see the game.
+4. Pick a feature in the **Tính năng** tab and press **Bắt đầu**. Press **Dừng** or `Ctrl+Alt+F10` to stop.
+
+Keep the game window **not minimized and at least partly visible**: Windows does not draw a minimized window, so the bot cannot see it. Other windows may cover part of it.
+
+## Upgrading
+
+- **From v1.8.0:** copy your old `NgoaLong_data.ini` next to `AutoNgoaLong.exe` **before the first run**. The bot imports the settings it still uses once and saves them to `settings.toml`.
+- **From an older v2 release:** extract the new version to a new folder and copy `settings.toml` and `data\` from the old folder into it. If you edited anything in `profiles\`, copy those changes over by hand.
+
+## Problems
+
+| What you see | What to do |
+| --- | --- |
+| "Không thấy cửa sổ Coowon đang mở Ngọa Long" | Open the game in Coowon (not another browser), wait until the tab title contains "Ngọa Long", then press **Tìm lại**. |
+| `Khung game: … không thấy` or `chưa chắc chắn` | The game window is minimized, still loading, or covered by a dialog. Restore it, set zoom to 100%, press **Kiểm tra**. |
+| The bot clicks in the wrong place | Set the page zoom to 100% (`Ctrl+0`). |
+| The bot does not start or shows no window | Read `logs\app.log`. Check that Defender did not quarantine files in `_internal\`; if it did, allow them and extract the zip again. |
+
+More cases are in section 10 of the [user guide](docs/user-guide-vi.md). When you report a bug, include the summary line from the **Nhật ký** panel and the `logs\run-<id>\` folder of that run (it has `run.log` and screenshots).
 
 ## Licence and policy
 
-The original v1.8.0 code has no licence (the author was asked). The target server allows bots. See docs/06 "Decisions".
+The original v1.8.0 code has no licence (the author was asked). The target server allows bots. Use the bot on your own account and at your own risk.

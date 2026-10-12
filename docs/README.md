@@ -2,7 +2,7 @@
 
 As of 2026-10-10. Online copy of the first version (Claude Doc, 2026-10-06): https://claude.ai/code/artifact/891ca6f5-e03c-4839-a7cc-bfe0f8e25c3b
 
-This design document is split into short files, so a person or an agent can open only the part it needs. Files 01–05 describe v1.8.0 as it is today. File 06 is the design of the Python rewrite (with its implementation status), 07 its first screen reference data, and 08 the engine revamp that replaced the first engine (perceive → read state → decide; phases R0–R4, done on 2026-10-10). The v2 user guide (Vietnamese), the bot structure page and the developer README sit beside them. Reference screenshots are in [`game screenshots/`](game%20screenshots/).
+This design document is split into short files, so a person or an agent can open only the part it needs. Files 01–05 describe v1.8.0 as it is today. File 06 is the design of the Python rewrite (with its implementation status), 07 its first screen reference data, and 08 the engine revamp that replaced the first engine (perceive → read state → decide; phases R0–R4, done on 2026-10-10). The v2 user guide (Vietnamese), the bot structure page and the development guide (repository root) sit beside them. Reference screenshots are in [`game screenshots/`](game%20screenshots/).
 
 ## Files
 
@@ -18,7 +18,7 @@ This design document is split into short files, so a person or an agent can open
 | [08-engine-revamp-plan.md](08-engine-revamp-plan.md) | The engine as it is now | Final state; why the first engine got lost live; live exploration; the six feature flows as observed; perception (parts, probes, digits, screens, readers, Snapshot), the decision loop, each feature's rules, live gates and findings per phase R0–R4 |
 | [bot-structure.html](bot-structure.html) | A visual tour of the code | Interactive page: layers and modules, run life cycle, perceive → decide → act, the recovery ladder, Quay Tinh Tú as rules, profile data, feature catalogue |
 | [user-guide-vi.md](user-guide-vi.md) | Using the v2 app (Vietnamese) | Install, first run, window detection, the six features and AutoClick, debug mode, routines, multiple windows, troubleshooting. Ships in the build as `HUONG-DAN.md` |
-| [../README.md](../README.md) | Working on the v2 code | Developer quick start, command line, code layout, tools, build (`build.ps1`, `AutoNgoaLong.spec`, `--selftest`) |
+| [../development-guide.md](../development-guide.md) | Working on the v2 code | Developer quick start, command line, code layout, tools, build (`build.ps1`, `AutoNgoaLong.spec`, `--selftest`) |
 
 ## Quick facts
 
@@ -34,6 +34,6 @@ This design document is split into short files, so a person or an agent can open
 - **A screen is misread**: 08 "Perception", `tools/perceive.py` (`--live`, `--draw`, `--bench`) and `corpus/live/labels.yaml`.
 - **Building input, capture or the canvas locator**: 02 Architecture, 05 Known issues (#1, #3, #9, #14), 06 "Finding the game screen automatically" and "Core interfaces".
 - **Migrating settings**: 04 Data and configuration; removed features are dropped by `Settings.forget_features`.
-- **Building or releasing**: the root [README.md](../README.md) (Build section), then the implementation status in 06.
+- **Building or releasing**: [development-guide.md](../development-guide.md) (Build section), then the implementation status in 06.
 - **Helping a player**: the user guide, [user-guide-vi.md](user-guide-vi.md).
 - **Changing the plan**: 08 for the engine, 06 for everything around it. Files 01–05 describe the fixed v1.8.0 build and change only when new reverse-engineering findings come in.
