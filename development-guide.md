@@ -7,7 +7,7 @@ A bot for the Flash webgame **Ngọa Long** on the private server ngoalongviet.c
 Supported: Nâng cấp khoa kỹ, Nâng cấp công trình (city and harbour), Clear Phó Bản, Tháp Thí Luyện, Quay Tinh Tú, Võ Khôi Tháp, plus AutoClick.
 
 - Users: read the Vietnamese user guide, the root [README.md](README.md). It ships with the build as `HUONG-DAN.md`.
-- Design: [docs/08-engine-revamp-plan.md](docs/08-engine-revamp-plan.md) (the engine and the features, final state at the top) and [docs/06-rewrite-design.md](docs/06-rewrite-design.md) (everything around it). A visual tour of the code: [docs/bot-structure.html](docs/bot-structure.html). All design docs are listed in [docs/README.md](docs/README.md).
+- Design: [docs/08-engine-revamp-plan.md](docs/08-engine-revamp-plan.md) (the engine and the features, final state at the top) and [docs/06-design.md](docs/06-design.md) (everything around it). A visual tour of the code: [docs/bot-structure.html](docs/bot-structure.html). All design docs are listed in [docs/README.md](docs/README.md).
 
 ## Developer quick start
 
@@ -26,7 +26,6 @@ Command line of `python -m ngoalong` (and of `AutoNgoaLong.exe`):
 | Option | Effect |
 | --- | --- |
 | `--settings PATH` | `settings.toml` to use (default: next to the app) |
-| `--ini PATH` | `NgoaLong_data.ini` settings imported once, when no `settings.toml` exists yet |
 | `--debug` | Start with debug mode on |
 | `--selftest` | Run the offline checks (profile, features, Win32 driver, the perception benchmark on the bundled corpus, offscreen main window) and exit 0 (passed) or 1 (failed) |
 | `--corpus PATH` | `--selftest`: `labels.yaml` of a corpus (default: the one bundled in the build; from source `corpus/live/labels.yaml`) |
@@ -59,7 +58,7 @@ ngoalong/                  the package
   app.py                   entry point, AppServices (dependency wiring, one Actor per run), command line
   paths.py                 APP_ROOT (project root / exe folder) and BUNDLE_ROOT (_internal)
   selftest.py              --selftest checks and the build's corpus bundle
-  config/settings.py       pydantic settings saved as settings.toml, one-time INI import
+  config/settings.py       pydantic settings saved as settings.toml
   core/                    GameWindow, CanvasLocator, capture/input, Matcher, TemplateStore, digit reader
     drivers/               win32.py (Coowon), fake.py (recording input), cdp.py (stub)
   perception/              canvas -> Snapshot: parts, probes, screens, readers; bench.py (the benchmark)
@@ -101,7 +100,7 @@ Output is a one-folder build in `dist\AutoNgoaLong\`:
 | `profiles\` | Copied from the source tree, next to the exe, so parts, screens, navigation and templates stay editable |
 | `HUONG-DAN.md`, `VERSION.txt` | The Vietnamese user guide and the version |
 
-The spec bundles the self-test frames (`ngoalong.selftest.BUNDLE_FRAMES`) from `corpus\live\` on the build machine; when they are missing it prints a warning and the build's self-test reports `SKIP [perception]` instead of running the benchmark. At run time the build reads and writes `settings.toml`, `NgoaLong_data.ini` (one-time import), `logs\` (run folders and `app.log`) and `data\` (history, routines) next to the exe; see `ngoalong/paths.py`. The build script keeps those user files across rebuilds and exits non-zero when PyInstaller or the self-test fails; the self-test report is saved to `build\selftest-report.txt`. Zip `dist\AutoNgoaLong\` to distribute it. Before zipping a release, remove the user files the build script kept (`settings.toml*`, `NgoaLong_data.ini`, `logs\`, `data\`, `selftest-report.txt`), and `_internal\selftest\` if the corpus frames should not ship; then attach the zip to a GitHub release, for example `gh release create v2.0.0 AutoNgoaLong-v2.0.0-win64.zip`.
+The spec bundles the self-test frames (`ngoalong.selftest.BUNDLE_FRAMES`) from `corpus\live\` on the build machine; when they are missing it prints a warning and the build's self-test reports `SKIP [perception]` instead of running the benchmark. At run time the build reads and writes `settings.toml`, `logs\` (run folders and `app.log`) and `data\` (history, routines) next to the exe; see `ngoalong/paths.py`. The build script keeps those user files across rebuilds and exits non-zero when PyInstaller or the self-test fails; the self-test report is saved to `build\selftest-report.txt`. Zip `dist\AutoNgoaLong\` to distribute it. Before zipping a release, remove the user files the build script kept (`settings.toml*`, `logs\`, `data\`, `selftest-report.txt`), and `_internal\selftest\` if the corpus frames should not ship; then attach the zip to a GitHub release, for example `gh release create v2.0.0 AutoNgoaLong-v2.0.0-win64.zip`.
 
 ## Licence
 

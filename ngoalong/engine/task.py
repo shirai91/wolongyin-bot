@@ -63,8 +63,3 @@ class Task(ABC):
 
     def on_stop(self, actor: Actor) -> None:
         """Called once after ``run`` ends for any reason (done, stopped or failed)."""
-
-    @classmethod
-    def import_legacy(cls, ini: Mapping[str, str]) -> dict[str, Any]:
-        """Map v1.8.0 ``[PRO5]`` INI values to this feature's params (docs/04); ``{}`` if none."""
-        return {}

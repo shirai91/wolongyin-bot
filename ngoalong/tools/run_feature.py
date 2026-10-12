@@ -20,7 +20,7 @@ import time
 
 from PySide6.QtCore import QCoreApplication, Qt
 
-from ngoalong.config.settings import DEFAULT_SETTINGS_PATH, load_or_import
+from ngoalong.config.settings import DEFAULT_SETTINGS_PATH, load_settings
 from ngoalong.engine import registry
 
 
@@ -41,7 +41,7 @@ def main(argv: list[str] | None = None) -> int:
 
     app = QCoreApplication.instance() or QCoreApplication(sys.argv[:1])  # noqa: F841 - Qt objects need it
     features = registry.discover()
-    settings, _ = load_or_import(args.settings, None, features)
+    settings = load_settings(args.settings)
     if args.gold is not None:
         settings.game.spend_gold_skip_wait = args.gold == "yes"
     services = AppServices(settings, settings_path=None)  # never saves

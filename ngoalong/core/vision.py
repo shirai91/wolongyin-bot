@@ -1,7 +1,7 @@
 """``Matcher``: OpenCV template search with a score threshold, ROI, mask and centre point.
 
-Fixes #3 (exact-pixel matching, clicks on the template's corner) and #14 (templates re-read from
-disk on every search). Every search records a ``Detection`` for the debug overlay, found or not.
+Matching tolerates small pixel differences, clicks go to the centre of a match, and templates come
+from the in-memory ``TemplateStore``. Every search records a ``Detection`` for the debug overlay, found or not.
 
 Coordinates: ``roi`` and returned rectangles are in FRAME pixels (the captured client area). Use
 ``scale`` (canvas width / 1000) when the canvas is zoomed; templates are resized to match.

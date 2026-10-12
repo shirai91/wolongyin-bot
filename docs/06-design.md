@@ -1,8 +1,8 @@
-# 06 · Rewrite design (Python)
+# 06 · Design
 
-Working draft of the Python rewrite: target browsers, automatic screen detection, debug overlay, stack, modules, interfaces, old-to-new mapping, roadmap and decisions. Issue numbers (#n) refer to [05 Known issues](05-known-issues.md). Index of all parts: [README.md](README.md)
+Design of AutoNgoaLong v2 in Python: target browsers, automatic screen detection, debug overlay, stack, modules, interfaces, roadmap and decisions. Index of all parts: [README.md](README.md)
 
-The proposal keeps v1.8.0's proven idea, background `PostMessage` clicks at `origin + offset`, and rebuilds everything around it. The new parts are a worker thread with real cancellation, OpenCV matching with a score threshold, a window binding that survives restarts, and offsets and flows stored as data instead of code.
+The bot is built on background `PostMessage` clicks at `origin + offset`, where the origin is the game canvas's top-left corner and the offset a canvas-relative position. Around that sit a worker thread with real cancellation, OpenCV matching with a score threshold, a window binding that survives restarts, and offsets and flows stored as data instead of code.
 
 > **Engine replaced (2026-10-08 → 10-10).** The first engine (scenes + `RunContext` + feature scripts, sections "Scene recognition" and "Pop-up guard" as first written) got lost on the live game. It was replaced by the perceive → read state → decide loop of [08](08-engine-revamp-plan.md) (phases R0–R4), and the bot now supports six features plus AutoClick. Window binding, capture, input, the canvas locator, the runner, the UI shell, routines, history, notifications and the build stay as described here; the sections below are updated to the final state.
 
@@ -12,12 +12,12 @@ The MVP supports one host: **Coowon** on Windows. **FlashBrowser** (Windows, mac
 
 | Browser | Engine | Platforms | Window the bot targets | Input | Capture | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| Coowon | Chromium-based with built-in Flash (v1.8.0's browser type 2) | Windows | The top-level `Chrome_WidgetWin_1` window itself. Verified live on 2026-10-06: this Coowon build (`%LOCALAPPDATA%\Coowon\Coowon\Application\chrome.exe`) has **no** `Chrome_RenderWidgetHostHWND` child | `PostMessage` mouse and key messages to the top-level window, client coordinates | `PrintWindow` with `PW_RENDERFULLCONTENT` on the top-level window | MVP; background capture and background click both verified live |
+| Coowon | Chromium-based with built-in Flash | Windows | The top-level `Chrome_WidgetWin_1` window itself. Verified live on 2026-10-06: this Coowon build (`%LOCALAPPDATA%\Coowon\Coowon\Application\chrome.exe`) has **no** `Chrome_RenderWidgetHostHWND` child | `PostMessage` mouse and key messages to the top-level window, client coordinates | `PrintWindow` with `PW_RENDERFULLCONTENT` on the top-level window | MVP; background capture and background click both verified live |
 | [FlashBrowser](https://github.com/radubirsan/FlashBrowser) | Electron 9.4.4 plus the Pepper Flash plugin you supply | Windows, macOS, Linux | Windows: the same render widget. macOS and Linux: no window handle available | Windows: `PostMessage`. Any OS: CDP `Input.dispatchMouseEvent` | Windows: `PrintWindow`. Any OS: CDP `Page.captureScreenshot` | Post-MVP; CDP path not yet tested |
 
 What this changes in the design:
 
-- **The origin is never 0,0.** In both browsers the game canvas sits inside a web page, so the origin is the canvas's top-left corner inside the render widget. v1.8.0's browser type 1 shortcut is dropped, and the canvas locator finds the canvas automatically (next section).
+- **The origin is never 0,0.** In both browsers the game canvas sits inside a web page, so the origin is the canvas's top-left corner inside the render widget. The canvas locator finds it automatically (next section).
 - **The MVP ships only the Win32 drivers.** The `InputDriver` and `Capturer` interfaces stay, so a `Cdp` driver can be added after the MVP without touching feature code.
 - **CDP is post-MVP and unproven.** Pepper Flash may ignore synthetic CDP input in Electron 9 (Chromium 83). If it does, macOS and Linux fall back to OS-level input and screen capture, which needs the game window in front.
 - **Page zoom changes the scale.** Chromium page zoom resizes the canvas, so `CoordMap` computes its scale factor per browser and per zoom level.
@@ -25,7 +25,7 @@ What this changes in the design:
 
 ## Finding the game screen automatically
 
-The user never sets the root coordinate (*Tọa độ gốc*) or presses F9. The bot finds the Coowon window, then locates the 1000×600 game canvas inside it on every capture. The 7 reference screenshots show why this is needed: the canvas's top-left corner moved between (270, 106) and (273, 112) from one capture to the next (measurements in [07 Screen catalogue](07-screen-catalogue.md)).
+The user never sets an origin by hand. The bot finds the Coowon window, then locates the 1000×600 game canvas inside it on every capture. The 7 reference screenshots show why this is needed: the canvas's top-left corner moved between (270, 106) and (273, 112) from one capture to the next (measurements in [07 Screen catalogue](07-screen-catalogue.md)).
 
 1. **Find the window.** Enumerate visible top-level `Chrome_WidgetWin_1` windows whose process path contains `\Coowon\` (the executable is named `chrome.exe`) and whose title contains "Ngọa Long" (for example "Sv 266 Ngọa Long Việt Nam - Coowon Browser"). Target that top-level window directly: it has no render-widget child. With several matches, list them in the UI by title; pick-under-cursor stays as a manual fallback only. The live window measured 1349×1391 client px with the canvas at about (180, 110); `tools/live/livectl.exe` is a reference implementation of find + capture + click.
 2. **Locate the canvas.** Run three detectors on the capture and combine them:
@@ -82,14 +82,14 @@ How it works:
 | Concern | Choice | Why |
 | --- | --- | --- |
 | Runtime | Python 3.12, 64-bit; Windows only for the MVP | The MVP targets Coowon, which is Windows-only, and the proven PostMessage path is Win32. |
-| Win32 access | `pywin32`, plus `ctypes` for `PrintWindow` and `RegisterHotKey` | Direct equivalents of every AutoIt call used today |
+| Win32 access | `pywin32`, plus `ctypes` for `PrintWindow` and `RegisterHotKey` | Direct access to the Win32 calls the bot needs: window enumeration, messages, capture, hotkeys |
 | CDP (FlashBrowser, post-MVP) | A small raw DevTools Protocol client on websocket-client. FlashBrowser is launched with --remote-debugging-port bound to localhost. | Background input and screenshots on all three operating systems, if Pepper Flash accepts CDP input (post-MVP spike) |
-| Capture | `PrintWindow(hwnd, PW_RENDERFULLCONTENT)` into a NumPy array | Works when the window is covered, and handles Chromium surfaces. DCs are freed in `finally` blocks, which fixes #1. |
-| Vision | OpenCV `matchTemplate` (`TM_CCOEFF_NORMED`), per-template threshold, region of interest and mask, templates cached in memory | Tolerates colour drift. Returns the centre and a score. Fixes #3 and #14. |
+| Capture | `PrintWindow(hwnd, PW_RENDERFULLCONTENT)` into a NumPy array | Works when the window is covered, and handles Chromium surfaces. DCs are freed in `finally` blocks, so long runs do not leak GDI handles. |
+| Vision | OpenCV `matchTemplate` (`TM_CCOEFF_NORMED`), per-template threshold, region of interest and mask, templates cached in memory | Tolerates colour drift. Returns the centre and a score. |
 | Debug overlay | Qt transparent click-through window for live view; OpenCV `rectangle`/`putText` for the panel and saved PNGs | Same `DebugFrame` drawn three ways; no extra dependency |
-| UI | PySide6 (Qt 6), Vietnamese UI only | Threaded runs with signals for log, progress and state. Fixes #7. |
-| Config | `pydantic` models saved as TOML (user settings); YAML for offsets and flows | Validated inputs (#15), readable files, and versioned profiles |
-| Hotkeys | `RegisterHotKey` on a message thread, configurable, with a modifier by default (Ctrl+Alt+F10 = stop) | No more stolen F-keys (#8) |
+| UI | PySide6 (Qt 6), Vietnamese UI only | Threaded runs with signals for log, progress and state, so the UI stays responsive. |
+| Config | `pydantic` models saved as TOML (user settings); YAML for offsets and flows | Validated inputs, readable files, and versioned profiles |
+| Hotkeys | `RegisterHotKey` on a message thread, configurable, with a modifier by default (Ctrl+Alt+F10 = stop) | Global hotkeys with a modifier do not take plain F-keys from other apps |
 | Packaging | PyInstaller one-folder build, later Nuitka | Simple distribution. The templates folder stays editable. |
 | Quality | A labelled corpus of live canvas captures and the perception benchmark (`tools/perceive.py --bench`, `--selftest` in the build); live gates per phase | Perception is checked frame by frame without the game; flows are checked on the live game |
 
@@ -101,7 +101,7 @@ As built (2026-10-10, after R4). The bot structure page ([bot-structure.html](bo
 ngoalong/
   app.py                 # entry point, AppServices (DI wiring, one Actor per run), command line
   paths.py  selftest.py  hotkeys.py  notify.py
-  config/settings.py     # pydantic settings (settings.toml), one-time INI import, removed features forgotten
+  config/settings.py     # pydantic settings (settings.toml), removed features forgotten
   core/
     window.py            # GameWindow: discover Coowon windows, bind by pid/exe/class/title, rebind
     locator.py           # CanvasLocator: anchors + black-border box + layout prior -> canvas rect, scale, confidence
@@ -140,7 +140,7 @@ class GameWindow:
     def discover(cls) -> list["GameWindow"]: ...  # Coowon windows whose title contains "Ngọa Long"
     def rebind(self) -> bool: ...                 # find again by pid/exe/class/title
 
-class CanvasLocator:                               # replaces the root coordinate (Tọa độ gốc) and F9
+class CanvasLocator:                               # canvas origin and scale, found on every capture
     def locate(self, frame: np.ndarray) -> CanvasFix: ...   # rect, scale, confidence, detectors that agreed
 
 class Perceiver:                                   # perception/snapshot.py
@@ -176,36 +176,19 @@ class Capturer(Protocol):                          # Win32Capturer
 
 Each feature is a `Task` subclass with a pydantic `Params` model, so the UI form, validation and saved settings all come from one definition.
 
-## Old to new mapping
-
-| v1.8.0 | Python replacement | What changes |
-| --- | --- | --- |
-| `MOUSE_POS` (F9), `HWND_GAME`, `TITLE_ACTIVE` | `GameWindow.discover` and `rebind` | Finds the Coowon window automatically and binds by process and window class, not a raw handle. Never captures its own window. Fixes #5 and #6. |
-| Root coordinate `TOADO_GOC` (*Tọa độ gốc*) | `CanvasLocator` | Found on every capture from anchors and the black border; no user step, follows window moves and zoom |
-| `ImageSearchEx` results with no feedback | `Detection` records + `DebugSink` | Debug mode shows every search as a green or red rectangle, live and in saved PNGs |
-| `ACP_GETPOS` (F2) | `autoclick` task with its own target | No longer overwrites the game window. Fixes #4. |
-| `LVS_MOUSECLICK`, `ACP_BUTTON` | `InputDriver.click` | One code path. Click type honoured. Fixes #10. |
-| `_LVS_SEND_TEXT` plus `ControlSend` | `InputDriver.key` and `InputDriver.text` | Proper key-down/up and `WM_CHAR`, no doubled keys. Fixes #9. |
-| `IMAGESEARCHEX*` and `_BMPSEARCH` shellcode | `Capturer` plus `Matcher` | No leaks, a score threshold, centre point, caching. Fixes #1, #3, #14. |
-| `While … And ON == True`, `Sleep` | The decision loop: one tick at a time, every action with an expectation and a time limit, Stop / Pause checked every tick | Every wait can be stopped and has a time limit. Fixes #2. |
-| Hard-coded `X_GOC + n` | UI parts found in search regions (`parts.yaml`), screens and navigation as data (`screens/*.yaml`, `nav.yaml`) | Buttons are found where they are; a fixed point is kept only for spots with no part. Editable without rebuilding; zoom is handled by the canvas scale. |
-| `[PRO5]` INI | `settings.toml` with a one-time INI importer | Typed, validated, saved continuously |
-| GUIGetMsg loop and MsgBox at the end | Qt UI, `TaskRunner` thread, log panel, tray notification | UI stays responsive, with Start, Pause and Stop per run. Fixes #7. |
-| IE ad banner, blog update scrape | Removed, or an optional GitHub Releases check | Fixes #11 |
-
 ## Roadmap
 
-Build in five phases. Each phase ends at a gate that must be checked against the real game before the next one starts, so the parity work (P0–P2) finishes before new features (P3).
+Build in five phases. Each phase ends at a gate that must be checked against the real game before the next one starts, so the foundations and the core features (P0–P2) are done before new features (P3).
 
 | Phase | Scope | Exit gate |
 | --- | --- | --- |
-| **P0 · Foundations (start here)** | GameWindow discovery, CanvasLocator, SceneDetector (7 known scenes), InputDriver, Capturer, Matcher, debug overlay + annotate tool, TaskRunner, settings + INI import. First working tasks: AutoClick and Quay rương on Coowon (Windows). | Canvas found within 2 px and scene named correctly on all 7 reference screenshots; 1-hour soak with a flat GDI-handle count; Stop ends any run within 1 s |
-| P1 · Offset-only features | Mở thẻ bài, Khoa kỹ, Công trình, Chúa công, Quay rương, Tháp Thí Luyện. Offsets loaded from coords.yaml, with a zoom scale factor. | Parity checklist against v1.8.0 passed, feature by feature |
+| **P0 · Foundations (start here)** | GameWindow discovery, CanvasLocator, SceneDetector (7 known scenes), InputDriver, Capturer, Matcher, debug overlay + annotate tool, TaskRunner, settings. First working tasks: AutoClick and Quay rương on Coowon (Windows). | Canvas found within 2 px and scene named correctly on all 7 reference screenshots; 1-hour soak with a flat GDI-handle count; Stop ends any run within 1 s |
+| P1 · Offset-only features | Mở thẻ bài, Khoa kỹ, Công trình, Chúa công, Quay rương, Tháp Thí Luyện. Offsets loaded from coords.yaml, with a zoom scale factor. | Each feature checked on the live game, feature by feature |
 | P2 · Template-driven features | Clear Phó Bản, Thám Bảo, Võ Khôi Tháp, Tri Kỷ. Templates captured on ngoalongviet.com, thresholds tuned, every wait time-limited. | Each runs 30 minutes with no stuck loop; every miss logged with a screenshot |
 | P3 · New features | Scheduler and routine chains, multiple windows, template capture tool, notifications, run history, FlashBrowser | Beta testers run their daily routines for one week |
 | P4 · Release | PyInstaller build and installer, update check through GitHub Releases, user guide in Vietnamese | — |
 
-P0 replaces the parts behind the high-severity bugs (#1–#4), so every later phase is built on fixed foundations.
+P0 builds the parts every feature depends on (window, capture, input, matching, stop), so every later phase is built on foundations already checked live.
 
 ## Implementation status (2026-10-10)
 
@@ -213,7 +196,7 @@ P0–P4 were built on the first engine (2026-10-06) with an offline pytest suite
 
 | Phase | Built | Where |
 | --- | --- | --- |
-| P0 · Foundations | Coowon window discovery and rebinding (top-level `Chrome_WidgetWin_1`), Win32 `PostMessage` input and `PrintWindow` capture with DCs freed in `finally`, `CanvasLocator` (anchors + black border + layout prior), `SceneDetector` (35 scenes, all golden screenshots pass), `Matcher`, `CoordMap`, debug model + overlay window + panel + PNG sink, annotate tool, `TaskRunner` with stop/pause, settings + one-time INI import, configurable hotkeys (Ctrl+Alt+F10 stop, Ctrl+Alt+D debug), Vietnamese Qt UI with forms generated from `Params`. Features: AutoClick, Quay rương | `ngoalong/core`, `debug`, `engine`, `ui`, `config`, `hotkeys.py`, `tools/annotate.py` |
+| P0 · Foundations | Coowon window discovery and rebinding (top-level `Chrome_WidgetWin_1`), Win32 `PostMessage` input and `PrintWindow` capture with DCs freed in `finally`, `CanvasLocator` (anchors + black border + layout prior), `SceneDetector` (35 scenes, all golden screenshots pass), `Matcher`, `CoordMap`, debug model + overlay window + panel + PNG sink, annotate tool, `TaskRunner` with stop/pause, settings, configurable hotkeys (Ctrl+Alt+F10 stop, Ctrl+Alt+D debug), Vietnamese Qt UI with forms generated from `Params`. Features: AutoClick, Quay rương | `ngoalong/core`, `debug`, `engine`, `ui`, `config`, `hotkeys.py`, `tools/annotate.py` |
 | P1 · Offset-only features | Mở thẻ bài, Nâng cấp khoa kỹ, Nâng cấp công trình, Cày cấp chúa công, Tháp Thí Luyện (shared tower steps), each checking its screen before clicking | `ngoalong/features/*.py`, `profiles/ngoalongviet/coords/*.yaml` |
 | P2 · Template-driven features | Clear Phó Bản, Thám Bảo, Võ Khôi Tháp, Tri Kỷ; templates cut reproducibly (`template_crops.yaml`, `tools/cut_templates.py`), every wait time-limited | `ngoalong/features`, `profiles/ngoalongviet/scenes`, `templates` |
 | P3 · New features | Routine chains + scheduler, multiple windows, template capture tool, notifications (tray, Telegram, Discord), run history, Thám Bảo x2 reward | `engine/scheduler.py`, `engine/manager.py`, `engine/history.py`, `notify.py`, `tools/template_tool.py`, `ui/tabs/*` |
@@ -230,11 +213,11 @@ Deferred or still open:
 - **OCR**: RapidOCR was added on 2026-10-06 for Chạy Thành Tựu and removed in R4 with it. Nothing reads text: numbers use the game's digit font (`core/digits.py`). If OCR is ever needed again, it must stay cross-platform (RapidOCR, not Windows.Media.Ocr) and outside screen identification (08 "When OCR is allowed").
 - **Later ideas**: template profiles per server or website.
 
-## New features to add after parity
+## New features beyond the core set
 
 - [x] **Routine chains and scheduler**: run a saved sequence such as Khoa kỹ → Công trình → Trial Tower → Boss at set times, with retries. (P3: "Chuỗi tác vụ" tab, `engine/scheduler.py`.)
 - [x] **Multiple windows**: one `TaskRunner` per bound game window, so several accounts run in parallel. The target server allows bots. (P3: "Nhiều cửa sổ" tab, `engine/manager.py`.)
-- [ ] **Template profiles per server or website**: delivers the selector that v1.8.0 promised but never implemented.
+- [ ] **Template profiles per server or website**: a selector for which server's or website's templates to use.
 - [ ] ~~**Template capture tool**~~: built in P3 ("Mẫu ảnh" tab), removed in R4 with the scenes it wrote to. Templates are now cut reproducibly from `part_crops.yaml` / `template_crops.yaml` (`tools/cut_templates.py`), frames captured with `python -m ngoalong.tools.explore`.
 - [x] **Notifications**: tray alerts plus optional Telegram or Discord messages on finish, stop or error, including a screenshot. (P3: "Thông báo" tab, `notify.py`.)
 - [x] **Run history**: logs, counters (spins, floors, bosses), and failure screenshots saved per run. (P3: "Lịch sử" tab, `engine/history.py`.)
@@ -247,7 +230,7 @@ Deferred or still open:
 - **Platform:** Windows only for the MVP, on Coowon. FlashBrowser, macOS and Linux are out of scope for the MVP.
 - **Server:** ngoalongviet.com, game page `http://www.ngoalongviet.com/UserCenter/mjwly.php`. Its templates still need capturing, before P2 starts.
 - **UI language:** Vietnamese only.
-- **Licence:** the original author was asked; the v1.8.0 code has no licence.
+- **Licence:** MIT (`LICENSE` in the repository root).
 - **Bot policy:** the target is a private server of a legacy Flash game that allows bots, so multi-account features are acceptable.
 
 No open questions remain.

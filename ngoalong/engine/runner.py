@@ -1,4 +1,4 @@
-"""``TaskRunner``: runs one ``Task`` on a ``QThread`` with Start / Pause / Stop (fixes #7).
+"""``TaskRunner``: runs one ``Task`` on a ``QThread`` with Start / Pause / Stop.
 
 * ``execute(task, actor)`` is the Qt-free core: runs the task, maps the outcome to a ``RunResult``
   and ALWAYS saves a failure screenshot under ``logs/run-<id>/`` when the task fails.

@@ -1,4 +1,4 @@
-"""``TemplateStore``: resolves template names to images and caches them in memory (fixes #14).
+"""``TemplateStore``: resolves template names to images and caches them in memory.
 
 Name resolution, tried in each root folder in order:
 

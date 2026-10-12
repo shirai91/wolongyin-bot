@@ -5,8 +5,8 @@ title contains "Ngọa Long" and "Coowon" (process ``chrome.exe`` under ``%LOCAL
 It has NO ``Chrome_RenderWidgetHostHWND`` child, so input and capture target the top-level window
 in client coordinates.
 
-The binding is by (pid, exe, class, title rule), never a raw handle saved across restarts (#6),
-and the bot's own windows are never selected (#5).
+The binding is by (pid, exe, class, title rule), never a raw handle saved across restarts,
+and the bot's own windows are never selected.
 """
 
 from __future__ import annotations

@@ -71,7 +71,7 @@ if ($running.Count -gt 0) {
     throw "$AppName.exe is running from $DistDir (pid $($running.Id -join ', ')): close it first, then build again"
 }
 # User files live next to the exe (ngoalong\paths.py APP_ROOT): keep them across the rebuild.
-$UserItems = @("settings.toml", "settings.toml.bak", "NgoaLong_data.ini", "data", "logs")
+$UserItems = @("settings.toml", "settings.toml.bak", "data", "logs")
 $Keep = Join-Path $Root "build\user-files"
 if (Test-Path $Keep) { Remove-Item -Recurse -Force $Keep }
 if (Test-Path $DistDir) {

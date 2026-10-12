@@ -28,7 +28,7 @@ class CachedCapturer:
     """Wraps a ``Capturer`` and reuses the last frame while it is younger than ``max_age_s``.
 
     Several searches in the same step then share one capture instead of grabbing the window each
-    time (#14). ``invalidate()`` forces the next ``grab`` to capture again (call it after a click).
+    time. ``invalidate()`` forces the next ``grab`` to capture again (call it after a click).
     """
 
     def __init__(

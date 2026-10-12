@@ -52,7 +52,7 @@ _BUTTON_MESSAGES: dict[str, tuple[int, int, int, int]] = {
 
 
 class Win32InputDriver:
-    """Background mouse and keyboard input with ``PostMessage`` (fixes #9 and #10).
+    """Background mouse and keyboard input with ``PostMessage``: the game window does not need focus.
 
     The short gaps between messages (tens of ms) let Flash see separate events; they are part of
     one gesture, not waits for the game, so they are plain sleeps.
@@ -146,7 +146,7 @@ class Win32Capturer:
 
     The whole window is rendered (flag 2, verified live on Coowon), then the client area is cut
     out using the client origin relative to the window rectangle. Every DC and bitmap is released
-    in ``finally`` blocks, whatever happens (fixes #1).
+    in ``finally`` blocks, whatever happens.
     """
 
     def __init__(self, target: WindowTarget, flags: int = w.PW_RENDERFULLCONTENT) -> None:

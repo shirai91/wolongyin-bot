@@ -1,5 +1,5 @@
 """Clear Phó Bản: attack the next army of the campaign field again and again, then move on to the
-next dungeon with "»" (docs/08 "Feature flows" 3; rule-based since R3; v1.8.0 ``CLEARMAP``).
+next dungeon with "»" (docs/08 "Feature flows" 3; rule-based since R3).
 
 The rules work on the campaign field (``field``) and its dialogs; the loop opens the field from any
 map with "Phó Bản" (bottom-right cluster, ``nav.yaml``) and closes whatever dialog is in the way.
@@ -35,7 +35,6 @@ map with "Phó Bản" (bottom-right cluster, ``nav.yaml``) and closes whatever d
 from __future__ import annotations
 
 import time
-from collections.abc import Mapping
 from typing import Any
 
 import numpy as np
@@ -425,9 +424,3 @@ class ClearMap(Feature):
         self.m.losses += 1
         self.m.loss_streak += 1
         self.actor.log(f"Trận {self.m.battles}: thua ({why}), {self.m.loss_streak} trận liên tiếp", "warning")
-
-    @classmethod
-    def import_legacy(cls, ini: Mapping[str, str]) -> dict[str, Any]:
-        """v1.8.0 saved only a delay and a template wait (``CPB_INPUT_MS``, ``CPB_INPUT_S``): neither
-        exists on the decision loop."""
-        return {}

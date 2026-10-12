@@ -16,7 +16,7 @@ the top icon rows (``nav.yaml``) and closes whatever dialog is in the way. They 
   count reached ``before − cycles``, or stopped falling for a second. A confirm box left over by a
   missed click is closed (✕), auto-open left running is stopped (Ngưng mở), and the next burst
   takes what is left. Measured 2026-10-10: every cycle opened its chest with the clicks posted 0, 5,
-  10 or 20 ms apart (50 of 50 each); v1.8.0 clicked the same points blind the same way.
+  10 or 20 ms apart (50 of 50 each).
 * **Count**: every drop of the chest count is a chest opened; the run ends when the count reads 0
   or the requested number is opened.
 """
@@ -24,7 +24,7 @@ the top icon rows (``nav.yaml``) and closes whatever dialog is in the way. They 
 from __future__ import annotations
 
 import time
-from collections.abc import Callable, Mapping
+from collections.abc import Callable
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -46,7 +46,7 @@ QTY_BOX = Point(437, 286)  # quantity box of the buy / auto-open boxes
 AUTO_OK = Point(438, 364)  # 确定 of the "Tự mở N Rương may mắn không?" box
 AUTO_CLOSE = Point(638, 227)  # its ✕
 BATCH = 50  # chests per burst (default)
-CLICK_MS = 5  # between the clicks of a burst (default; v1.8.0 used 5 ms too)
+CLICK_MS = 5  # between the clicks of a burst (default)
 QUIET_S = 1.0  # the count has not moved this long after a burst: every chest it opened is counted
 BUY_TRIES = 3
 VANG_PER_CHEST = 240
@@ -267,11 +267,3 @@ class QuayRuong(Feature):
 
     def rules(self) -> list[Rule]:
         return self.job.rules()
-
-    @classmethod
-    def import_legacy(cls, ini: Mapping[str, str]) -> dict[str, Any]:
-        try:
-            value = int(ini.get("QR_SOLUONG", "").strip())
-        except ValueError:
-            return {}
-        return {"opens": value} if value >= 1 else {}

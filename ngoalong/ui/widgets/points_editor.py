@@ -2,7 +2,7 @@
 
 Points are added by typing X/Y, or recorded from the mouse: press "Ghi từ con trỏ", move the mouse
 over the game within 3 seconds; the position is converted to canvas coordinates with the canvas
-locator. Recording never changes the bound game window (#4).
+locator. Recording never changes the bound game window.
 """
 
 from __future__ import annotations

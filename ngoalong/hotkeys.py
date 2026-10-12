@@ -1,6 +1,6 @@
-"""Global hotkeys with ``RegisterHotKey`` on a dedicated message thread (fixes #8).
+"""Global hotkeys with ``RegisterHotKey`` on a dedicated message thread.
 
-v1.8.0 grabbed bare F1-F4 and F8-F10 for the whole system. Here every hotkey needs Ctrl, Alt or
+Bare function keys are never taken from the whole system: every hotkey needs Ctrl, Alt or
 Win, the defaults are Ctrl+Alt+F10 (stop) and Ctrl+Alt+D (debug overlay), and all are configurable
 in ``settings.toml``. A combination already taken by another program is reported, not fatal.
 

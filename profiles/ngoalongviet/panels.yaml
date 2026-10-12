@@ -4,7 +4,8 @@
 # Checked on the 44 live captures (docs/game screenshots/live): open >= 0.98, closed/absent <= 0.53.
 
 # The top icon rows (">>" at 822, 70) are NOT collapsed: features open their screens from them
-# (Quay Tinh Tú, Tửu Quán, ...). Clear Phó Bản still hides them itself, as v1.8.0 did.
+# (Quay Tinh Tú, Tửu Quán, ...). Clear Phó Bản and Nâng cấp công trình hide them
+# themselves while they run.
 
 quest_tracker:
   description: "bảng nhiệm vụ bên phải"

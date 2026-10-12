@@ -1,18 +1,14 @@
-"""AutoClick: background clicker on recorded canvas points (v1.8.0 ``ACP_RUN``, docs/03).
-
-Differences from v1.8.0, on purpose:
+"""AutoClick: background clicker on recorded canvas points.
 
 * points are canvas-relative (1000x600), so they survive window moves and page zoom; recording a
-  point never re-targets the game window (#4);
-* the click type is honoured (#10);
-* a run can be limited to a number of rounds; Stop / Pause work at any time (#2, #7).
+  point never re-targets the game window;
+* six click types (left / middle / right, single / double);
+* a run can be limited to a number of rounds; Stop / Pause work at any time.
 """
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 from enum import StrEnum
-from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -26,7 +22,7 @@ CANVAS_W, CANVAS_H = 1000, 600
 
 
 class ClickType(StrEnum):
-    """The six click types of v1.8.0's AutoClick combo (#10: now honoured)."""
+    """Mouse button and single / double click."""
 
     LEFT = "left"
     LEFT_DOUBLE = "left_double"
@@ -82,16 +78,6 @@ class AutoClickParams(TaskParams):
     rounds: int = Field(0, ge=0, le=1_000_000, title="Số vòng", description="0 = chạy đến khi bấm Dừng")
 
 
-def _parse_xy(text: str) -> tuple[int, int] | None:
-    parts = text.strip().lower().split("x")
-    if len(parts) != 2:
-        return None
-    try:
-        return int(parts[0]), int(parts[1])
-    except ValueError:
-        return None
-
-
 @register
 class AutoClick(Task):
     id = "autoclick"
@@ -122,30 +108,3 @@ class AutoClick(Task):
                     actor.sleep(p.interval_ms / 1000)
             rnd += 1
         return f"Đã click {done} lần"
-
-    @classmethod
-    def import_legacy(cls, ini: Mapping[str, str]) -> dict[str, Any]:
-        """``ACP_*`` keys; v1.8.0 points were client pixels, made canvas-relative with TOADO_GOC."""
-        out: dict[str, Any] = {}
-        origin = _parse_xy(ini.get("TOADO_GOC", "")) or (0, 0)
-        raw = [_parse_xy(s) for s in ini.get("ACP_LIST_TOADO", "").split("|") if s.strip()]
-        if not any(raw):
-            single = _parse_xy(f"{ini.get('ACP_LABEL_X', '')}x{ini.get('ACP_LABEL_Y', '')}")
-            raw = [single] if single else []
-        points = []
-        for xy in raw:
-            if xy is None:
-                continue
-            x, y = xy[0] - origin[0], xy[1] - origin[1]
-            if 0 <= x < CANVAS_W and 0 <= y < CANVAS_H:
-                points.append({"x": x, "y": y})
-        if points:
-            out["points"] = points
-        try:
-            s = int(ini.get("ACP_INPUT_S", "") or 0)
-            ms = int(ini.get("ACP_INPUT_MS", "") or 0)
-            if s or ms:
-                out["interval_ms"] = max(10, s * 1000 + ms)
-        except ValueError:
-            pass
-        return out

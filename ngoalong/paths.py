@@ -1,7 +1,7 @@
 """Where the app's files live, from source and in the PyInstaller build (docs/06 Packaging).
 
 * ``APP_ROOT``: the folder holding the user-editable files: ``profiles/``, ``settings.toml``,
-  ``NgoaLong_data.ini``, ``logs/`` and ``data/``. From source it is the project root; in the
+  ``logs/`` and ``data/``. From source it is the project root; in the
   one-folder build it is the folder of ``AutoNgoaLong.exe`` (``profiles/`` is copied next to the exe,
   so templates and offsets stay editable without rebuilding).
 * ``BUNDLE_ROOT``: read-only data bundled inside the build (``_internal/`` = ``sys._MEIPASS``),

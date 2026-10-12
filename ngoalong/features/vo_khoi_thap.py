@@ -1,5 +1,5 @@
 """Võ Khôi Tháp: fight a tower boss again and again, a long loop the game does not automate (docs/08
-"Feature flows" 6; rule-based since R3; v1.8.0 ``BOSS_VOKHOITHAP`` and its helpers).
+"Feature flows" 6; rule-based since R3).
 
 The loop works on the full-screen tower screens; the decision loop walks there from any map
 (world map → the pagoda over the "Võ Khôi Tháp" label, ``nav.yaml``) and closes what is in the way.
@@ -31,7 +31,6 @@ The loop works on the full-screen tower screens; the decision loop walks there f
 from __future__ import annotations
 
 import time
-from collections.abc import Mapping
 from enum import IntEnum
 from typing import Any
 
@@ -626,16 +625,3 @@ class VoKhoiThap(Feature):
                        f"{m.silver_before:,} → {now:,}")
         m.silver = now
         m.silver_before = None
-
-    @classmethod
-    def import_legacy(cls, ini: Mapping[str, str]) -> dict[str, Any]:
-        """``BOSS_ID`` (combo label "3. Bệ Ngạn ( lv 140 )": the N-th boss) and ``BOSS_SLMUA`` (chests
-        to buy); docs/04. The other v1.8.0 values have no meaning on the decision loop."""
-        out: dict[str, Any] = {}
-        raw = ini.get("BOSS_ID", "").strip().split(".", 1)[0].strip()
-        if raw.isdigit() and 1 <= int(raw) <= 20:
-            out["boss"] = int(raw)
-        qty = ini.get("BOSS_SLMUA", "").strip()
-        if qty.isdigit() and int(qty) >= 1:
-            out["chest_quantity"] = min(int(qty), 10_000)
-        return out

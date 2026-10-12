@@ -1,7 +1,7 @@
 """``CanvasLocator``: finds the 1000x600 game canvas inside a capture of the Coowon window.
 
-Replaces v1.8.0's root coordinate (*Tọa độ gốc*) and F9 (docs/06 "Finding the game screen
-automatically"). Three detectors run on every frame:
+No manual calibration: the canvas is found again on every frame, wherever the window is and
+whatever the page zoom (docs/06 "Finding the game screen automatically"). Three detectors run:
 
 * **Anchor templates** (primary): HUD pieces with fixed canvas positions (``locator.yaml``).
   ``origin = match - anchor offset * scale``; two anchors far apart also give the scale.

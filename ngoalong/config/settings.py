@@ -1,15 +1,11 @@
 """User settings: pydantic models saved as ``settings.toml`` (docs/06 Stack: Config).
 
-* ``debug`` flag and the live overlay refresh interval, hotkeys, the last window title (a rebinding hint; never a raw handle, #6) and
-  per-feature params (validated by each feature's ``Params`` model when used, #15).
-* One-time import of v1.8.0's ``NgoaLong_data.ini`` ``[PRO5]`` section (docs/04) when no
-  ``settings.toml`` exists yet. The useful raw values are kept in ``legacy_ini`` so features added
-  in later phases can import their own keys the first time their params are read.
+* ``debug`` flag and the live overlay refresh interval, hotkeys, the last window title (a rebinding hint; never a raw handle) and
+  per-feature params (validated by each feature's ``Params`` model when used).
 """
 
 from __future__ import annotations
 
-import configparser
 import logging
 import os
 import re
@@ -30,20 +26,12 @@ log = logging.getLogger(__name__)
 
 PROJECT_ROOT = APP_ROOT  # the exe folder in the PyInstaller build (ngoalong/paths.py)
 DEFAULT_SETTINGS_PATH = PROJECT_ROOT / "settings.toml"
-DEFAULT_INI_PATH = PROJECT_ROOT / "NgoaLong_data.ini"
-INI_SECTION = "PRO5"
 
 # Live debug overlay refresh (``Settings.overlay_refresh_ms``): each tick captures and matches the
 # whole canvas, so the interval is clamped to keep debug mode from hogging the CPU.
 OVERLAY_REFRESH_DEFAULT_MS = 750
 OVERLAY_REFRESH_MIN_MS = 250
 OVERLAY_REFRESH_MAX_MS = 10_000
-
-# [PRO5] keys never imported: raw handle (#6), the bot's own title (#5), leftovers (docs/04).
-IGNORED_INI_KEYS = frozenset(
-    {"HWND_GAME", "TITLE_ACTIVE", "ACP_LIST_TOADO_DEM", "WEBSITE_SELECT", "SERVER_SELECT",
-     "SHOW_BEGIN_POPUP", "TRINHDUYET"}
-)
 
 
 class HotkeySettings(BaseModel):
@@ -76,7 +64,7 @@ class MultiWindowSettings(BaseModel):
     """"Nhiều cửa sổ" tab: which feature each game window runs.
 
     Keyed by the window title (it names the server/account and survives restarts); never by a raw
-    handle (#6). Feature params are shared with the "Tính năng" tab (``Settings.features``).
+    handle. Feature params are shared with the "Tính năng" tab (``Settings.features``).
     """
 
     model_config = ConfigDict(extra="ignore", validate_assignment=True)
@@ -182,9 +170,6 @@ class Settings(BaseModel):
     notify: NotifySettings = Field(default_factory=NotifySettings)
     game: GameSettings = Field(default_factory=GameSettings)
     features: dict[str, dict[str, Any]] = Field(default_factory=dict)
-    legacy_ini: dict[str, str] = Field(default_factory=dict)
-    legacy_applied: list[str] = Field(default_factory=list)
-    ini_imported_from: str = ""
 
     @model_validator(mode="before")
     @classmethod
@@ -211,10 +196,8 @@ class Settings(BaseModel):
 
     # --- per-feature params ---------------------------------------------------------------------
     def feature_params(self, cls: type[Task]) -> TaskParams:
-        """Saved params of a feature (legacy INI values on first use), validated; defaults if broken."""
+        """Saved params of a feature, validated; defaults if missing or broken."""
         raw = self.features.get(cls.id)
-        if raw is None and self.legacy_ini and cls.id not in self.legacy_applied:
-            raw = self._apply_legacy(cls)
         try:
             return cls.Params.model_validate(raw or {})
         except ValidationError as exc:
@@ -235,55 +218,14 @@ class Settings(BaseModel):
         self.multi_window.assignments = {t: f for t, f in self.multi_window.assignments.items() if f in ids}
         if self.ui.last_feature not in ids:
             self.ui.last_feature = ""
-        self.legacy_applied = [f for f in self.legacy_applied if f in ids]
         log.info("settings: forgot the removed features %s", ", ".join(gone))
         return gone
 
     def set_feature_params(self, fid: str, params: BaseModel) -> None:
         self.features = {**self.features, fid: params.model_dump(mode="json", exclude_none=True)}
 
-    def _apply_legacy(self, cls: type[Task]) -> dict[str, Any] | None:
-        try:
-            values = cls.import_legacy(self.legacy_ini)
-        except Exception:
-            log.exception("legacy import of %s failed", cls.id)
-            values = {}
-        self.legacy_applied = [*self.legacy_applied, cls.id]
-        if not values:
-            return None
-        try:
-            params = cls.Params.model_validate(values)
-        except ValidationError as exc:
-            log.warning("legacy values of %s rejected: %s", cls.id, exc)
-            return None
-        self.set_feature_params(cls.id, params)
-        return self.features[cls.id]
-
-    def import_legacy(self, ini: dict[str, str], source: str, features: Iterable[type[Task]] = ()) -> None:
-        self.legacy_ini = {k: v for k, v in ini.items() if k not in IGNORED_INI_KEYS}
-        self.ini_imported_from = source
-        for cls in features:
-            if cls.id not in self.features and cls.id not in self.legacy_applied:
-                self._apply_legacy(cls)
-
 
 # --- files --------------------------------------------------------------------------------------
-def read_ini_section(path: str | Path, section: str = INI_SECTION) -> dict[str, str]:
-    """Raw key/values of one INI section (keys keep their case). UTF-8, else Windows-1258."""
-    p = Path(path)
-    data = p.read_bytes()
-    try:
-        text = data.decode("utf-8-sig")
-    except UnicodeDecodeError:
-        text = data.decode("cp1258", errors="replace")
-    parser = configparser.ConfigParser(interpolation=None, strict=False)
-    parser.optionxform = str  # type: ignore[assignment,method-assign]
-    parser.read_string(text, source=str(p))
-    if not parser.has_section(section):
-        return {}
-    return {k: v.strip() for k, v in parser.items(section)}
-
-
 def load_settings(path: str | Path = DEFAULT_SETTINGS_PATH) -> Settings:
     """Read ``settings.toml``; defaults when missing. A broken file is kept as ``.bak``."""
     p = Path(path)
@@ -312,27 +254,3 @@ def save_settings(settings: Settings, path: str | Path = DEFAULT_SETTINGS_PATH) 
     os.replace(tmp, p)
     return p
 
-
-def load_or_import(
-    path: str | Path = DEFAULT_SETTINGS_PATH,
-    ini_path: str | Path | None = DEFAULT_INI_PATH,
-    features: Iterable[type[Task]] = (),
-) -> tuple[Settings, bool]:
-    """Settings from ``path``; on first start, import the v1.8.0 INI once and save.
-
-    Returns ``(settings, imported)``.
-    """
-    p = Path(path)
-    if p.is_file():
-        return load_settings(p), False
-    settings = Settings()
-    if ini_path is None or not Path(ini_path).is_file():
-        return settings, False
-    try:
-        ini = read_ini_section(ini_path)
-    except (OSError, configparser.Error) as exc:
-        log.warning("cannot read %s: %s", ini_path, exc)
-        return settings, False
-    settings.import_legacy(ini, str(ini_path), features)
-    save_settings(settings, p)
-    return settings, True

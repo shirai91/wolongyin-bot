@@ -64,12 +64,8 @@ class SettingsTab(QWidget):
         gl.addWidget(self.panels_box)
         lay.addWidget(game)
 
-        s = services.settings
         path = services.settings_path or "(không lưu)"
-        info = f"Tệp cài đặt: {path}"
-        if s.ini_imported_from:
-            info += f"\nĐã nhập cài đặt cũ từ: {s.ini_imported_from}"
-        lbl = QLabel(info)
+        lbl = QLabel(f"Tệp cài đặt: {path}")
         lbl.setWordWrap(True)
         lay.addWidget(lbl)
         lay.addStretch(1)

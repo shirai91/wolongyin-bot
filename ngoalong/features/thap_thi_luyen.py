@@ -19,9 +19,7 @@ Luyện", ``nav.yaml``) and closes whatever dialog is in the way.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 from enum import StrEnum
-from typing import Any
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
@@ -303,21 +301,3 @@ class ThapThiLuyen(Feature):
         p = self.params
         self.actor.progress(self.m.won, p.end_floor - p.start_floor + 1)
         self.m.floor += 1
-
-    @classmethod
-    def import_legacy(cls, ini: Mapping[str, str]) -> dict[str, Any]:
-        """``TTL_INPUT_BATDAU`` / ``TTL_INPUT_KETTHUC`` (start / end floor); docs/04."""
-        out: dict[str, Any] = {}
-        for key, field in (("TTL_INPUT_BATDAU", "start_floor"), ("TTL_INPUT_KETTHUC", "end_floor")):
-            try:
-                v = int(ini.get(key, "").strip())
-            except ValueError:
-                continue
-            if 1 <= v <= MAX_FLOOR:
-                out[field] = v
-        defaults = ThapThiLuyenParams.model_fields
-        start = out.get("start_floor", defaults["start_floor"].default)
-        end = out.get("end_floor", defaults["end_floor"].default)
-        if end < start:  # keep the pair valid: climb at least the start floor
-            out["end_floor"] = start
-        return out

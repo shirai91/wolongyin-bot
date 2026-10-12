@@ -1,3 +1,3 @@
-"""AutoNgoaLong v2: Python rewrite of the AutoNgoaLong bot (see docs/06-rewrite-design.md)."""
+"""AutoNgoaLong v2: a bot for the Flash webgame Ngọa Long (see docs/06-design.md)."""
 
 __version__ = "2.0.0.dev0"

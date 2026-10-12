@@ -24,9 +24,7 @@ under the avatar (``hud.level``), or the user's lower "Cấp tối đa".
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 from enum import StrEnum
-from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -391,13 +389,3 @@ class CongTrinh(Feature):
     def _closed(self) -> None:
         self.m.current = None
         self.m.presses = 0
-
-    @classmethod
-    def import_legacy(cls, ini: Mapping[str, str]) -> dict[str, Any]:
-        """``CAPDO`` (upgrades per building); the mode radio was not saved."""
-        try:
-            value = int(ini.get("CAPDO", "").strip())
-        except ValueError:
-            return {}
-        return {"upgrades": min(value, 1000)} if value >= 1 else {}
-

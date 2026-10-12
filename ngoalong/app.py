@@ -21,7 +21,7 @@ import numpy as np
 from PySide6.QtCore import QObject, QTimer, Signal, Slot
 
 from ngoalong.config.settings import (
-    DEFAULT_INI_PATH, DEFAULT_SETTINGS_PATH, PROJECT_ROOT, Settings, load_or_import, save_settings,
+    DEFAULT_SETTINGS_PATH, PROJECT_ROOT, Settings, load_settings, save_settings,
 )
 from ngoalong.core.capture import CachedCapturer, Capturer
 from ngoalong.core.errors import WindowGoneError, WindowNotFoundError
@@ -608,7 +608,6 @@ def _show_startup_error(message: str) -> None:
 def main(argv: Sequence[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="python -m ngoalong", description="AutoNgoaLong v2")
     ap.add_argument("--settings", default=str(DEFAULT_SETTINGS_PATH), help="settings.toml path")
-    ap.add_argument("--ini", default=str(DEFAULT_INI_PATH), help="NgoaLong_data.ini settings to import once")
     ap.add_argument("--debug", action="store_true", help="start with debug mode on")
     ap.add_argument("--selftest", action="store_true",
                     help="run the offline checks (perception benchmark on the bundled corpus) and exit "
@@ -636,7 +635,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     services: AppServices | None = None
     try:
         features = registry.discover()
-        settings, imported = load_or_import(args.settings, args.ini, features)
+        settings = load_settings(args.settings)
         settings.forget_features({c.id for c in features})
         if args.debug:
             settings.debug = True
@@ -661,8 +660,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         return 1
     services.attach_tray()
-    if imported:
-        window.log_message("info", f"Đã nhập cài đặt cũ từ {args.ini}")
     for err in services.apply_hotkeys():
         window.log_message("warning", f"Phím tắt: {err}")
     window.show()
