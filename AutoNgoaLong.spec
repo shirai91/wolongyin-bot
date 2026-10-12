@@ -5,7 +5,7 @@ Output: dist/AutoNgoaLong/
     AutoNgoaLong.exe        windowed app (``--selftest`` runs the offline checks)
     _internal/              Python, Qt, OpenCV, the ``ngoalong`` package, selftest/ (corpus frames + labels)
     profiles/               copied next to the exe: parts, screens, navigation and templates stay editable
-    HUONG-DAN.md            the Vietnamese user guide (docs/user-guide-vi.md)
+    HUONG-DAN.md            the Vietnamese user guide (README.md)
 
 Build with ``.\\build.ps1`` (or ``pyinstaller --noconfirm --clean AutoNgoaLong.spec``).
 """
@@ -103,7 +103,7 @@ profiles_dst = dist_dir / "profiles"
 if profiles_dst.exists():
     shutil.rmtree(profiles_dst)
 shutil.copytree(ROOT / "profiles", profiles_dst, ignore=shutil.ignore_patterns(".gitkeep", "__pycache__"))
-guide = ROOT / "docs" / "user-guide-vi.md"
+guide = ROOT / "README.md"
 if guide.is_file():
     shutil.copy2(guide, dist_dir / "HUONG-DAN.md")
 (dist_dir / "VERSION.txt").write_text(f"{APP_NAME} {__version__}\n", encoding="utf-8")

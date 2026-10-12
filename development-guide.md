@@ -1,12 +1,12 @@
 # AutoNgoaLong v2: development guide
 
-How to run, change, test and build AutoNgoaLong v2 from source. To use the released package, read the [README](README.md) instead.
+How to run, change, test and build AutoNgoaLong v2 from source. To use the released package, read the [README](README.md) (the Vietnamese user guide) instead.
 
 A Python rewrite of AutoNgoaLong v1.8.0, a bot for the Flash webgame **Ngọa Long** on the private server ngoalongviet.com, played in the **Coowon** browser on Windows. It clicks in the background with `PostMessage`, captures with `PrintWindow`, finds the 1000×600 game canvas by itself, and runs each feature as a decision loop: every tick it perceives the screen stack and its numbers from UI parts (OpenCV templates, colour probes, the game's digit font; no OCR), picks one action from the feature's rules, and checks that the game answered. Every wait is time-limited and can be stopped.
 
 Supported: Nâng cấp khoa kỹ, Nâng cấp công trình (city and harbour), Clear Phó Bản, Tháp Thí Luyện, Quay Tinh Tú, Võ Khôi Tháp, plus AutoClick.
 
-- Users: read the Vietnamese guide, [docs/user-guide-vi.md](docs/user-guide-vi.md). It ships with the build as `HUONG-DAN.md`.
+- Users: read the Vietnamese user guide, the root [README.md](README.md). It ships with the build as `HUONG-DAN.md`.
 - Design: [docs/08-engine-revamp-plan.md](docs/08-engine-revamp-plan.md) (the engine and the features, final state at the top) and [docs/06-rewrite-design.md](docs/06-rewrite-design.md) (everything around it). A visual tour of the code: [docs/bot-structure.html](docs/bot-structure.html). All design docs are listed in [docs/README.md](docs/README.md).
 
 ## Developer quick start
