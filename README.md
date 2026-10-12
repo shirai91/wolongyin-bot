@@ -1,303 +1,278 @@
 # AutoNgoaLong v2
 
-Hướng dẫn sử dụng. Người muốn sửa mã nguồn hoặc tự build: xem [development-guide.md](development-guide.md) (tiếng Anh).
+**AutoNgoaLong** là chương trình tự động chơi giúp bạn một số việc lặp đi lặp lại trong game **Ngọa Long** (máy chủ ngoalongviet.com). Bot tự bấm chuột vào game thay bạn, **ngay cả khi bạn đang làm việc khác trên máy**.
 
-AutoNgoaLong v2 là bản viết lại bằng Python của AutoNgoaLong v1.8.0, dùng cho game Ngọa Long (máy chủ ngoalongviet.com) chạy trong trình duyệt **Coowon** trên Windows. Bot click và chụp màn hình **ở chế độ nền**: bạn vẫn làm việc khác trên máy được, chỉ cần cửa sổ game **còn lộ ra một phần** (xem mục 3).
+> Bạn là lập trình viên muốn sửa mã nguồn hoặc tự build? Xem [development-guide.md](development-guide.md) (tiếng Anh).
 
-Điểm khác lớn nhất so với v1.8.0:
+## Bot làm được gì?
 
-- **Không còn bấm F9 và nhập "Tọa độ gốc".** Bot tự tìm cửa sổ Coowon và tự tìm khung game 1000×600 trong cửa sổ trên mỗi lần chụp, kể cả khi bạn kéo cửa sổ hoặc phóng to/thu nhỏ trang.
-- **Bot nhìn rồi mới làm.** Mỗi nhịp (khoảng 0,3 giây) bot chụp game, nhận ra màn hình đang hiện (bản đồ, các bảng đang mở chồng lên nhau, các thông báo) và đọc các con số cần thiết (số rương, Bạc, Quân lệnh, tầng, cấp...), rồi mới quyết định click gì. Vì vậy **bắt đầu ở màn hình nào cũng được**: bot tự đi tới màn hình cần, tự đóng bảng lạ đang che.
-- **Mỗi click đều được kiểm tra.** Sau mỗi thao tác bot chờ kết quả mong đợi (bảng mở ra, con số thay đổi...). Không thấy thì bot tự gỡ rối (đóng bảng, ESC, đi lại từ đầu); vẫn không được thì dừng, ghi lý do và chụp ảnh.
-- **Mọi lần chờ đều có giới hạn thời gian** và nút Dừng có tác dụng ngay (dưới 1 giây).
-- **Phím tắt không chiếm phím F trần.** Mặc định Dừng = `Ctrl+Alt+F10`, bật/tắt gỡ lỗi = `Ctrl+Alt+D`.
-- **Không còn hộp thoại (MsgBox) khi chạy xong.** Kết quả ghi ở khung Nhật ký, thẻ Lịch sử và (tùy chọn) thông báo khay hệ thống, Telegram, Discord.
-
-Bot có **6 tính năng** cho game và AutoClick (mục 4). Các hoạt động khác (Thám Bảo, Tri Kỷ, Mở thẻ bài, Chạy Thành Tựu, Cày cấp chúa công) đã được bỏ: chế độ tự chơi của game làm được việc đó.
-
-## 1. Cài đặt
-
-### 1.1 Cần có gì
-
-| Yêu cầu | Ghi chú |
+| Tính năng | Bot làm giúp bạn |
 | --- | --- |
-| Windows 10 hoặc 11, 64-bit | Bot dùng các hàm của Windows, không chạy trên macOS hay Linux. |
-| Trình duyệt **Coowon** | Game chạy bằng Flash, các trình duyệt thông thường không còn chạy được Flash nhưng Coowon vẫn chạy được. Bot chỉ làm việc với Coowon (không dùng Chrome/Edge). |
-| Tài khoản Ngọa Long trên ngoalongviet.com | Đăng nhập và vào máy chủ của bạn trong Coowon trước khi chạy bot. |
+| **Nâng cấp công trình** | Nâng lần lượt các công trình trong Thành chính và/hoặc Hải cảng, công trình thấp nhất trước. |
+| **Quay Tinh Tú** | Mở rương Tinh Tú thật nhanh (khoảng 200 rương trong 10 giây), có thể mua thêm rương trước. |
+| **Nâng cấp khoa kỹ** | Nâng các ô khoa kỹ trong Phủ Sách Lược. |
+| **Tháp Thí Luyện** | Leo tháp từ tầng này đến tầng kia, hoặc quét (tự vượt) một tầng đã thắng nhiều lần. |
+| **Clear Phó Bản** | Đánh hết các đạo quân trong phó bản, rồi tự sang phó bản tiếp theo. |
+| **Võ Khôi Tháp** | Đánh boss Võ Khôi Tháp liên tục; tự mua rương khi bạc sắp đầy, tự mở rương Tinh Tú khi hết Quân lệnh. |
+| **AutoClick** | Bấm lần lượt vào các điểm bạn chọn trên game, lặp lại nhiều lần. |
 
-Không cần cài thêm gì khác: Python, Qt, OpenCV và thư viện Visual C++ đều đã nằm sẵn trong gói. Bot không cần quyền quản trị (Administrator).
+Bạn có thể **bấm Bắt đầu ở bất kỳ màn hình nào** của game: bot tự đi tới đúng chỗ, tự đóng các bảng thông báo đang che. Bot cũng có thể **tự chạy theo giờ** (ví dụ 8 giờ sáng mỗi ngày) và **chạy nhiều tài khoản cùng lúc**.
 
-### 1.2 Tải về và giải nén
+---
 
-1. Mở trang [Releases](../../releases/latest) và tải tệp `AutoNgoaLong-v<phiên bản>-win64.zip`.
-2. **Trước khi giải nén**, bấm chuột phải vào tệp zip → **Properties** → đánh dấu **Unblock** (nếu có) → **OK**. Như vậy Windows không cảnh báo trên từng tệp bên trong (xem mục 1.3).
-3. Giải nén thư mục `AutoNgoaLong` vào nơi bạn có quyền ghi, ví dụ `D:\AutoNgoaLong`. Không nên để trong `C:\Program Files`, vì bot ghi cài đặt, nhật ký và lịch sử ngay trong thư mục này.
-4. Trong thư mục có:
+## Bắt đầu nhanh
 
-    | Tệp / thư mục | Dùng để |
-    | --- | --- |
-    | `AutoNgoaLong.exe` | Chạy bot |
-    | `_internal\` | Thư viện của chương trình. Không sửa, không xóa. |
-    | `profiles\ngoalongviet\` | Dữ liệu nhận diện game: các phần giao diện (`parts.yaml`), màn hình (`screens\*.yaml`), đường đi giữa các màn hình (`nav.yaml`), popup tự đóng (`popups.yaml`), ảnh mẫu (`templates\`). Sửa được bằng Notepad, không cần build lại. |
-    | `HUONG-DAN.md` | Tài liệu này |
-    | `VERSION.txt` | Phiên bản |
-    | `settings.toml` | Cài đặt của bạn (tự tạo khi chạy lần đầu) |
-    | `logs\` | Nhật ký và ảnh chụp mỗi lần chạy (tự tạo) |
-    | `data\` | Lịch sử chạy và chuỗi tác vụ (tự tạo) |
+1. Cài trình duyệt **Coowon** và vào game Ngọa Long bằng Coowon.
+2. Tải tệp `AutoNgoaLong-…-win64.zip` ở trang [Releases](../../releases/latest).
+3. Giải nén vào ổ D (ví dụ `D:\AutoNgoaLong`), mở `AutoNgoaLong.exe`.
+4. Nếu Windows hiện màn hình xanh "Windows protected your PC": bấm **More info** → **Run anyway** (xem [mục 3](#3-windows-báo-chương-trình-nguy-hiểm)).
+5. Trong bot, bấm **Kiểm tra** → chọn tính năng → bấm **Bắt đầu**.
 
-5. Muốn giữ cài đặt của bản cũ v1.8.0: chép tệp `NgoaLong_data.ini` của v1.8.0 vào cùng thư mục với `AutoNgoaLong.exe` **trước lần chạy đầu tiên**. Bot nhập các giá trị còn dùng được (số rương, tầng tháp, boss...) một lần duy nhất rồi lưu sang `settings.toml`. Cài đặt của các tính năng đã bỏ được bot tự xóa khi mở; bước của chuỗi tác vụ dùng tính năng đã bỏ được tắt (vẫn thấy trong chuỗi).
-6. Kiểm tra bản cài (không cần mở game): mở PowerShell trong thư mục bot và chạy
+Muốn dừng bot bất cứ lúc nào: bấm **Dừng**, hoặc nhấn **`Ctrl + Alt + F10`**.
 
-    ```powershell
-    Start-Process .\AutoNgoaLong.exe -ArgumentList "--selftest" -Wait
-    Get-Content .\selftest-report.txt -Encoding UTF8
-    ```
+Các mục dưới đây giải thích chi tiết từng bước.
 
-    Bot kiểm tra hồ sơ `profiles\`, 7 tính năng, trình điều khiển cửa sổ và giao diện. Mỗi dòng `OK` là một phép kiểm tra đạt; dòng cuối cho biết tổng số lỗi. Dòng `SKIP [perception]` là bình thường với bản phát hành: gói không kèm bộ ảnh game mẫu nên bỏ qua phần kiểm tra nhận diện. Nếu có dòng `FAIL`, xem mục Xử lý sự cố.
+---
 
-### 1.3 Vì sao Windows cảnh báo
+## 1. Bạn cần có
 
-Lần đầu chạy `AutoNgoaLong.exe`, Windows có thể hiện **"Windows protected your PC"** (SmartScreen), hoặc Microsoft Defender chặn hay cách ly tệp. Điều này là bình thường với loại chương trình này:
+- **Máy tính Windows 10 hoặc Windows 11** (bản 64-bit, hầu hết máy hiện nay đều là bản này). Bot không chạy trên máy Mac.
+- **Trình duyệt Coowon.** Game Ngọa Long dùng Flash, mà Chrome, Edge, Cốc Cốc… đã bỏ Flash. Coowon vẫn chạy được Flash. **Bot chỉ làm việc với game mở trong Coowon.**
+- **Tài khoản Ngọa Long** trên ngoalongviet.com.
 
-- **Tệp exe chưa được ký số.** Ký số cần mua chứng chỉ. SmartScreen cảnh báo mọi chương trình chưa ký mà ít người tải ("unknown publisher").
-- **Chương trình được đóng gói bằng PyInstaller.** Tệp exe tự giải nén một bộ Python đi kèm. Một số phần mềm độc hại cũng đóng gói như vậy, nên phần mềm diệt virus đôi khi nghi ngờ cả các ứng dụng PyInstaller nói chung.
-- **Bot điều khiển cửa sổ của chương trình khác.** Bot gửi click chuột và phím vào cửa sổ Coowon (`PostMessage`), chụp ảnh cửa sổ đó (`PrintWindow`) và đăng ký phím tắt toàn cục (Dừng = `Ctrl+Alt+F10`). Bot game nào cũng phải làm vậy, nhưng đây cũng là những hành vi mà trình quét virus để ý.
+Bạn **không cần cài thêm gì khác**. Mọi thứ bot cần đã nằm sẵn trong tệp tải về.
 
-Bot **không**: cần quyền quản trị, cài đặt gì vào máy, đổi cài đặt hệ thống, hay kết nối internet (trừ khi bạn bật thông báo Telegram/Discord ở thẻ **Thông báo**).
+## 2. Tải về và cài đặt
 
-Nếu bạn tin nguồn tải:
+1. Mở trang [Releases](../../releases/latest), tải tệp có tên dạng `AutoNgoaLong-v2.0.0-win64.zip`.
+2. **Bỏ chặn tệp vừa tải (nên làm):** bấm chuột phải vào tệp zip → chọn **Properties** → nếu ở dưới cùng có ô **Unblock** thì đánh dấu vào → bấm **OK**. Việc này giúp Windows bớt cảnh báo về sau.
+3. **Giải nén:** bấm chuột phải vào tệp zip → **Extract All…** → chọn nơi giải nén, ví dụ `D:\AutoNgoaLong` → **Extract**.
+    - Nên để ở ổ D hoặc trong thư mục Documents.
+    - **Không** để trong `C:\Program Files`: bot cần lưu cài đặt và nhật ký ngay trong thư mục của nó, mà Windows không cho ghi vào đó.
+4. Mở thư mục vừa giải nén, bấm đúp vào **`AutoNgoaLong.exe`** để chạy bot. Bạn có thể bấm chuột phải vào tệp này → **Send to** → **Desktop (create shortcut)** để có biểu tượng ngoài màn hình chính.
 
-- **SmartScreen:** bấm **More info** → **Run anyway**. Windows nhớ lựa chọn này cho tệp đó.
-- **Defender chặn hoặc xóa tệp:** mở **Windows Security** → **Virus & threat protection** → **Protection history**, chọn mục bị chặn → **Allow on device**. Để không bị chặn lại sau mỗi lần cập nhật, thêm thư mục bot vào **Virus & threat protection settings** → **Exclusions** → **Add an exclusion** → **Folder**. Nếu Defender đã xóa tệp trong `_internal\`, giải nén lại gói sau khi cho phép.
+Trong thư mục bot:
 
-### 1.4 Cập nhật lên bản mới
+| Tên | Là gì |
+| --- | --- |
+| `AutoNgoaLong.exe` | Chương trình bot. Bấm đúp để mở. |
+| `HUONG-DAN.md` | Tài liệu hướng dẫn này. |
+| `_internal` | Các tệp bot cần để chạy. **Đừng sửa, đừng xóa.** |
+| `profiles` | Dữ liệu giúp bot nhận ra màn hình game. **Đừng sửa** nếu không được hướng dẫn. |
+| `settings.toml`, `logs`, `data` | Bot tự tạo khi chạy lần đầu: cài đặt của bạn, nhật ký, lịch sử. |
 
-Giải nén bản mới vào một thư mục mới, rồi chép `settings.toml` và thư mục `data\` từ thư mục cũ sang. Nếu bạn đã sửa tệp trong `profiles\`, chép lại các thay đổi đó bằng tay (bản mới có thể đã sửa cùng tệp).
+## 3. Windows báo chương trình nguy hiểm?
 
-## 2. Lần chạy đầu tiên
+Lần đầu mở bot, Windows có thể hiện màn hình xanh **"Windows protected your PC"**, hoặc phần mềm diệt virus (Windows Defender) chặn hay xóa tệp. **Đây là chuyện bình thường với các bot game nhỏ như thế này**, vì:
 
-1. Mở **Coowon**, vào game Ngọa Long trên ngoalongviet.com. Nếu Coowon báo "Adobe Flash Player was blocked", bấm **Run this time**.
-2. Để trang game ở mức thu phóng 100% (Ctrl+0). Bot vẫn chạy được ở mức khác, nhưng 100% là mức đã được kiểm tra kỹ nhất.
-3. Chạy `AutoNgoaLong.exe`. Cửa sổ chính gồm:
-    - Khung **Cửa sổ game (Coowon)**: danh sách cửa sổ game, nút **Tìm lại**, nút **Kiểm tra**, và hai dòng trạng thái *Khung game* và *Màn hình*.
-    - Các thẻ: **Tính năng**, **Nhiều cửa sổ**, **Chuỗi tác vụ**, **Gỡ lỗi**, **Lịch sử**, **Thông báo**, **Cài đặt**.
-    - Khung **Nhật ký** ở dưới cùng.
-    - Thanh trạng thái nhắc phím tắt Dừng và Gỡ lỗi.
-4. Bấm **Kiểm tra**. Nếu thấy `Khung game: (…) 1000×600 ×1.00 - tin cậy` và một dòng *Màn hình* như `Màn hình: city{…} | hud{silver=…, quan_lenh=…, level=140}` là bot đã nhìn thấy game. Bạn đã sẵn sàng chạy tính năng.
+- **Bot không có "chữ ký" của nhà phát hành.** Muốn có chữ ký phải mua chứng nhận hằng năm, nên các chương trình nhỏ, miễn phí thường không có. Windows thấy chương trình lạ, ít người tải thì cảnh báo cho chắc.
+- **Bot bấm chuột và chụp ảnh cửa sổ của chương trình khác** (cửa sổ game). Bot game nào cũng phải làm vậy, nhưng phần mềm diệt virus lại hay nghi ngờ những việc này.
+- **Bot được đóng gói thành một tệp .exe tự giải nén**, giống cách một số phần mềm xấu hay dùng, nên đôi khi bị nghi ngờ nhầm.
 
-Dòng *Màn hình* là cái bot "thấy": màn hình nền (ví dụ `city` = Thành chính, `harbour` = Hải cảng, `field` = bản đồ Phó Bản, `world_map` = Bản đồ thế giới), rồi các bảng đang mở chồng lên (dấu `>`, bảng trên cùng ở cuối, ví dụ `city > chest.wheel{chests=99}` = bảng Tinh Tú có 99 rương), các thông báo (dấu `+`), và các con số trên thanh trên cùng (`hud`). Một bảng bot không biết ghi là `unknown`; bot vẫn đóng được nó bằng nút ✕.
+Bot **không** cần quyền quản trị (Administrator), **không** cài gì vào máy, **không** đổi cài đặt Windows, và **không** gửi gì lên mạng (trừ khi bạn tự bật thông báo qua Telegram/Discord, xem [mục 9](#9-thông-báo-về-điện-thoại)).
 
-## 3. Nhận cửa sổ game
+**Cách cho phép bot chạy** (chỉ làm nếu bạn tải bot từ nguồn bạn tin tưởng):
 
-- Bot tự liệt kê các cửa sổ Coowon có tiêu đề chứa "Ngọa Long" (ví dụ `Sv 266 Ngọa Long Việt Nam - Coowon Browser`). Không cần F9, không cần chọn bằng chuột.
-- Có nhiều cửa sổ: chọn đúng cửa sổ trong danh sách. Lần sau bot tự chọn lại cửa sổ có cùng tiêu đề.
-- Mở game sau khi đã mở bot, hoặc tải lại trang: bấm **Tìm lại**.
-- Bot không bao giờ lưu "số hiệu cửa sổ" (HWND) như v1.8.0, nên đóng/mở lại Coowon không làm bot click nhầm cửa sổ khác. Nếu cửa sổ đã đóng khi đang chạy, lần chạy dừng với thông báo "Cửa sổ game đã đóng".
-- Trong lúc một tính năng hay một chuỗi tác vụ đang chạy, danh sách cửa sổ bị khóa để không đổi cửa sổ giữa chừng.
-- **Khung game** cho biết vị trí khung 1000×600 trong cửa sổ:
-    - `tin cậy`: hai cách dò khác nhau cho cùng một kết quả, bot được phép click.
-    - `chưa chắc chắn` hoặc `không thấy`: bot không click. Thường do game đang tải, bị thu nhỏ xuống thanh tác vụ, hoặc trang đang ở mức thu phóng quá lạ. Đưa game về màn hình chính rồi bấm **Kiểm tra** lại.
-- Cửa sổ game **không được thu nhỏ (minimize)** và **nên để lộ ít nhất một phần**: Windows không vẽ cửa sổ đã thu nhỏ, và đã có lần ảnh chụp đứng yên khi cửa sổ bị che kín. Khi ảnh chụp đứng yên mà cửa sổ bị che kín, Nhật ký ghi "cửa sổ game bị che, hãy để lộ một phần cửa sổ".
+- **Màn hình xanh "Windows protected your PC":** bấm dòng chữ **More info** → bấm nút **Run anyway**. Chỉ cần làm một lần.
+- **Windows Defender chặn hoặc xóa tệp:**
+    1. Bấm nút Start, gõ **Windows Security**, mở lên.
+    2. Chọn **Virus & threat protection** → **Protection history**.
+    3. Bấm vào mục bị chặn → **Actions** → **Allow on device** (Cho phép).
+    4. Để không bị chặn lại: trong **Virus & threat protection**, bấm **Manage settings** → kéo xuống **Exclusions** → **Add or remove exclusions** → **Add an exclusion** → **Folder** → chọn thư mục bot (ví dụ `D:\AutoNgoaLong`).
+    5. Nếu Defender đã xóa mất tệp, giải nén lại tệp zip.
 
-## 4. Chạy một tính năng
+## 4. Lần đầu mở bot
+
+1. Mở **Coowon**, vào game. Nếu Coowon hiện thanh báo "Adobe Flash Player was blocked", bấm **Run this time**.
+2. Để trang game ở **cỡ chữ 100%**: bấm vào trang game rồi nhấn **`Ctrl + 0`** (số không).
+3. Mở **`AutoNgoaLong.exe`**.
+4. Ở phía trên cửa sổ bot, trong ô **Cửa sổ game (Coowon)**, bot tự tìm cửa sổ game của bạn. Không thấy thì bấm **Tìm lại**.
+5. Bấm **Kiểm tra**. Nếu dòng *Khung game* có chữ **"tin cậy"** là bot đã nhìn thấy game. Bạn đã sẵn sàng!
+
+Nếu dòng đó ghi **"không thấy"** hoặc **"chưa chắc chắn"**: đợi game tải xong, đóng các hộp thoại đang che game, đặt lại cỡ chữ 100% (`Ctrl + 0`), rồi bấm **Kiểm tra** lại.
+
+### Ba điều cần nhớ khi bot chạy
+
+- **Không thu nhỏ (minimize) cửa sổ game** xuống thanh tác vụ. Khi bị thu nhỏ, Windows không vẽ game nữa nên bot không nhìn thấy gì.
+- **Để cửa sổ game lộ ra ít nhất một phần.** Bạn vẫn có thể mở cửa sổ khác che bớt và làm việc khác bình thường.
+- **Hạn chế bấm vào game trong lúc bot đang chạy**, để không làm bot bị rối.
+
+## 5. Cách chạy một tính năng
 
 1. Mở thẻ **Tính năng**, chọn tính năng ở danh sách bên trái.
-2. Điền thông số ở biểu mẫu bên phải. Rê chuột lên tên thông số để xem giải thích. Giá trị sai bị báo đỏ ngay, bot không chạy với giá trị sai như v1.8.0.
-3. Bấm **Bắt đầu**, ở **bất kỳ màn hình nào** của game: bot tự đi tới màn hình bắt đầu (ghi ở dòng xám *Màn hình bắt đầu* dưới tên tính năng) và tự đóng bảng đang che đường.
-4. **Tạm dừng** để dừng tạm thời, bấm lại để chạy tiếp. **Dừng** (hoặc `Ctrl+Alt+F10`) để kết thúc.
-5. Khi xong, dòng tóm tắt hiện ở Nhật ký và thanh trạng thái, kèm đường dẫn thư mục nhật ký của lần chạy. Lần chạy lỗi luôn có ảnh chụp màn hình cuối cùng trong thư mục đó.
+2. Điền các ô ở bên phải. **Rê chuột lên tên một ô** để xem giải thích. Ô bị tô đỏ là giá trị chưa hợp lệ.
+3. Bấm **Bắt đầu**. Game đang ở màn hình nào cũng được.
+4. Trong lúc chạy:
+    - **Tạm dừng**: dừng tạm, bấm lại để chạy tiếp.
+    - **Dừng** (hoặc **`Ctrl + Alt + F10`**): kết thúc ngay.
+5. Khi xong, khung **Nhật ký** ở dưới cùng ghi lại bot đã làm được gì.
 
-Thông số của mỗi tính năng được lưu tự động và dùng lại ở lần sau (và ở Chuỗi tác vụ). Mọi tính năng có **Thời gian chạy tối đa (phút)**: 0 = không giới hạn; hết giờ thì bot dừng và tóm tắt việc đã làm.
+Bot **tự nhớ** những gì bạn điền, lần sau mở lên không cần điền lại. Tính năng nào cũng có ô **Thời gian chạy tối đa (phút)**: hết giờ thì bot tự dừng (để **0** nếu không muốn giới hạn).
 
-**Bot tự lo những việc chung**, ở mọi tính năng:
+**Bot tự lo giúp bạn:**
 
-- **Đóng popup vô hại** khi chúng hiện lên (phần thưởng "Chúc mừng ngài được", thông báo góc phải, hộp cốt truyện "bấm để tiếp tục").
-- **Thu gọn các bảng che game** trên bản đồ (bảng nhiệm vụ, "Sắp mở", chat), nếu bật trong thẻ Cài đặt.
-- **Trả lời câu hỏi tốn Vàng** "Bỏ qua thời gian chờ…" theo cài đặt **Dùng vàng bỏ qua thời gian chờ** (thẻ Cài đặt).
-- **Gỡ rối** khi một thao tác không có kết quả: đóng bảng trên cùng bằng ✕ → ESC → đi lại tới màn hình bắt đầu → dừng và chụp ảnh. Mỗi lần gỡ rối có một dòng "Gỡ rối (…)" trong Nhật ký.
-- **Game đứng hình**: màn hình không đổi chút nào trong 30 giây dù bot đã click → bot dừng với lời nhắn "game không phản hồi … Hãy tải lại trình duyệt (F5)".
+- Đóng các bảng phần thưởng, thông báo, hộp cốt truyện khi chúng hiện lên.
+- Thu gọn bảng nhiệm vụ, khung chat… để chúng không che game.
+- Khi bấm mà game không phản ứng như mong đợi, bot tự thử cách khác (đóng bảng, quay lại). Vẫn không được thì bot dừng, ghi lý do và chụp ảnh màn hình để bạn xem.
+- Nếu game bị đơ (màn hình đứng yên 30 giây), bot dừng và nhắc bạn tải lại trang game (**F5**).
 
-| Tính năng | Màn hình bắt đầu (bot tự tới) | Thông số chính |
-| --- | --- | --- |
-| Nâng cấp công trình | Thành chính (`city`), Hải cảng khi chọn | Khu vực, cấp tối đa, số lần bấm Tăng cấp mỗi lần mở |
-| Quay Tinh Tú | Bảng Tinh Tú (`chest.wheel`) | Số rương cần mở, số rương mua trước, cỡ đợt mở nhanh |
-| Nâng cấp khoa kỹ | Bảng Phủ Sách Lược, thẻ Khoa kỹ (`research`) | Số cấp mỗi ô, các ô cần nâng |
-| Tháp Thí Luyện | Bảng Tháp Thí Luyện (`tower.dialog`) | Chế độ (Vượt tháp / Tự vượt tháp), tầng, số lần quét |
-| Clear Phó Bản | Bản đồ Phó Bản (`field`) | Sang phó bản kế tiếp, số trận, số trận thua liên tiếp |
-| Võ Khôi Tháp | Bản đồ thế giới (`world_map`) | Boss, số lượt, khi bạc vượt 2 tỷ, mở rương khi hết Quân lệnh |
-| AutoClick | Bất kỳ | Danh sách tọa độ, kiểu click, thời gian giữa 2 click, số vòng |
+> **Về Vàng:** khi hết thợ xây, game hỏi *"Bỏ qua thời gian chờ tốn … Vàng?"*. Mặc định bot **không** tiêu Vàng: bot bấm Hủy và dừng lại. Muốn bot tiêu Vàng để chạy tiếp, bật **Dùng vàng bỏ qua thời gian chờ** trong thẻ **Cài đặt**.
 
-### 4.1 Nâng cấp công trình
+## 6. Từng tính năng
 
-Bot đọc nhãn "lvN" trên từng công trình của bản đồ và nâng công trình thấp nhất trước, đến cấp Chúa công (số trong vòng tròn dưới ảnh đại diện) hoặc **Cấp tối đa** bạn đặt.
+### 6.1 Nâng cấp công trình
 
-1. Trên bản đồ: thu gọn danh sách thông báo bên trái và hàng biểu tượng trên cùng (để không che nhãn; hàng biểu tượng được mở lại khi xong), đọc cấp mọi công trình. Một cấp chỉ được tin khi hai lần đọc liên tiếp giống nhau.
-2. Mở công trình thấp nhất, bấm **Tăng cấp** tối đa **Số lần bấm Tăng cấp mỗi lần mở**, đóng bảng, đọc lại bản đồ. Mỗi lần "Tốn bạc" đổi là một cấp.
-3. Bấm hai lần liền mà không có gì đổi (công trình ở cấp cao nhất của nó, ví dụ lv110) thì bỏ công trình đó đến hết lần chạy.
-4. Hết thợ (game hỏi "Bỏ qua thời gian chờ tốn N Vàng"): **Dùng vàng bỏ qua thời gian chờ** bật thì bấm 确定 và chạy tiếp; tắt thì bấm 取消 và dừng, ghi lý do.
-5. Xong khi không còn công trình nào thấp hơn cấp đích.
+Bot đọc cấp của từng công trình, rồi nâng **công trình thấp nhất trước**, cho tới cấp bạn chọn. Công trình đã đạt cấp cao nhất thì bot bỏ qua.
 
-- **Khu vực**: Thành chính, Hải cảng, hoặc Cả hai (Thành chính trước, rồi bot tự vào Hải cảng bằng "Vào Hải Cảng").
-- **Cấp tối đa**: 0 = cấp Chúa công.
+- **Khu vực**: Thành chính, Hải cảng, hoặc Cả hai (làm Thành chính trước, rồi bot tự sang Hải cảng).
+- **Cấp tối đa**: nâng tới cấp này thì thôi. Để **0** = nâng tới bằng cấp Chúa công.
+- **Số lần bấm Tăng cấp mỗi lần mở**: mỗi lần mở một công trình, bot bấm Tăng cấp tối đa bấy nhiêu lần.
+- Hết thợ xây: xem lưu ý **Về Vàng** ở mục 5.
 
-### 4.2 Quay Tinh Tú
+### 6.2 Quay Tinh Tú
 
-Bot tự mở bảng **Tinh Tú** (biểu tượng trên cùng; mở hàng biểu tượng nếu đang ẩn), mua rương nếu được yêu cầu, rồi mở rương theo **đợt**: mỗi đợt bấm liền Tự mở → 确定 → Ngưng mở nhiều lần (mỗi lần mở 1 rương), rồi đọc lại số rương. Khoảng 20–25 rương mỗi giây; 200 rương trong khoảng 9 giây.
+Bot tự mở bảng **Tinh Tú**, mua thêm rương nếu bạn muốn, rồi mở rương rất nhanh.
 
-- **Số rương cần mở**: 0 = mở hết.
-- **Mua thêm rương trước khi mở**: 240 Vàng mỗi rương; 0 = không mua. Bot gõ số lượng vào ô, **đọc lại ô** và chỉ bấm 确定 khi ô đúng số; sai thì gõ lại. Hộp "Dùng 240 vàng…" được bấm 确定 (ô "Lần sau không nhắc nhở" không bao giờ được tích).
-- **Số rương mỗi đợt mở nhanh** (mặc định 50), **Khoảng cách giữa các click khi mở nhanh (ms)** (mặc định 5).
-- Mỗi đợt ghi một dòng như `Mở nhanh 50 lượt: rương 200 → 150 (mở 50, 2.2s)`.
+- **Số rương cần mở**: để **0** = mở hết rương đang có.
+- **Mua thêm rương trước khi mở**: mỗi rương **240 Vàng**. Để **0** = không mua.
+- Các ô về "mở nhanh" (số rương mỗi đợt, khoảng cách giữa các click): **để mặc định**.
 
-### 4.3 Nâng cấp khoa kỹ
+### 6.3 Nâng cấp khoa kỹ
 
-Bot mở **Phủ Sách Lược** (nút "Khoa kỹ" ở thanh dưới Thành chính), chọn thẻ **Khoa kỹ**, rồi đi lần lượt các ô: chọn ô, bấm **Tăng cấp** khi cấp còn tăng, tối đa **Số cấp nâng tối đa mỗi ô khoa kỹ**. Ô hiện dòng đỏ "Cấp Phủ sách lược không đủ…" (hoặc bấm mà cấp không đổi) là đã tối đa và được bỏ qua.
+Bot mở **Phủ Sách Lược** → thẻ **Khoa kỹ**, rồi nâng lần lượt từng ô. Ô nào đã tối đa thì bỏ qua.
 
-- **Các ô khoa kỹ**: để trống = cả 18 ô, đánh số theo hàng từ trái sang (ví dụ `1-8`).
-- Mọi ô đều tối đa thì dòng tóm tắt nhắc bạn nâng công trình Phủ Sách Lược.
+- **Số cấp nâng tối đa mỗi ô khoa kỹ**: mỗi ô nâng nhiều nhất bấy nhiêu cấp.
+- **Các ô khoa kỹ**: để **trống** = cả 18 ô. Muốn chọn một số ô: các ô được đánh số theo hàng, từ trái sang phải, bắt đầu từ 1. Ví dụ `1-8` = 8 ô đầu.
+- Nếu mọi ô đều đã tối đa, bot nhắc bạn nâng công trình Phủ Sách Lược trước.
 
-### 4.4 Tháp Thí Luyện
+### 6.4 Tháp Thí Luyện
 
-Bot tự mở bảng Tháp Thí Luyện (Thành chính → công trình Tháp → nút Tháp Thí Luyện), chọn thẻ **Tháp**, gõ số trang vào ô trang (đọc lại để chắc chắn) và chọn tầng.
+Bot tự mở bảng Tháp Thí Luyện và chọn tầng cho bạn. Có hai chế độ:
 
-- **Chế độ Vượt tháp**: đánh từ **Tầng bắt đầu** đến **Tầng kết thúc**. Mỗi tầng: Vượt Tháp → 确定 (3 Thí luyện lệnh) → tích ô "Tự Vượt Tháp" nếu chưa tích → bấm **một lần** vào lính đứng dưới viên pha lê xanh; quân mình tự đánh hết lính. Thắng thì lên tầng sau; thua thì Thoát → 确定 và dừng.
-- **Chế độ Tự vượt tháp**: quét **Số lần tự vượt tháp** lần tầng **Tầng bắt đầu** (phải là tầng đã thắng; chưa thắng thì bot dừng và báo "chưa thắng"). Quét xong ngay, không có trận.
-- **Thời gian tối đa mỗi tầng (giây)**: không thấy Thắng/Bại sau thời gian này thì bot gỡ rối rồi dừng.
+- **Vượt tháp**: đánh từ **Tầng bắt đầu** tới **Tầng kết thúc**. Mỗi tầng tốn 3 Thí luyện lệnh. Thắng thì lên tầng sau; **thua thì bot dừng**.
+- **Tự vượt tháp** (quét): quét **Số lần tự vượt tháp** lần ở **Tầng bắt đầu**. Tầng này phải là tầng bạn **đã thắng**, nếu chưa thì bot dừng và báo.
+- **Thời gian tối đa mỗi tầng (giây)**: quá thời gian này mà chưa có kết quả Thắng/Bại thì bot dừng.
 
-### 4.5 Clear Phó Bản
+### 6.5 Clear Phó Bản
 
-Bot mở **Phó Bản** (nút ở góc dưới bên phải), rồi đánh đạo quân có **tia sáng xanh** (đạo quân kế tiếp của phó bản):
+Bot mở **Phó Bản**, tìm đạo quân tiếp theo (đạo quân có **tia sáng xanh**), đánh nhanh (bỏ qua xem trận), rồi tìm đạo quân kế tiếp. Bot đánh được cả đoàn chiến và boss. Hết đạo quân thì bot bấm **»** để sang phó bản tiếp theo.
 
-1. Thu gọn danh sách thông báo và hàng biểu tượng trên cùng (không che đạo quân; mở lại khi xong).
-2. Tia sáng bị giao diện che (đạo quân ngay dưới bảng nhân vật): bot nhận ra đạo quân nhờ vòng sáng xanh nhấp nháy quanh chân đạo quân (so sánh khung hình trong ~1-2 giây).
-3. Click đạo quân dưới tia sáng, bỏ tích "Phát chiến đấu" (đánh nhanh, không xem trận), bấm **Tấn công**. Dòng xanh "Thắng Trận" = thắng; tia sáng chuyển sang đạo quân khác cũng là thắng.
-4. Đoàn chiến ("(Đoàn-Tinh)"): Tấn công → Lập đội → Khai chiến → vào trận → Thoát. Đạo quân boss: Tấn công, vào trận, Thoát. Trong màn trận, nút **Kết quả** (góc dưới bên phải) hiện ra thì bot bấm ngay để bỏ qua trận.
-5. Phó bản chỉ được coi là **xong khi nút » hiện ra** (phó bản kế tiếp đã mở) và không còn tia sáng: bot bấm » ngay (phó bản kế tiếp cũng đã xong thì bấm tiếp). Chưa có » thì phó bản chưa xong: bot tiếp tục tìm tia sáng / vòng sáng; 10 giây không thấy đạo quân nào thì dừng báo lỗi kèm ảnh chụp.
+- **Hết đạo quân thì sang phó bản kế tiếp**: bật để đánh nối nhiều phó bản.
+- **Số phó bản được chuyển sang tối đa**, **Số trận tối đa**: để **0** = không giới hạn số trận.
+- **Dừng khi thua liên tiếp bấy nhiêu trận**: mặc định 3.
+- Hết **Quân lệnh** thì bot dừng.
 
-- **Hết đạo quân thì sang phó bản kế tiếp**, **Số phó bản được chuyển sang tối đa**, **Số trận tối đa** (0 = không giới hạn).
-- **Dừng khi thua liên tiếp bấy nhiêu trận** (mặc định 3), **Thời gian tối đa mỗi trận (giây)**. Hết Quân lệnh cũng dừng.
+### 6.6 Võ Khôi Tháp
 
-### 4.6 Võ Khôi Tháp
+Bot đánh boss Võ Khôi Tháp liên tục, phù hợp để **chạy lâu** (ví dụ treo qua đêm).
 
-Vòng lặp dài: đánh boss Võ Khôi Tháp liên tục, tự xử lý bạc đầy và hết Quân lệnh.
+- **Boss**: để **0** = đánh boss đang hiện trong sảnh; số N = boss thứ N.
+- **Số lượt đánh**: để **0** = đánh mãi cho tới khi bạn bấm Dừng.
+- **Khi bạc vượt 2 tỷ**: bạc tối đa trong game là 2 tỷ, phần dư bị mất. Bạn chọn:
+    - *Mua rương 1 tỷ bạc rồi chạy tiếp* (mặc định): bot vào Cửa hiệu mua rương 1 tỷ bạc (mỗi lần mua **Số rương 1 tỷ bạc mua mỗi lần**, mặc định 2) để bạc không bị phí;
+    - *Bỏ qua, chạy tiếp*; hoặc *Dừng*.
+- **Hết Quân lệnh thì mở rương Tinh Tú**: rương Tinh Tú có thể cho Quân lệnh, bot mở rương rồi đánh tiếp.
+    - **Hết rương Tinh Tú thì mua thêm (tốn Vàng)**: 240 Vàng mỗi rương, mua **Số rương Tinh Tú mua mỗi lần**.
+    - **Số lần mở rương tối đa**: để **0** = không giới hạn.
+    - Mở rương mà không có thêm Quân lệnh, hoặc không mua được rương, thì bot dừng.
 
-1. Từ Bản đồ thế giới, bot bấm vào tháp Võ Khôi → sảnh (đọc **Quân lệnh cần cho lượt này**: lượt 1 tốn 1, lượt 2 tốn 2…, về 1 mỗi ngày mới) → Tấn công → Lập đội → Khai chiến.
-2. Trong đấu trường: bấm **một** vòng phép phát sáng; thấy dòng "Ngài gia nhập thành công" là đã vào trận (nhân vật tự đi tới boss, 5–15 giây). Không vào được thì thử vòng khác. Hết giờ đếm ngược mà boss còn đầy máu thì Thoát.
-3. Kết quả 胜利 / 失败 → 确定 → lượt sau. Thua thì đánh lại.
+### 6.7 AutoClick
 
-- **Boss**: 0 = boss đang hiện trong sảnh; N = boss thứ N.
-- **Số lượt đánh**: 0 = đến khi bấm Dừng.
-- **Khi bạc vượt 2 tỷ**: bạc tối đa là 2.000.000.000, phần vượt bị mất. *Mua rương 1 tỷ bạc rồi chạy tiếp* (mặc định): trước khi tràn (hoặc khi game báo "Bạc đã đạt tối đa", bot bấm **Hủy bỏ**, không bao giờ bấm Cường hóa), bot mở Trang bị → Cửa hiệu, cuộn xuống hàng rương, kiểm tra "Bạc cần" = 1.000.000.000 rồi bấm Mua **Số rương 1 tỷ bạc mua mỗi lần** lần (mặc định 2), kiểm tra bạc giảm đúng sau mỗi lần. Hai lựa chọn khác: *Bỏ qua, chạy tiếp* và *Dừng*.
-- **Hết Quân lệnh thì mở rương Tinh Tú**: mở hết rương Tinh Tú (rương có thể cho Quân lệnh), rồi đánh tiếp. **Hết rương Tinh Tú thì mua thêm (tốn Vàng)** với **Số rương Tinh Tú mua mỗi lần** (240 Vàng mỗi rương). Không mua được hoặc mở rương mà không thêm Quân lệnh thì dừng. **Số lần mở rương tối đa**: 0 = không giới hạn.
-- **Số rương Tinh Tú mỗi đợt mở nhanh**, **Khoảng cách giữa các click khi mở rương (ms)**: như Quay Tinh Tú.
-- Mỗi hộp lạ hiện ra lần đầu được lưu thành ảnh `event-NN-….png` trong thư mục nhật ký của lần chạy.
+Bot bấm lần lượt vào các điểm bạn chọn trên game, rồi lặp lại. AutoClick **không nhìn** game, chỉ bấm đúng chỗ đã ghi.
 
-### 4.7 AutoClick
+- **Thêm điểm**: bấm **Ghi từ con trỏ (3 giây)**, rồi trong 3 giây đưa chuột tới chỗ cần bấm trên game và giữ yên. Hoặc bấm **Thêm** để tự gõ tọa độ.
+- Điểm được tính theo khung game, nên kéo cửa sổ đi chỗ khác vẫn bấm đúng.
+- **Kiểu click**: chuột trái/giữa/phải, bấm một lần hoặc bấm đúp.
+- **Thời gian giữa 2 lần click (ms)**: 1000 ms = 1 giây.
+- **Số vòng**: để **0** = lặp mãi cho tới khi bấm Dừng.
 
-Click lần lượt các điểm bạn ghi, ở chế độ nền. AutoClick không nhận diện màn hình: nó chỉ tìm khung game để đổi tọa độ.
+## 7. Tự chạy theo giờ (Chuỗi tác vụ)
 
-- **Danh sách tọa độ**: điểm trên khung game 1000×600 (không phải tọa độ màn hình), nên vẫn đúng khi bạn kéo cửa sổ. Thêm điểm bằng nút **Thêm** (nhập tay) hoặc **Ghi từ con trỏ (3 giây)**: bấm nút, trong 3 giây đưa chuột tới chỗ cần click trên game và giữ yên.
-- **Kiểu click**: chuột trái, giữa hoặc phải, click đơn hoặc click đúp (6 kiểu như bản cũ; bản cũ bỏ qua lựa chọn này, bản mới làm đúng).
-- **Thời gian giữa 2 lần click (ms)**, **Số vòng** (0 = đến khi bấm Dừng).
-- Sau mỗi click, con trỏ của game được đưa về mép trên khung game (600, 2), để nút vừa bấm không còn sáng.
-
-## 5. Chế độ gỡ lỗi
-
-Chế độ gỡ lỗi cho bạn thấy bot đang "nhìn" gì. Mặc định tắt. Bật bằng một trong ba cách:
-
-- ô **Bật chế độ gỡ lỗi** ở thẻ **Gỡ lỗi**;
-- phím tắt `Ctrl+Alt+D` (đổi được ở thẻ Cài đặt);
-- `debug = true` trong `settings.toml`, hoặc chạy `AutoNgoaLong.exe --debug`.
-
-Khi bật:
-
-- **Lớp phủ trực tiếp** vẽ ngay trên cửa sổ game (không chặn chuột, chỉ hiện khi game đang hiện trên màn hình), cả khi không có tính năng nào chạy:
-    - khung **xanh lơ** = khung game bot tìm được (đỏ nếu chưa chắc chắn), kèm kích thước, gốc tọa độ và tỉ lệ;
-    - khung **xanh lá** = phần giao diện bot nhận ra (nút, tiêu đề bảng, ✕...), kèm tên và điểm khớp;
-    - khung **đỏ** = nút ✕ của một bảng bot không biết;
-    - **dấu cộng vàng** = chỗ bot sắp click;
-    - dòng trạng thái: các màn hình bot thấy (như dòng *Màn hình*), cửa sổ, tính năng, luật vừa chọn và thao tác.
-- **Thẻ Gỡ lỗi** hiện ảnh chụp cuối cùng với cùng các khung đó, dùng được cả khi game bị che.
-- **Ảnh PNG từng nhịp** được lưu vào `logs\run-<mã>\NNN-<bước>.png`.
-
-Khi tắt, bot vẫn lưu ảnh màn hình cuối cùng của mọi lần chạy bị lỗi. `run.log` trong thư mục đó có một dòng cho mỗi quyết định (màn hình bot thấy | luật → thao tác, kết quả mong đợi). Gửi kèm thư mục `logs\run-<mã>\` khi báo lỗi.
-
-## 6. Chuỗi tác vụ và lịch chạy
-
-Thẻ **Chuỗi tác vụ** cho phép chạy nhiều tính năng nối tiếp nhau, bằng tay hoặc theo giờ (ví dụ 08:00 mỗi ngày: Nâng cấp khoa kỹ → Nâng cấp công trình → Tháp Thí Luyện → Võ Khôi Tháp).
+Thẻ **Chuỗi tác vụ** giúp bot chạy **nhiều tính năng nối tiếp nhau**, bằng tay hoặc **tự động theo giờ**. Ví dụ: 8 giờ sáng mỗi ngày → Nâng cấp khoa kỹ → Nâng cấp công trình → Tháp Thí Luyện → Võ Khôi Tháp.
 
 1. Bấm **Thêm chuỗi**, đặt **Tên**.
-2. **Các bước**: bấm **Thêm bước**, chọn tính năng. Mỗi bước có:
-    - **Thử lại**: số lần chạy lại khi bước lỗi; **Chờ thử lại (giây)**: thời gian chờ trước khi chạy lại;
-    - **Bật**: bỏ dấu để tạm bỏ qua bước;
-    - **Tối đa (phút)**: hết thời gian thì dừng bước và chuyển sang bước sau (0 = không giới hạn). **Bắt buộc đặt** cho tính năng chạy đến khi bấm Dừng (Võ Khôi Tháp, AutoClick có số lượt/số vòng = 0), nếu không chuỗi sẽ không bao giờ sang bước sau.
-    - Thông số của mỗi bước lấy từ thẻ **Tính năng** (giá trị đã lưu lúc bước bắt đầu).
-    - Dùng **Lên**/**Xuống** để đổi thứ tự.
-3. **Dừng cả chuỗi khi một bước vẫn lỗi sau khi thử lại**: bỏ dấu để chuỗi bỏ qua bước lỗi và chạy tiếp.
-4. **Chạy theo lịch**: nhập **Giờ chạy** (ví dụ `08:00, 20:30`) và chọn **Ngày** (bỏ trống = mỗi ngày). Ô **Bật lịch tự động** ở trên cùng bật/tắt lịch cho mọi chuỗi; dòng bên cạnh cho biết lần chạy kế tiếp.
-5. Bấm **Lưu**. **Chạy ngay** để chạy thử; **Dừng chuỗi** (hoặc phím Dừng) để dừng.
+2. Bấm **Thêm bước**, chọn tính năng. Lặp lại cho mỗi tính năng muốn chạy. Dùng **Lên** / **Xuống** để đổi thứ tự.
+    - Mỗi bước dùng thông số bạn đã điền ở thẻ **Tính năng**.
+    - **Thử lại**: bước bị lỗi thì chạy lại bấy nhiêu lần.
+    - **Tối đa (phút)**: bước chạy quá thời gian này thì chuyển sang bước sau.
+3. Muốn chạy theo giờ: gõ **Giờ chạy** (ví dụ `08:00, 20:30`), chọn **Ngày** (để trống = mỗi ngày), và đánh dấu **Bật lịch tự động** ở trên cùng.
+4. Bấm **Lưu**. Bấm **Chạy ngay** để thử.
 
-Lưu ý:
+> **Quan trọng:**
+> - Với **Võ Khôi Tháp** và **AutoClick** đặt chạy mãi (số lượt/số vòng = 0), **phải điền Tối đa (phút)**, nếu không chuỗi sẽ kẹt ở bước đó mãi.
+> - Lịch chỉ chạy khi **bot đang mở** (và máy không tắt, không ngủ).
 
-- Lịch chỉ chạy khi AutoNgoaLong đang mở. Nếu bot vừa mở sau giờ hẹn vài phút, chuỗi vẫn được chạy; trễ quá lâu thì bỏ qua lần đó.
-- Nếu một tính năng khác đang chạy tới giờ hẹn, chuỗi xếp hàng chờ; chờ quá lâu thì bị hủy và ghi vào Nhật ký.
-- Vì mỗi tính năng tự đi tới màn hình của nó, các bước nối tiếp nhau không cần đưa game về màn hình nào trước.
-- Chuỗi được lưu trong `data\routines.json`.
+## 8. Nhiều tài khoản cùng lúc
 
-## 7. Nhiều cửa sổ (nhiều tài khoản)
+Thẻ **Nhiều cửa sổ** chạy mỗi tài khoản một tính năng, cùng một lúc.
 
-Thẻ **Nhiều cửa sổ** chạy song song một tính năng trên mỗi cửa sổ game (máy chủ này cho phép dùng bot).
+1. Mở mỗi tài khoản trong **một cửa sổ Coowon riêng**, rồi bấm **Tìm cửa sổ**.
+2. Ở mỗi dòng (mỗi cửa sổ), chọn tính năng muốn chạy. Thông số lấy từ thẻ **Tính năng**.
+3. Bấm **Bắt đầu** ở từng dòng, hoặc **Bắt đầu tất cả**. Phím **`Ctrl + Alt + F10`** dừng tất cả.
 
-1. Mở mỗi tài khoản trong một cửa sổ Coowon riêng, rồi bấm **Tìm cửa sổ**.
-2. Với mỗi cửa sổ, chọn tính năng muốn chạy. Thông số lấy từ thẻ **Tính năng**.
-3. Bấm **Bắt đầu** / **Tạm dừng** / **Dừng** ở từng dòng, hoặc **Bắt đầu tất cả** / **Dừng tất cả**. Phím Dừng dừng mọi cửa sổ.
+## 9. Thông báo về điện thoại
 
-Một cửa sổ đang chạy ở thẻ Tính năng (hoặc trong một chuỗi tác vụ) thì không chạy được ở thẻ Nhiều cửa sổ, và ngược lại. Lớp phủ gỡ lỗi chỉ đi theo cửa sổ chọn ở trên cùng; các cửa sổ khác xem ở thẻ Gỡ lỗi.
+Thẻ **Thông báo** cho bot báo cho bạn khi chạy xong, bị dừng hoặc gặp lỗi: hiện thông báo ở góc màn hình, hoặc gửi tin nhắn qua **Telegram** hay **Discord** (có thể kèm ảnh chụp game). Điền thông tin, bấm **Lưu**, rồi bấm **Gửi thử** để kiểm tra.
 
-## 8. Các thẻ khác
+Mã Telegram/Discord được lưu trong tệp `settings.toml`: **đừng gửi tệp này cho người khác.**
 
-- **Lịch sử**: mọi lần chạy (tính năng, cửa sổ, giờ, kết quả, tóm tắt, bộ đếm như số rương, số tầng, số lượt). **Mở ảnh lỗi** mở ảnh chụp lúc lỗi; **Mở thư mục nhật ký** mở thư mục của lần chạy; **Xóa lịch sử** xóa danh sách. Lưu trong `data\history.sqlite3`.
-- **Thông báo**: chọn gửi khi **Hoàn thành**, **Bị dừng**, **Gặp lỗi**; thông báo ở khay hệ thống; Telegram (mã bot + chat id) và Discord (webhook `https://discord.com/api/webhooks/...`), có thể đính kèm ảnh chụp game. Bấm **Lưu**, rồi **Gửi thử**. Mã bot và webhook nằm trong `settings.toml`: đừng chia sẻ tệp đó.
-- **Cài đặt**: đổi phím tắt **Dừng**, **Bật/tắt gỡ lỗi**, **Tạm dừng / tiếp tục** (phải có Ctrl, Alt hoặc Win; để trống ô Tạm dừng = không dùng), rồi bấm **Áp dụng**. Thẻ cũng cho biết đường dẫn tệp cài đặt và tệp INI cũ đã nhập.
-    - **Trong game → Dùng vàng bỏ qua thời gian chờ** (mặc định tắt). Khi game hỏi *"Bỏ qua thời gian chờ tốn … Vàng. Xác nhận?"* (ví dụ sau khi bấm Tăng cấp lúc hết thợ): **bật** thì bot bấm **确定** (tốn Vàng, không phải chờ) rồi chạy tiếp; **tắt** thì bot bấm **取消** và dừng tính năng đang chạy, ghi lý do vào Nhật ký. Thay đổi có tác dụng ngay, kể cả khi đang chạy. Bot không bao giờ tích ô "Lần sau không nhắc nhở". Lưu ý: lựa chọn "dùng vàng" trong game bị xóa mỗi khi tải lại trình duyệt.
-    - **Trong game → Thu gọn các bảng che game khi chạy** (mặc định bật). Trên bản đồ không có bảng nào mở, bot thu gọn bảng nhiệm vụ bên phải, khung "Sắp mở" và khung chat (tối đa 2 lần bấm mỗi bảng mỗi lần chạy), để chúng không che nhà và đạo quân. Hàng biểu tượng trên cùng chỉ được ẩn bởi tính năng cần (Công trình, Clear Phó Bản) và được mở lại khi xong. Áp dụng từ lần chạy sau.
+## 10. Thẻ Cài đặt và Lịch sử
 
-## 9. Sửa dữ liệu nhận diện không cần build lại
+**Cài đặt:**
 
-Mọi thứ bot dùng để nhận ra game nằm trong `profiles\ngoalongviet\`:
+- **Phím tắt**: đổi phím Dừng (mặc định `Ctrl + Alt + F10`), phím bật/tắt Gỡ lỗi (`Ctrl + Alt + D`) và phím Tạm dừng. Phím tắt phải có Ctrl, Alt hoặc Win. Bấm **Áp dụng**.
+- **Dùng vàng bỏ qua thời gian chờ** (mặc định tắt): xem lưu ý **Về Vàng** ở mục 5. Lưu ý: game tự xóa lựa chọn "dùng vàng" mỗi khi bạn tải lại trang.
+- **Thu gọn các bảng che game khi chạy** (mặc định bật): bot thu gọn bảng nhiệm vụ, khung chat… để chúng không che công trình và đạo quân.
 
-- `parts.yaml`: các phần giao diện (nút, tiêu đề bảng, ✕...), mỗi phần là một ảnh mẫu và vùng tìm kiếm trên khung 1000×600;
-- `probes.yaml`: các đầu dò màu (thẻ đang chọn, ô đã tích, tia sáng xanh, dòng chữ đỏ/xanh...);
-- `numbers.yaml`: vị trí các con số bot đọc (Bạc, Quân lệnh, số rương, tầng, cấp...);
-- `screens\*.yaml`: mỗi màn hình là một quy tắc trên các phần giao diện, kèm các giá trị bot đọc trên màn hình đó;
-- `nav.yaml`: đường đi giữa các màn hình (bấm gì để từ màn hình này sang màn hình kia);
-- `popups.yaml`, `panels.yaml`: popup tự đóng, bảng tự thu gọn;
-- `templates\**\*.png`: ảnh mẫu (`templates\digits\game\` là các chữ số của game);
-- `locator.yaml`: các mốc dùng để tìm khung game.
+**Lịch sử:** danh sách mọi lần chạy và kết quả. Bấm **Mở ảnh lỗi** để xem ảnh chụp lúc lỗi, **Mở thư mục nhật ký** để mở thư mục chứa nhật ký của lần chạy đó.
 
-Sửa bằng Notepad (lưu dạng UTF-8), khởi động lại bot. Sao lưu thư mục `profiles` trước khi sửa. Sau khi sửa, chạy `--selftest` để chắc chắn các tệp vẫn đọc được, đủ ảnh mẫu, và 57 ảnh mẫu vẫn được nhận diện đúng.
+## 11. Khi gặp sự cố
 
-## 10. Xử lý sự cố
-
-| Hiện tượng | Cách xử lý |
+| Bạn thấy | Cách xử lý |
 | --- | --- |
-| Danh sách cửa sổ ghi "Không thấy cửa sổ Coowon đang mở Ngọa Long" | Mở game trong **Coowon** (không phải Chrome/Edge), chờ tiêu đề tab có "Ngọa Long", rồi bấm **Tìm lại**. |
-| Coowon báo "Adobe Flash Player was blocked" | Bấm **Run this time** mỗi lần tải lại trang. |
-| `Khung game: … không thấy` hoặc `chưa chắc chắn` | Cửa sổ game bị thu nhỏ, game đang tải, hoặc có hộp thoại che khung. Mở lại cửa sổ, đặt thu phóng 100% (Ctrl+0), bấm **Kiểm tra**. Khi chạy, bot dừng nếu không thấy khung game 20 giây liền. |
-| Dòng *Màn hình* có `unknown` | Một bảng bot không biết đang mở. Khi chạy, bot tự đóng nó bằng ✕ (hoặc ESC); không cần làm gì. |
-| Nhật ký có nhiều dòng "Gỡ rối (…)" | Một thao tác không ra kết quả mong đợi; bot đã tự đóng bảng / ESC / đi lại. Vài dòng là bình thường (game chậm). Nếu lần chạy dừng, xem ảnh lỗi và dòng "Snapshot lúc dừng" trong `run.log`. |
-| "game không phản hồi: màn hình đứng yên …" | Game (Flash) bị treo: hình không đổi dù bot đã click. Tải lại trang game (F5) rồi chạy lại. |
-| "cửa sổ game bị che, hãy để lộ một phần cửa sổ" | Ảnh chụp đứng yên trong lúc cửa sổ game bị che kín hoặc thu nhỏ. Kéo cửa sổ game ra để lộ một phần, rồi chạy lại. |
-| Bot click lệch | Đặt thu phóng trang về 100%. Bật gỡ lỗi: dấu cộng vàng là chỗ click. |
-| Phím tắt không chạy | Một chương trình khác đã giữ tổ hợp đó: Nhật ký ghi "Phím tắt: …". Đổi sang tổ hợp khác ở thẻ Cài đặt. |
-| Telegram/Discord không nhận được tin | Kiểm tra mã bot, chat id, webhook; bấm **Gửi thử** và đọc dòng kết quả. |
-| `settings.toml` bị hỏng | Bot đổi tên tệp hỏng thành `settings.toml.bak` và chạy với cài đặt mặc định. |
-| Bot không mở được, không hiện cửa sổ | Xem `logs\app.log`. Chạy `--selftest` (mục 1.2) và gửi `selftest-report.txt` khi báo lỗi. |
-| `--selftest` báo `FAIL [profile] …` hoặc `FAIL [perception] …` | Có tệp trong `profiles\` bị sửa hỏng, xóa hoặc đổi tên. Lấy lại thư mục `profiles` từ bản tải về (hoặc hoàn tác thay đổi của bạn). |
-| SmartScreen cảnh báo, hoặc Windows Defender chặn hay xóa tệp | Tệp exe chưa ký số và điều khiển cửa sổ khác. Xem mục 1.3 để cho phép chạy và thêm thư mục bot vào danh sách loại trừ. |
+| Bot ghi "Không thấy cửa sổ Coowon đang mở Ngọa Long" | Mở game bằng **Coowon** (không phải Chrome/Edge/Cốc Cốc), đợi game tải xong, rồi bấm **Tìm lại**. |
+| Coowon báo "Adobe Flash Player was blocked" | Bấm **Run this time**. Mỗi lần tải lại trang phải bấm lại. |
+| Dòng *Khung game* ghi "không thấy" hoặc "chưa chắc chắn" | Cửa sổ game đang bị thu nhỏ, game đang tải, hoặc có hộp thoại che game. Mở cửa sổ game lên, nhấn `Ctrl + 0`, bấm **Kiểm tra**. |
+| Bot bấm lệch chỗ | Nhấn `Ctrl + 0` trên trang game để về cỡ chữ 100%. |
+| "game không phản hồi" | Game bị đơ. Nhấn **F5** để tải lại trang game, rồi chạy lại. |
+| "cửa sổ game bị che, hãy để lộ một phần cửa sổ" | Kéo cửa sổ game ra để thấy được một phần, rồi chạy lại. |
+| Nhật ký có vài dòng "Gỡ rối (…)" | Bình thường: game chậm, bot đã tự xử lý. Chỉ cần quan tâm nếu bot dừng hẳn. |
+| Phím tắt không có tác dụng | Chương trình khác đang dùng phím đó. Đổi sang phím khác trong thẻ **Cài đặt**. |
+| Telegram/Discord không nhận được tin | Kiểm tra lại mã, bấm **Gửi thử** và đọc dòng kết quả. |
+| Windows báo nguy hiểm, Defender chặn hoặc xóa tệp | Xem [mục 3](#3-windows-báo-chương-trình-nguy-hiểm). |
+| Bot không mở lên được | Kiểm tra Defender có xóa tệp không (mục 3). Nếu có, cho phép rồi giải nén lại. |
 
-Khi báo lỗi, gửi: dòng tóm tắt ở Nhật ký, thư mục `logs\run-<mã>\` của lần chạy (có ảnh lỗi và `run.log`), và nếu có thể, một lần chạy lại với chế độ gỡ lỗi bật.
+### Cách báo lỗi
 
-## 11. Giấy phép
+Khi nhờ người khác xem lỗi, hãy gửi:
 
-Mã nguồn gốc của v1.8.0 không có giấy phép (đã hỏi tác giả). Máy chủ ngoalongviet.com cho phép dùng bot. Bạn dùng bot trên tài khoản của mình và tự chịu rủi ro.
+1. Dòng cuối trong khung **Nhật ký** (dòng tóm tắt).
+2. **Thư mục nhật ký của lần chạy bị lỗi**: vào thẻ **Lịch sử**, chọn lần chạy đó, bấm **Mở thư mục nhật ký**, rồi nén thư mục đó (chuột phải → **Send to** → **Compressed (zipped) folder**) và gửi tệp zip.
+3. Nếu được nhờ: bật **Gỡ lỗi** (`Ctrl + Alt + D`), chạy lại cho tới khi lỗi, rồi gửi thư mục nhật ký mới. Khi bật, bot vẽ khung màu lên game để cho thấy nó đang "nhìn" gì, và lưu ảnh từng bước.
+
+## 12. Cập nhật lên bản mới
+
+1. Tải bản mới, giải nén vào **một thư mục mới** (ví dụ `D:\AutoNgoaLong-2.1`).
+2. Từ thư mục cũ, chép tệp **`settings.toml`** và thư mục **`data`** sang thư mục mới, để giữ cài đặt, lịch sử và chuỗi tác vụ.
+3. Mở bot từ thư mục mới. Chạy tốt rồi thì có thể xóa thư mục cũ.
+
+## 13. Dành cho người rành máy tính
+
+**Tự kiểm tra bản cài** (không cần mở game): mở PowerShell trong thư mục bot và chạy
+
+```powershell
+Start-Process .\AutoNgoaLong.exe -ArgumentList "--selftest" -Wait
+Get-Content .\selftest-report.txt -Encoding UTF8
+```
+
+Mỗi dòng `OK` là một phép kiểm tra đạt, dòng cuối ghi tổng số lỗi. Dòng `SKIP [perception]` là bình thường với bản tải về (gói không kèm bộ ảnh game mẫu). Dòng `FAIL [profile]` nghĩa là có tệp trong `profiles` bị sửa hỏng hoặc bị xóa: lấy lại thư mục `profiles` từ tệp zip.
+
+**Sửa dữ liệu nhận diện:** mọi thứ bot dùng để nhận ra game (vị trí nút, màn hình, đường đi giữa các màn hình, ảnh mẫu) nằm trong `profiles\ngoalongviet\`, là các tệp văn bản `.yaml` và ảnh `.png`. Sửa được bằng Notepad (lưu dạng UTF-8) rồi mở lại bot, không cần build lại. Hãy sao lưu thư mục `profiles` trước khi sửa và chạy `--selftest` sau khi sửa.
+
+**Các tệp bot tạo ra:** `settings.toml` (cài đặt; nếu bị hỏng, bot đổi tên thành `settings.toml.bak` và dùng cài đặt mặc định), `logs\app.log` (nhật ký chung), `logs\run-<mã>\` (nhật ký `run.log` và ảnh của từng lần chạy), `data\history.sqlite3` (lịch sử), `data\routines.json` (chuỗi tác vụ).
+
+**Chế độ Gỡ lỗi** còn bật được bằng `debug = true` trong `settings.toml` hoặc chạy `AutoNgoaLong.exe --debug`. Màu các khung vẽ trên game: xanh lơ = khung game bot tìm được (đỏ nếu chưa chắc), xanh lá = nút/bảng bot nhận ra, đỏ = nút ✕ của bảng lạ, dấu cộng vàng = chỗ bot sắp bấm.
+
+## 14. Giấy phép
+
+AutoNgoaLong được phát hành theo giấy phép **MIT** (xem tệp [LICENSE](LICENSE), trong gói tải về là `LICENSE.txt`): bạn được tự do dùng, sửa và chia sẻ. Máy chủ ngoalongviet.com cho phép dùng bot. Bạn dùng bot trên tài khoản của mình và tự chịu rủi ro.

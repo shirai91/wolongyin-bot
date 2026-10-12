@@ -68,7 +68,7 @@ class SettingsTab(QWidget):
         path = services.settings_path or "(không lưu)"
         info = f"Tệp cài đặt: {path}"
         if s.ini_imported_from:
-            info += f"\nĐã nhập cài đặt cũ (v1.8.0) từ: {s.ini_imported_from}"
+            info += f"\nĐã nhập cài đặt cũ từ: {s.ini_imported_from}"
         lbl = QLabel(info)
         lbl.setWordWrap(True)
         lay.addWidget(lbl)

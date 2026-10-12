@@ -6,6 +6,7 @@ Output: dist/AutoNgoaLong/
     _internal/              Python, Qt, OpenCV, the ``ngoalong`` package, selftest/ (corpus frames + labels)
     profiles/               copied next to the exe: parts, screens, navigation and templates stay editable
     HUONG-DAN.md            the Vietnamese user guide (README.md)
+    LICENSE.txt             MIT licence
 
 Build with ``.\\build.ps1`` (or ``pyinstaller --noconfirm --clean AutoNgoaLong.spec``).
 """
@@ -106,5 +107,6 @@ shutil.copytree(ROOT / "profiles", profiles_dst, ignore=shutil.ignore_patterns("
 guide = ROOT / "README.md"
 if guide.is_file():
     shutil.copy2(guide, dist_dir / "HUONG-DAN.md")
+shutil.copy2(ROOT / "LICENSE", dist_dir / "LICENSE.txt")
 (dist_dir / "VERSION.txt").write_text(f"{APP_NAME} {__version__}\n", encoding="utf-8")
 print(f"[spec] {APP_NAME} {__version__}: profiles copied to {profiles_dst}")

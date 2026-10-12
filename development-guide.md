@@ -2,7 +2,7 @@
 
 How to run, change, test and build AutoNgoaLong v2 from source. To use the released package, read the [README](README.md) (the Vietnamese user guide) instead.
 
-A Python rewrite of AutoNgoaLong v1.8.0, a bot for the Flash webgame **Ngọa Long** on the private server ngoalongviet.com, played in the **Coowon** browser on Windows. It clicks in the background with `PostMessage`, captures with `PrintWindow`, finds the 1000×600 game canvas by itself, and runs each feature as a decision loop: every tick it perceives the screen stack and its numbers from UI parts (OpenCV templates, colour probes, the game's digit font; no OCR), picks one action from the feature's rules, and checks that the game answered. Every wait is time-limited and can be stopped.
+A bot for the Flash webgame **Ngọa Long** on the private server ngoalongviet.com, played in the **Coowon** browser on Windows. It clicks in the background with `PostMessage`, captures with `PrintWindow`, finds the 1000×600 game canvas by itself, and runs each feature as a decision loop: every tick it perceives the screen stack and its numbers from UI parts (OpenCV templates, colour probes, the game's digit font; no OCR), picks one action from the feature's rules, and checks that the game answered. Every wait is time-limited and can be stopped.
 
 Supported: Nâng cấp khoa kỹ, Nâng cấp công trình (city and harbour), Clear Phó Bản, Tháp Thí Luyện, Quay Tinh Tú, Võ Khôi Tháp, plus AutoClick.
 
@@ -26,7 +26,7 @@ Command line of `python -m ngoalong` (and of `AutoNgoaLong.exe`):
 | Option | Effect |
 | --- | --- |
 | `--settings PATH` | `settings.toml` to use (default: next to the app) |
-| `--ini PATH` | v1.8.0 `NgoaLong_data.ini` imported once, when no `settings.toml` exists yet |
+| `--ini PATH` | `NgoaLong_data.ini` settings imported once, when no `settings.toml` exists yet |
 | `--debug` | Start with debug mode on |
 | `--selftest` | Run the offline checks (profile, features, Win32 driver, the perception benchmark on the bundled corpus, offscreen main window) and exit 0 (passed) or 1 (failed) |
 | `--corpus PATH` | `--selftest`: `labels.yaml` of a corpus (default: the one bundled in the build; from source `corpus/live/labels.yaml`) |
@@ -103,6 +103,6 @@ Output is a one-folder build in `dist\AutoNgoaLong\`:
 
 The spec bundles the self-test frames (`ngoalong.selftest.BUNDLE_FRAMES`) from `corpus\live\` on the build machine; when they are missing it prints a warning and the build's self-test reports `SKIP [perception]` instead of running the benchmark. At run time the build reads and writes `settings.toml`, `NgoaLong_data.ini` (one-time import), `logs\` (run folders and `app.log`) and `data\` (history, routines) next to the exe; see `ngoalong/paths.py`. The build script keeps those user files across rebuilds and exits non-zero when PyInstaller or the self-test fails; the self-test report is saved to `build\selftest-report.txt`. Zip `dist\AutoNgoaLong\` to distribute it. Before zipping a release, remove the user files the build script kept (`settings.toml*`, `NgoaLong_data.ini`, `logs\`, `data\`, `selftest-report.txt`), and `_internal\selftest\` if the corpus frames should not ship; then attach the zip to a GitHub release, for example `gh release create v2.0.0 AutoNgoaLong-v2.0.0-win64.zip`.
 
-## Licence and policy
+## Licence
 
-The original v1.8.0 code has no licence (the author was asked). The target server allows bots. See docs/06 "Decisions".
+MIT, see [LICENSE](LICENSE). The target server allows bots.

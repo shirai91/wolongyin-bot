@@ -608,7 +608,7 @@ def _show_startup_error(message: str) -> None:
 def main(argv: Sequence[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="python -m ngoalong", description="AutoNgoaLong v2")
     ap.add_argument("--settings", default=str(DEFAULT_SETTINGS_PATH), help="settings.toml path")
-    ap.add_argument("--ini", default=str(DEFAULT_INI_PATH), help="v1.8.0 NgoaLong_data.ini to import once")
+    ap.add_argument("--ini", default=str(DEFAULT_INI_PATH), help="NgoaLong_data.ini settings to import once")
     ap.add_argument("--debug", action="store_true", help="start with debug mode on")
     ap.add_argument("--selftest", action="store_true",
                     help="run the offline checks (perception benchmark on the bundled corpus) and exit "
