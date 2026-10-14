@@ -8,7 +8,9 @@ Luyện", ``nav.yaml``) and closes whatever dialog is in the way.
 * **Page**: page N lists floors 10(N-1)+1 .. 10N (only floors reached). The page box takes typing:
   double-click, End, Backspaces, the number, Deletes, Enter (``Text``), read back. The dialog reopens on its last tab and page, so
   both are read, never assumed.
-* **Climb** ("Vượt tháp"): select the floor, Vượt Tháp → 确定 (3 Thí luyện lệnh) → floor map: tick
+* **Climb** ("Vượt tháp"): select the floor, Vượt Tháp → 确定 (3 Thí luyện lệnh; without them the box
+  asks "Thí luyện lệnh không đủ, dùng 3 Quân lệnh để Vượt tháp?", which players prefer for the
+  Chúa công xp: answered 确定 the same, no warning) → floor map: tick
   "Tự Vượt Tháp" if needed, click the guard under the light-blue crystal ONCE (the crystal must be
   seen on 2 ticks: it flickers), wait for 战胜 / 战败. A win moves to the next floor; a loss leaves
   the floor (Thoát → 确定) and ends the run.
@@ -146,7 +148,12 @@ class ThapThiLuyen(Feature):
         elif self.m.floor > p.end_floor:
             return f"Đã vượt xong từ tầng {p.start_floor} đến tầng {p.end_floor}"
         if tokens is not None and tokens < TOKENS_PER_RUN:
-            return f"Hết Thí luyện lệnh ({tokens}). {self.summary()}"
+            if self.sweeping:
+                return f"Hết Thí luyện lệnh ({tokens}). {self.summary()}"
+            hud = snap.hud  # a climb takes 3 Quân lệnh instead
+            ql = hud.quan_lenh if hud is not None else None
+            if ql is not None and ql[0] < TOKENS_PER_RUN:
+                return f"Hết Thí luyện lệnh ({tokens}) và Quân lệnh ({ql[0]}). {self.summary()}"
         return None
 
     # --- rules ----------------------------------------------------------------------------------
@@ -166,7 +173,7 @@ class ThapThiLuyen(Feature):
                  do=lambda s: Click(s.sweep, label="Tự Vượt Tháp", expect=SWEEP)),
             # boxes
             Rule("xác nhận vào tháp", on=CONFIRM, when=lambda s: self._confirm_is("enter"),
-                 do=lambda s: Click(s.ok, label=f"vào tầng {self.m.floor} (3 Thí luyện lệnh)", expect=FLOOR,
+                 do=lambda s: Click(s.ok, label=f"vào tầng {self.m.floor} ({TOKENS_PER_RUN} Thí luyện lệnh / Quân lệnh)", expect=FLOOR,
                                     within=20, then=self._entered)),
             Rule("xác nhận tự vượt", on=CONFIRM, when=lambda s: self._confirm_is("sweep"), do=self._confirm_sweep),
             Rule("xác nhận rời tháp", on=CONFIRM, when=lambda s: self._confirm_is("leave"),
