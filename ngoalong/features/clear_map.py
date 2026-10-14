@@ -6,7 +6,8 @@ map with "Phó Bản" (bottom-right cluster, ``nav.yaml``) and closes whatever d
 
 * **Next army**: the game marks it with a light-blue beam (``field.beam``). The beam flickers, so it
   must be seen on 2 ticks in a row; it is picked by size (blue map decorations are wider or
-  taller), and the army stands ~55 px below its lower tip. Over an army at the top of the map the
+  taller; ``field.beam`` keeps that shape, so its ``beam`` reader is what this feature attacks
+  under), and the army stands ~55 px below its lower tip. Over an army at the top of the map the
   beam is cut by the canvas edge (only its lower part shows): it is taken when it is still tall
   enough. On a bright map (sand) the beam washes out to near-white: the probe takes the pale glow
   around a saturated blue centre. A blob on the "◀" panel tab (it glows pale blue) is ignored.
@@ -62,11 +63,11 @@ PLAY_TICK = Point(550, 411)
 ARMY_CLOSE = Point(638, 184)
 RESULT_EXIT = Point(540, 408)  # Thoát of the 战胜 / 战败 box (when its template is not found)
 GROUP_EXIT = Point(960, 577)  # Thoát bottom right after a group battle
-# The beam: 9-16 x 30-50 px live (frames 359, 367, 425, 480, 485); its tip bobs a few px. Cut by the
-# top edge over an army at the top of the map (10 x 34 px at y=0, user report 2026-10-10).
-BEAM_W = (6, 18)
-BEAM_H = (25, 60)
-BEAM_CUT_H = 20  # a beam that starts at y=0 is taken from this height (the probe's min_h)
+# The beam: 9-16 x 30-50 px live (frames 359, 367, 425, 480, 485), 17 x 66 when its glow runs on over
+# a bright stone court (576); its tip bobs a few px. The probe keeps blobs of that shape (6-18 px
+# wide, 20-80 tall); one shorter than BEAM_MIN_H is taken only when the top edge cuts it (over an
+# army at the top of the map, 10 x 34 px at y=0, user report 2026-10-10).
+BEAM_MIN_H = 25
 ARMY_BELOW = (55, 35, 75)  # px below the beam's lower tip, per try (the army sprite is ~50 px tall)
 SAME_DX, SAME_DY = 25, 40  # the beam is over the same army (it bobs up and down)
 OPEN_TRIES = 3  # clicks under one beam that open no dialog before the run fails
@@ -245,8 +246,7 @@ class ClearMap(Feature):
     # --- the field ---------------------------------------------------------------------------------
     def _beam(self, s: ScreenState) -> Beam | None:
         found = [Beam(x=r.center.x, tip=r.bottom) for r in s.beams
-                 if not PANEL_TAB.contains(r.center) and BEAM_W[0] <= r.w <= BEAM_W[1]
-                 and (BEAM_H[0] <= r.h <= BEAM_H[1] or (r.y <= 0 and BEAM_CUT_H <= r.h <= BEAM_H[1]))]
+                 if not PANEL_TAB.contains(r.center) and (r.h >= BEAM_MIN_H or r.y <= 0)]
         if not found:
             return None
         last = self.m.target

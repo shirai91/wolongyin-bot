@@ -13,8 +13,9 @@ Kinds:
 * ``count``  pixels matching ``colour`` (per-channel ranges, also ``r-b``, ``g-r``...); ``ring: N``
              counts only an N px band along the rect's border (a selection frame). On from ``min``
              (default 1) up to ``max``, so ``max`` alone checks that something is NOT drawn.
-* ``blobs``  connected regions of ``colour`` with a minimum size and height/width ``aspect``; the
-             value is their rectangles (canvas pixels), largest first. On when there is one.
+* ``blobs``  connected regions of ``colour`` with a minimum size (``max_w`` / ``max_h`` cap it) and
+             height/width ``aspect``; the value is their rectangles (canvas pixels), largest first.
+             On when there is one.
              ``core: {colour: ..., min: N}`` keeps only regions holding at least N pixels of a
              stricter colour (a pale glow counts only around a saturated centre).
 * ``fill``   fraction of the rect's columns where at least ``col_frac`` of the pixels match
@@ -143,8 +144,9 @@ def evaluate(spec: ProbeSpec, canvas: np.ndarray, rect: Rect | None = None) -> P
     blobs = []
     for i in range(1, n):
         x, y, w, h, area = (int(v) for v in st[i])
-        if (w >= p.get("min_w", 1) and h >= p.get("min_h", 1) and area >= p.get("min_area", 1)
-                and h >= p.get("aspect", 0) * w and (not core or in_core[i] >= int(core.get("min", 1)))):
+        if (p.get("min_w", 1) <= w <= p.get("max_w", 10**6) and p.get("min_h", 1) <= h <= p.get("max_h", 10**6)
+                and area >= p.get("min_area", 1) and h >= p.get("aspect", 0) * w
+                and (not core or in_core[i] >= int(core.get("min", 1)))):
             blobs.append((area, Rect(r.x + x, r.y + y, w, h)))
     rects = tuple(b for _a, b in sorted(blobs, key=lambda t: -t[0]))
     return ProbeResult(spec.name, rects, bool(rects))

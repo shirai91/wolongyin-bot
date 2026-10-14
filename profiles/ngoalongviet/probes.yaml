@@ -39,10 +39,13 @@ vkt.boss_hp:    {kind: fill, colour: {g: [120, 255], g-r: [60, 255]}, rect: [365
 # and only a 5 x 8 px centre stays saturated blue, so the blob is the pale colour (a superset of the
 # old saturated one) around at least 8 saturated pixels: snow and white flags have no such centre.
 # Same beams as before on every corpus field frame; 12 x 30 at 454,237 on the sand map. Not on the
-# corpus's Khăn Vàng frames (that map showed no beam).
+# corpus's Khăn Vàng frames (that map showed no beam). The shape is the one clear_map attacks under
+# (6-18 px wide, at most 80 tall): on a bright stone court (user report 2026-10-14, Đổng Trác) the
+# pale glow runs on over the floor and the beam is 17 x 66 at 547,336 over the army at ~550,455; no
+# other field frame of the corpus or of corpus/motion has a beam-shaped blob over 53 px tall.
 field.beam:     {kind: blobs, colour: {b: [200, 255], g: [171, 255], b-r: [4, 255]}, rect: [0, 0, 1000, 525],
                  core: {colour: {b: [201, 255], g: [171, 255], r: [0, 199], b-r: [51, 255]}, min: 8},
-                 min_w: 4, min_h: 20, min_area: 60, aspect: 1.8}
+                 min_w: 6, max_w: 18, min_h: 20, max_h: 80, min_area: 60, aspect: 1.8}
 # Green floating line "Thắng Trận / Nhận C.C*43" in the middle of the field after an attack with
 # "Phát chiến đấu" off (075: 334 px, 076: 165, 385: 143; battle screens and other field frames <= 20).
 field.win_line: {kind: count, colour: {g: [181, 255], r: [0, 119], b: [0, 99]}, rect: [360, 230, 280, 90], min: 60}

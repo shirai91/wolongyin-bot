@@ -48,11 +48,12 @@ EXPECTED_FEATURES = frozenset({
 # cover over the labels so that each one is seen at least once: every screen of the six features
 # (33, with the overlays), every distinct feature screen stack (47), every labelled reader value
 # that a reader checks (41 readers), and the 9 kinds of other screens (unknown dialogs, full-screen
-# locations, HUD maps). 57 frames, about 34 MB as lossless WebP.
+# locations, HUD maps), plus the field beams the campaign must find (576: a beam taller than usual on
+# a bright court). 58 frames, about 35 MB as lossless WebP.
 BUNDLE_FRAMES = (
     2, 3, 6, 10, 23, 30, 32, 33, 38, 42, 58, 62, 86, 88, 100, 103, 104, 114, 119, 124, 125, 134, 135,
     155, 191, 205, 208, 215, 217, 258, 260, 266, 273, 298, 306, 360, 362, 367, 371, 387, 393, 410,
-    426, 427, 430, 435, 442, 468, 470, 477, 481, 482, 522, 538, 540, 541, 564,
+    426, 427, 430, 435, 442, 468, 470, 477, 481, 482, 522, 538, 540, 541, 564, 576,
 )
 
 

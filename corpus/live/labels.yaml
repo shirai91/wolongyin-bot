@@ -387,3 +387,4 @@
 573-user-field-beam-top.png:     {base: field, state: {beam: true}, note: "user report 2026-10-10 (Tư Mã): beam cut by the top edge, 10x34 at 445,0 over the army at ~450,89; webp, cropped to the canvas"}
 574-user-field-beam-sand.png:    {base: field, state: {beam: true}, note: "user report 2026-10-10 (Đinh Nguyên, sand map): beam washed out to near-white, 12x30 at 454,237 over the army at ~460,320; webp, cropped to the canvas"}
 575-user-field-done-next.png:    {base: field, state: {beam: false}, note: "user report 2026-10-11 (Vương Hồn): done (» shown), no beam; the river shimmer passed for a ring before the water filter; webp, cropped to the canvas"}
+576-user-field-beam-building.png: {base: field, state: {beam: true}, note: "user report 2026-10-14 (Đổng Trác, bright stone court): the beam's pale glow runs on over the floor, 17x66 at 547,336 over the army at ~550,455; webp, cropped to the canvas"}
