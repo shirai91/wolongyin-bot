@@ -253,6 +253,7 @@ class AppServices:
         self.overlay_sink: OverlaySink | None = None
         # Live overlay refresh between bot frames: its own locator (refresh thread).
         self._overlay_locator = self.new_locator()
+        self._overlay_held: str | None = None  # screens.py "stays", carried from frame to frame
         self.overlay_refresher = OverlayRefresher(self)
         base_log = Path(log_dir if log_dir is not None else self.settings.log_dir)
         self.runner = TaskRunner(base_log if base_log.is_absolute() else PROJECT_ROOT / base_log)
@@ -334,6 +335,7 @@ class AppServices:
         self.window = window
         self.locator.reset()  # another window: the old canvas position means nothing
         self._overlay_locator.reset()
+        self._overlay_held = None
         if window is not None:
             self.settings.window.title = window.title
             self.settings.window.exe_path = window.exe_path
@@ -401,7 +403,8 @@ class AppServices:
             return None
         if not fix.reliable:
             return DebugFrame(canvas=fix, window=gw.title, note="live")
-        snap = self.perceiver().perceive(Perceiver.canvas(image, fix))
+        snap = self.perceiver().perceive(Perceiver.canvas(image, fix), self._overlay_held)
+        self._overlay_held = snap.identity.held
         frame = snapshot_frame(image, fix, snap, window=gw.title, note="live")
         frame.image = None  # the overlay draws over the game itself
         return frame

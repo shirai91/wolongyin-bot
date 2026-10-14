@@ -11,6 +11,7 @@
       forbid: [qty.max]        # none of
       close: [802, 119]        # its ✕: claims the ``close`` hit within CLOSE_TOL px
       claims: [box.ok]         # other generic parts it explains
+      stays: map               # base only: see below
       read: {...}              # readers (readers.py)
 
 A rule item is a part name (found), a probe name (on), or ``{part: close, near: [x, y]}``.
@@ -18,7 +19,10 @@ Items are checked in order and stop at the first failure, so a screen's later (d
 searched only when its first ones are there: put the cheapest, most telling part first.
 
 Base screens are tried in file order (``base.yaml`` first, most specific first) and the first that
-holds wins; when none does the base is ``unknown``. Every dialog and overlay that holds is kept;
+holds wins; when none does the base is ``unknown``. A base with ``stays: <other base>`` is held:
+later frames that read as that other base (or as ``unknown``, a dialog over the HUD) are still
+this one, until a frame reads as any other base. The caller passes ``Identity.held`` of the last
+frame back in (the city of a young account is only told apart by a banner shown on entering it). Every dialog and overlay that holds is kept;
 dialogs are ordered by ``z``. A ✕ that no screen claims becomes an ``unknown`` dialog, and the
 unclaimed hits are listed so recovery can still close it.
 """
@@ -62,6 +66,7 @@ class ScreenSpec:
     z: int = 1
     close: Point | None = None
     claims: tuple[str, ...] = ()
+    stays: str = ""  # base only: a later frame read as this base is still this screen
     read: dict[str, Any] = field(default_factory=dict)
     source: str = ""
 
@@ -75,6 +80,7 @@ class Identity:
     overlays: tuple[str, ...]
     hud: bool
     unknown: tuple[Hit, ...]  # generic parts no screen claimed (✕ of an unknown dialog, ...)
+    held: str | None = None  # a base with ``stays`` seen last: pass it to the next frame's identify
 
 
 def _item(v: Any, where: str) -> Item:
@@ -126,12 +132,17 @@ class ScreenBook:
                     forbid=tuple(_item(x, where) for x in v.get("forbid", [])),
                     over=tuple(v.get("over", [])), z=int(v.get("z", 1)),
                     close=Point(*v["close"]) if v.get("close") else None,
-                    claims=tuple(v.get("claims", [])), read=dict(v.get("read", {})), source=path.name,
+                    claims=tuple(v.get("claims", [])), stays=str(v.get("stays", "")),
+                    read=dict(v.get("read", {})), source=path.name,
                 ))
         names = [s.name for s in specs]
         dup = {n for n in names if names.count(n) > 1}
         if dup:
             raise ValueError(f"screens declared twice: {sorted(dup)}")
+        bases = {s.name for s in specs if s.layer == "base"}
+        bad = [f"{s.source}:{s.name}" for s in specs if s.stays and (s.layer != "base" or s.stays not in bases)]
+        if bad:
+            raise ValueError(f"stays: only a base screen can stay, over another base: {bad}")
         return cls(specs)
 
     def signals(self) -> set[str]:
@@ -139,8 +150,10 @@ class ScreenBook:
         return {n for s in self.specs for item in (*s.require, *s.forbid) for n in _names(item)} | set(GENERIC)
 
     # --- identification -------------------------------------------------------------------------
-    def identify(self, on: Callable[[str], bool], hits: Callable[[str], tuple[Hit, ...]]) -> Identity:
-        """``on(name)``: is the part found / the probe on; ``hits(name)``: a part's hits."""
+    def identify(self, on: Callable[[str], bool], hits: Callable[[str], tuple[Hit, ...]],
+                 held: str | None = None) -> Identity:
+        """``on(name)``: is the part found / the probe on; ``hits(name)``: a part's hits;
+        ``held``: ``Identity.held`` of the last frame."""
 
         def holds(item: Item) -> bool:
             if isinstance(item, str):
@@ -155,6 +168,13 @@ class ScreenBook:
             return all(holds(i) for i in s.require) and not any(holds(i) for i in s.forbid)
 
         base = next((s.name for s in self.bases if matches(s, [])), UNKNOWN)
+        kept = self.by_name.get(held) if held else None
+        if base != UNKNOWN and self.by_name[base].stays:
+            held = base
+        elif kept is not None and base == kept.stays:
+            base = kept.name
+        elif base != UNKNOWN:
+            held = None
         stack = [base]
         found: list[ScreenSpec] = []
         for s in self.dialogs:  # sorted by z: a side panel can ask for its main dialog
@@ -185,4 +205,4 @@ class ScreenBook:
         if n_unknown_dialogs:  # above the main dialogs, under side panels and boxes
             at = sum(1 for s in found if s.z <= 1)
             dialogs[at:at] = [UNKNOWN] * n_unknown_dialogs
-        return Identity(base, tuple(dialogs), tuple(s.name for s in overlays), hud, unknown)
+        return Identity(base, tuple(dialogs), tuple(s.name for s in overlays), hud, unknown, held)

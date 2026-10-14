@@ -38,11 +38,10 @@ edges:
     chest.wheel: {click: icon.tinh_tu, reveal: hud.icons_hidden}
     inventory: {click: bar.trang_bi}
     world_map: {click: hud.world}
-  map:
-    city: {click: hud.home}
-    chest.wheel: {click: icon.tinh_tu, reveal: hud.icons_hidden}
+  map:                                           # no 主城 edge: a young account's city reads as "map" until
+    field: {click: hud.pho_ban}                  # the "Trong Thành" banner shows (base.yaml city), and the way
+    chest.wheel: {click: icon.tinh_tu, reveal: hud.icons_hidden}   # sure to show it is Phó Bản, then 主城
     world_map: {click: hud.world}
-    field: {click: hud.pho_ban}
 
   # --- Tháp Thí Luyện -----------------------------------------------------------------------------
   city.building_panel:

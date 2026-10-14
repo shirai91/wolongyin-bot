@@ -132,7 +132,7 @@ class Loop:
             return self._no_canvas()
         self._no_canvas_since = None
         canvas = self.actor.canvas(frame, fix)
-        snap = self.perceiver.perceive(canvas)
+        snap = self.perceiver.perceive(canvas, self.snap.identity.held if self.snap else None)
         self.snap = self.f.snap = snap
         stack = snap.describe(read=False)
         if stack != self._last_stack:

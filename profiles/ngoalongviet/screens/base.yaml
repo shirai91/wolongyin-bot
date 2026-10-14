@@ -61,9 +61,10 @@ harbour:                    # Hải Cảng: the city's bottom bar, map label "H�
     icons_shown: {present: hud.icons_shown}     # the top icon rows cover labels near the top
     notice: {present: hud.notice_open}          # the left notice list is open
 
-city:                       # Thành chính: bottom bar with Dinh Phủ / Quốc Chính
-  layer: base
-  require: [hud.home, [bar.dinh_phu, bar.quoc_chinh]]
+city:                       # Thành chính: bottom bar with Dinh Phủ / Quốc Chính, which a young account
+  layer: base               # does not have yet (its bar is the world map's): there only the "Trong Thành"
+  require: [hud.home, [bar.dinh_phu, bar.quoc_chinh, banner.trong_thanh]]   # banner on entering tells,
+  stays: map                # so the city is held while later frames read as a bare map
   read:
     harbour: {point: map.vao_hai_cang}
     labels: {tags: map.lv}

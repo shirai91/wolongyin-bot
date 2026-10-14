@@ -23,6 +23,7 @@ bar.trang_bi:         {template: part.bar.trang_bi, search: [480, 525, 420, 50],
 bar.dinh_phu:         {template: part.bar.dinh_phu, search: [480, 565, 420, 30]}  # label strip, visible under Tinh Tú
 map.vao_hai_cang:     {template: part.map.vao_hai_cang, search: [250, 470, 150, 60]}
 map.hai_chien:        {template: part.map.hai_chien, search: [320, 490, 120, 50]}
+banner.trong_thanh:   {template: part.banner.trong_thanh, search: [430, 275, 140, 55], threshold: 0.80}  # ~2 s on entering the city; fading 0.85 (230), others <= 0.73
 map.vo_khoi_thap:     {template: part.map.vo_khoi_thap, search: [170, 340, 140, 50]}
 field.next:           {template: part.field.next, search: [450, 555, 250, 45]}
 field.prev:           {template: part.field.prev, search: [300, 555, 250, 45]}

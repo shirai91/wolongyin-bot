@@ -213,12 +213,13 @@ class Perceiver:
             img = cv2.resize(img, (CANVAS_W, CANVAS_H), interpolation=interp)
         return img
 
-    def perceive(self, canvas: np.ndarray) -> Snapshot:
+    def perceive(self, canvas: np.ndarray, held: str | None = None) -> Snapshot:
+        """``held``: ``snap.identity.held`` of the last frame of the same game (screens.py "stays")."""
         if canvas.shape[:2] != (CANVAS_H, CANVAS_W):
             raise ValueError(f"canvas must be {CANVAS_W}x{CANVAS_H}, got {canvas.shape[1]}x{canvas.shape[0]}")
         if canvas.ndim == 3 and canvas.shape[2] == 4:
             canvas = cv2.cvtColor(canvas, cv2.COLOR_BGRA2BGR)
         t0 = time.perf_counter()
         senses = Senses(np.ascontiguousarray(canvas), self.parts, self.probes, self.numbers, self.glyphs)
-        identity = self.book.identify(senses.on, senses.hits)
+        identity = self.book.identify(senses.on, senses.hits, held)
         return Snapshot(identity, senses, self.book, (time.perf_counter() - t0) * 1000, senses.ms)
