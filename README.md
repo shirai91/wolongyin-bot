@@ -44,7 +44,7 @@ Bạn **không cần cài thêm gì khác**. Mọi thứ bot cần đã nằm s�
 
 ## 2. Tải về và cài đặt
 
-1. Mở trang [Releases](../../releases/latest), tải tệp có tên dạng `AutoNgoaLong-v2.0.0-win64.zip`.
+1. Mở trang [Releases](../../releases/latest), tải tệp có tên dạng `AutoNgoaLong-v2.0.1-win64.zip`.
 2. **Bỏ chặn tệp vừa tải (nên làm):** bấm chuột phải vào tệp zip → chọn **Properties** → nếu ở dưới cùng có ô **Unblock** thì đánh dấu vào → bấm **OK**. Việc này giúp Windows bớt cảnh báo về sau.
 3. **Giải nén:** bấm chuột phải vào tệp zip → **Extract All…** → chọn nơi giải nén, ví dụ `D:\AutoNgoaLong` → **Extract**.
     - Nên để ở ổ D hoặc trong thư mục Documents.
