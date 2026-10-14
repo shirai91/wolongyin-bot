@@ -156,7 +156,10 @@ class Navigator:
 
     def _act(self, e: Edge, snap: Snapshot) -> Action:
         before = snap.stack
-        moved = lambda s: s.stack != before  # noqa: E731 - the next screen, or a box in between
+        # a screen held over a bare one (screens.py "stays") shows as that bare one first: a young
+        # account's city reads as "map" for 0.5-2 s after 主城, until its banner has faded in
+        bare = getattr(snap.book.by_name.get(e.dst), "stays", "")
+        moved = lambda s: s.stack != before and not (bare and s.top == bare)  # noqa: E731 - the next screen, or a box in between
         label = f"{e.src} → {e.dst}: {e.name}"
         if e.close:
             return self.close(snap)
